@@ -104,18 +104,118 @@
 
 \subsection{Uncertainty in Doppler Shift}
 
+The geophysical Doppler frequency shift is calculated as
 \begin{equation}
-  \varpi_g = \varpi_{\rm dc} - \varpi_{\rm geo} - \varpi_{\rm e} + \Delta\varpi,
+  \varpi_g = \varpi_{\rm dc} - \varpi_{\rm geo} - \varpi_{\rm e} + \Delta\varpi^*,
   \label{eq:DCcomponents}
 \end{equation}
 
-\subsubsection{Doppler Centroid Frequency Shift}
+\noindent where $\varpi_{\rm dc}$ is the Doppler centroid frequency shift,
+$\varpi_{\rm geo}$ is a geometric term related to the antenna pointing via the
+satellite's orbit and attitude, $\varpi_{\rm e}$ is an electronic term
+resulting from antenna mis-pointing, and $\Delta\varpi^*$ is the residual error.
+The estimate of each term comes with uncertainty as described in the following
+sub-sections.
 
-\subsubsection{Orbit and Attitude}
+\subsubsection{Uncertainty of the Doppler Centroid Frequency Shift}
 
-\subsubsection{Electronic Mis-Pointing}
+The Doppler centroid frequency shift (DC) is usually estimated from the azimuth
+power spectrum of the SAR beam. For ASAR data published at
+\url{https://data.met.no/dataset/e19b9c36-a9dc-4e13-8827-c998b9045b54}, the
+estimation algorithm is based on \cite{bamler91}, but extended to correct the
+azimuth spectra for energy aliased from neighboring areas \cite{hansen26}. The
+same model is used to calculate the standard deviation of the DC estimate,
+which gives the standard uncertainty, $\sigma_{\rm dc}$, of $\varpi_{\rm dc}$.
+Figure~\ref{fig:dc} shows $\sigma_{\rm dc}$ and $\varpi_{\rm dc}$ of an Envisat
+ASAR acquisition over the Amazon rain forest on
+2010-02-19T14:02:27.240842+00:00.
 
-\subsubsection{Geophysical Doppler Shift}
+\begin{figure}
+  \centering
+  \includegraphics[width=0.3\paperwidth]{figures/dc}
+  \includegraphics[width=0.3\paperwidth]{figures/dc_std}
+
+  \caption{Doppler centroid frequency shift (DC) estimates (Hz; left) and their
+  standard uncertainty (Hz; right), given by the experimental standard deviation.}
+
+  \label{fig:dc}
+\end{figure}
+
+\subsubsection{Uncertainty of the Estimates of Doppler Shifts caused by Mis-Pointing}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=0.3\paperwidth]{figures/range_bias_LUT_2012-01-27_2012-02-16_VV.dcgeo_residual}
+  \includegraphics[width=0.3\paperwidth]{figures/range_bias_LUT_2012-01-27_2012-02-16_VV.oacorr_residual}
+  \includegraphics[width=0.3\paperwidth]{figures/orbital_residual_2012-01-27_2012-02-16_VV}
+  \includegraphics[width=0.3\paperwidth]{figures/antenna_mispointing_2012-01-27_2012-02-16_VV}
+
+  \caption{Distributions of global Doppler centroid anomaly (DCA; VV
+  polarization) measurements over land between the 27th January and 16th
+  February 2012 following (a) subtraction of the Doppler shift resulting from a-priori
+  orbit and attitude estimates given in auxiliary orbit and attitude data files
+  from DC, and (b) after attitude correction by manual fit. Panel (c) shows the
+  orbital variation of the residual geometric Doppler frequency shift,
+  $\varpi^{\rm r}_1(\gamma_h)$ (dots), and the interpolated signal,
+  $\varpi^{\rm r}_2(\gamma_h)$ (solid line), and panel (d) shows the DCA
+  distribution attributed to electronic mis-pointing, $\varpi_e$, and random
+  noise, $\Delta\varpi$, after also correcting for the orbital variation.}
+
+  \label{fig:mispointing-corr}
+\end{figure}
+
+Figure~\ref{fig:mispointing-corr} shows the DC measurements over land after
+step-wise subtraction of (a) the Doppler shift resulting from a-priori orbit
+and attitude estimates given in auxiliary orbit and attitude data files and (b)
+after attitude correction obtained by manual fit.
+Figure~\ref{fig:mispointing-corr}(c) shows the remaining residual as a function
+of the satellite hour angle, i.e., its orbit, and
+Figure~\ref{fig:mispointing-corr}(d) shows the DC measurements, or Doppler
+Centroid Anomaly (DCA), after subtraction of the orbital bias. The uncertainty
+of the corrections can be described by the variance around the mean DCA in bins
+of the sensor view angle, as shown in
+Figure~\ref{fig:antenna-pattern-with-errorbars} for the third sub-swath, where
+the error bars represent the experimental standard deviation in each bin.
+
+\begin{figure}
+  \centering
+  \includegraphics[width=0.6\paperwidth]{figures/antenna-pattern-with-errorbars}
+
+  \caption{Antenna pattern DCA bias with error bars for the third sub-swath of
+  the data shown in Figure~\ref{fig:mispointing-corr}.}
+
+  \label{fig:antenna-pattern-with-errorbars}
+\end{figure}
+
+\noindent {\bf Uncertainty of the Antenna Pattern.} Equation E.3 from GUM?
+
+z=$f(w_1, w_2, ..., w_N)$
+
+$\displaystyle\sigma_z^2 = \sum_{i=1}^N (\frac{\partial f}{\partial w_i})^2\sigma_i^2 + 2\sum_{i=1}^{N-1}\sum_{j=i+1}^N \frac{\partial f}{\partial w_i}\frac{\partial f}{\partial w_j}\sigma_i\sigma_j\rho_{ij}$
+
+What about the Mean vs the Shape?
+
+\subsubsection{Uncertainty of the Geophysical Doppler Shift}
+
+\begin{equation}
+  \Delta\varpi^* = \Delta\varpi_{\rm lb} + \Delta\varpi,
+  \label{eq:final-residual}
+\end{equation}
+
+{\bf By propagation of errors.}
+
+{\bf By considering the variance over land.}
+
+See Figure~\ref{fig:fg_plot}. The mean is here $-0.10$~Hz, with standard deviation $6.9$~Hz.
+
+\begin{figure}
+  \centering
+  \includegraphics[width=0.6\paperwidth]{figures/fg_plot}
+
+  \caption{Remaining bias after subtraction of $\varpi_{\rm geo}$ and $\varpi_{\rm e}$.}
+
+  \label{fig:fg-plot}
+\end{figure}
 
 \subsection{Uncertainty in Auxiliary Data}
 
