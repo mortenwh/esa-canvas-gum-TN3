@@ -41,6 +41,9 @@
 \usepackage{pdflscape}
 \usepackage[nodayofweek]{datetime}
 
+\usepackage{tikz}
+\usetikzlibrary{shapes, arrows.meta, positioning}
+
 \definecolor{BUR}{rgb}{0.8, 0.0, 0.0}
 \definecolor{blue(pigment)}{rgb}{0.2, 0.2, 0.6}
 \definecolor{green1}{RGB}{221,242,151}
@@ -122,6 +125,140 @@ The estimate of each term comes with uncertainty as described in the following
 sub-sections.
 
 \subsubsection{Traceability Diagram}
+
+\begin{figure*}
+  \centering
+  \begin{tikzpicture}
+    \node[draw,
+          text width = 5cm,
+          align = center,
+          minimum width=2cm,
+          minimum height=1cm] (pred) {$\varpi_{\rm p} = g(\varpi_{\rm geo}, \varpi_{\rm e}) + \Delta\varpi_{\rm p}$};
+ 
+    \node[draw,
+          left = of pred,
+          text width = 0.9cm,
+          align = center,
+          minimum width=1cm,
+          minimum height=1cm] (dpreddgeo) {$\frac{\partial\varpi_{\rm p}}{\partial\varpi_{\rm geo}}$};
+
+    \node[draw,
+          above = of dpreddgeo,
+          text width = 6cm,
+          align = center,
+          minimum width=2cm,
+          minimum height=1cm] (geo) {$\varpi_{\rm geo} = I(\varpi_{\rm aux}, \varpi_{\rm fit}, \varpi_{\rm orb}) + \Delta\varpi_{\rm geo}$};
+ 
+    \node[draw,
+          above = of geo,
+          text width = 0.9cm,
+          align = center,
+          minimum width=1cm,
+          minimum height=1cm] (dgeodfit) {$\frac{\partial\varpi_{\rm geo}}{\partial\varpi_{\rm fit}}$};
+
+    \node[draw,
+          above = of dgeodfit,
+          text width = 5.5cm,
+          align = center,
+          minimum width=2cm,
+          minimum height=1cm] (aux) {$\varpi_{\rm aux} = J(\vec{P},\gamma,\psi,\phi)+ \Delta\varpi_{\rm aux}$};
+
+    \node[draw,
+          right = of aux,
+          text width = 5.5cm,
+          align = center,
+          minimum width=2cm,
+          minimum height=1cm] (fit) {$\varpi_{\rm fit} = K(\Delta\gamma, \Delta\psi, \Delta\phi) + \Delta\varpi_{\rm fit}$};
+
+    \node[above = of fit, text width = 4cm] (fitleaves) {Corrections, $\Delta\gamma$, $\Delta\psi$, $\Delta\phi$, obtained by manual fit.};
+ 
+    \node[draw,
+          left = of dgeodfit,
+          text width = 0.9cm,
+          align = center,
+          minimum width=1cm,
+          minimum height=1cm] (dgeodaux) {$\frac{\partial\varpi_{\rm geo}}{\partial\varpi_{\rm aux}}$};
+
+    \node[draw,
+          right = of dgeodfit,
+          text width = 0.9cm,
+          align = center,
+          minimum width=1cm,
+          minimum height=1cm] (dgeodorb) {$\frac{\partial\varpi_{\rm geo}}{\partial\varpi_{\rm orb}}$};
+
+    \node[draw,
+          right = of dgeodorb,
+          text width = 5.5cm,
+          align = center,
+          minimum width=2cm,
+          minimum height=1cm] (orb) {$\varpi_{\rm orb} = L(\gamma_h) + \Delta\varpi_{\rm orb}$};
+ 
+    \node[draw,
+          right = of pred,
+          text width = 0.7cm,
+          align = center,
+          minimum width=.8cm,
+          minimum height=1cm] (dpreddelec) {$\frac{\partial\varpi_{\rm p}}{\partial\varpi_{\rm e}}$};
+
+    \node[draw,
+          above = of dpreddelec,
+          text width = 4cm,
+          align = center,
+          minimum width=0.8cm,
+          minimum height=1cm] (elec) {$\varpi_{\rm e} = h(\theta_{\rm n}) + \Delta\varpi_{\rm e}$};
+
+    \node[draw,
+          below = of pred,
+          text width = 0.7cm,
+          align = center,
+          minimum width=0.8cm,
+          minimum height=1cm] (dgdpred) {$\frac{\partial\varpi_{\rm g}}{\partial\varpi_{\rm p}}$};
+  
+    \node[draw,
+          below = of dgdpred,
+          text width = 5cm,
+          align = center,
+          trapezium,
+          trapezium left angle = 80,
+          trapezium right angle = 100,
+          trapezium stretches] (fg) {$\varpi_{\rm g} = f(\varpi_{\rm dc}, \varpi_{\rm p}) + \Delta\varpi_{\rm g}$};
+
+    \node[draw,
+          below = of fg,
+          text width = 0.7cm,
+          align = center,
+          minimum width=0.8cm,
+          minimum height=1cm] (dgdc) {$\frac{\partial\varpi_{\rm g}}{\partial\varpi_{\rm dc}}$};
+  
+    \node[draw,
+          left = of dgdc,
+          text width = 5cm,
+          align = center,
+          minimum width=2cm,
+          minimum height=1cm] (dc) {$\varpi_{\rm dc}=g(I, D, \varpi, t) + \Delta\varpi$};
+
+    \draw[-latex] (dgdc) edge (fg)
+        (dc) edge (dgdc)
+        (dgdpred) edge (fg)
+        (pred) edge (dgdpred)
+        (dpreddgeo) edge (pred)
+        (geo) edge (dpreddgeo)
+        (dgeodaux) edge (geo)
+        (dgeodfit) edge (geo)
+        (aux) edge (dgeodaux)
+        (fit) edge (dgeodfit)
+        (fitleaves) edge (fit)
+        (orb) edge (dgeodorb)
+        (dgeodorb) edge (geo)
+        (dpreddelec) edge (pred)
+        (elec) edge (dpreddelec);
+
+  \end{tikzpicture}
+  \caption{Uncertainty tree diagram for the geophysical Doppler shift, $\varpi_{\rm g}$.}
+  \label{fig:scene_calibration}
+\end{figure*}
+
+
 
 \subsubsection{Uncertainty of the Doppler Centroid Frequency Shift}
 
