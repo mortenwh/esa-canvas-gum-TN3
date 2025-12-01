@@ -158,20 +158,50 @@ sub-sections.
 
     \node[draw,
           above = of dgeodfit,
-          text width = 5.5cm,
+          text width = 4.5cm,
           align = center,
           minimum width=2cm,
-          minimum height=1cm] (aux) {$\varpi_{\rm aux} = J(\vec{P},\gamma,\psi,\phi)+ \Delta\varpi_{\rm aux}$};
+          minimum height=1cm] (aux) {$\varpi_{\rm aux} = J(\vec{P},\alpha)+ \Delta\varpi_{\rm aux}$};
 
     \node[draw,
-          right = of aux,
-          text width = 5.5cm,
+          above = of aux,
+          text width = 0.9cm,
           align = center,
-          minimum width=2cm,
-          minimum height=1cm] (fit) {$\varpi_{\rm fit} = K(\Delta\gamma, \Delta\psi, \Delta\phi) + \Delta\varpi_{\rm fit}$};
+          minimum width=1cm,
+          minimum height=1cm] (uP) {$u(\vec{P})$};
 
-    \node[above = of fit, text width = 4cm] (fitleaves) {Corrections, $\Delta\gamma$, $\Delta\psi$, $\Delta\phi$, obtained by manual fit.};
- 
+    \node[draw,
+          left = of uP,
+          text width = 0.9cm,
+          align = center,
+          minimum width=1cm,
+          minimum height=1cm] (dauxdP) {$\frac{\partial\varpi_{\rm aux}}{\partial\vec{P}}$};
+
+    \node[above = of uP, text width = 4cm] (uPleaves) {DORIS uncertainty};
+
+    \node[draw,
+          above = of uPleaves,
+          text width = 3cm,
+          align = center,
+          minimum width=1cm,
+          minimum height=1cm] (A) {$\alpha=A(\psi,\gamma,\phi)$};
+
+    \node[draw,
+          left = of A,
+          text width = 1.5cm,
+          align = center,
+          minimum width=1cm,
+          minimum height=1cm] (dauxdA) {$\frac{\partial\varpi_{\rm aux}}{\partial \alpha}$};
+
+    \node[draw,
+          right = of A,
+          text width = 0.9cm,
+          align = center,
+          minimum width=1cm,
+          minimum height=1cm] (uA) {$u(A)$};
+
+    \node[right = of uA, text width = 4cm] (uAleaves) {Uncertainty in restituted attitude data\\Missing attitude data};
+
     \node[draw,
           left = of dgeodfit,
           text width = 0.9cm,
@@ -192,6 +222,31 @@ sub-sections.
           align = center,
           minimum width=2cm,
           minimum height=1cm] (orb) {$\varpi_{\rm orb} = L(\gamma_h) + \Delta\varpi_{\rm orb}$};
+
+    \node[draw,
+          above = of orb,
+          text width = 0.8cm,
+          align = center,
+          minimum width=0.8cm,
+          minimum height=1cm] (uorb) {$u(L)$};
+
+    \node[right = of uorb, text width = 3cm] (orbleaves) {Random noise\\Mismatch};
+ 
+    \node[draw,
+          above = of uorb,
+          text width = 5.5cm,
+          align = center,
+          minimum width=2cm,
+          minimum height=1cm] (fit) {$\varpi_{\rm fit} = K(\Delta\gamma, \Delta\psi, \Delta\phi) + \Delta\varpi_{\rm fit}$};
+
+    \node[draw,
+          above = of fit,
+          text width = 0.8cm,
+          align = center,
+          minimum width=0.8cm,
+          minimum height=1cm] (ufit) {$u(K)$};
+
+    \node[right = of ufit, text width = 3cm] (fitleaves) {Random noise\\Mismatch};
  
     \node[draw,
           right = of pred,
@@ -206,6 +261,15 @@ sub-sections.
           align = center,
           minimum width=0.8cm,
           minimum height=1cm] (elec) {$\varpi_{\rm e} = h(\theta_{\rm n}) + \Delta\varpi_{\rm e}$};
+
+    \node[draw,
+          right = of dpreddelec,
+          text width = 0.8cm,
+          align = center,
+          minimum width=0.8cm,
+          minimum height=1cm] (uelec) {$u(h)$};
+
+    \node[below = of uelec, text width = 3cm] (elecleaves) {Random noise\\Pointing error\\Empirical antenna model error};
 
     \node[draw,
           below = of pred,
@@ -246,11 +310,23 @@ sub-sections.
         (dgeodaux) edge (geo)
         (dgeodfit) edge (geo)
         (aux) edge (dgeodaux)
+        (dauxdA) edge (aux)
+        (A) edge (dauxdA)
+        (uA) edge (A)
+        (uAleaves) edge (uA)
+        (dauxdP) edge (aux)
+        (uP) edge (dauxdP)
+        (uPleaves) edge (uP)
         (fit) edge (dgeodfit)
-        (fitleaves) edge (fit)
+        (ufit) edge (fit)
+        (fitleaves) edge (ufit)
+        (uorb) edge (orb)
+        (orbleaves) edge (uorb)
         (orb) edge (dgeodorb)
         (dgeodorb) edge (geo)
         (dpreddelec) edge (pred)
+        (uelec) edge (elec)
+        (elecleaves) edge (uelec)
         (elec) edge (dpreddelec);
 
   \end{tikzpicture}
