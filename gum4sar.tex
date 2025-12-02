@@ -109,20 +109,20 @@
 
 \subsubsection{Measurand and measurement model}
 
-The geophysical Doppler shift is the measurand, defined as \dots.
-
-The geophysical Doppler frequency shift is calculated as
+The geophysical Doppler frequency shift, the measurand, is given by
 \begin{equation}
-  \varpi_g = \varpi_{\rm dc} - \varpi_{\rm geo} - \varpi_{\rm e} + \Delta\varpi^*,
+  \varpi_g = \varpi_{\rm dc} - \varpi_p + \Delta\varpi_g
   \label{eq:DCcomponents}
 \end{equation}
 
 \noindent where $\varpi_{\rm dc}$ is the Doppler centroid frequency shift,
-$\varpi_{\rm geo}$ is a geometric term related to the antenna pointing via the
-satellite's orbit and attitude, $\varpi_{\rm e}$ is an electronic term
-resulting from antenna mis-pointing, and $\Delta\varpi^*$ is the residual error.
-The estimate of each term comes with uncertainty as described in the following
-sub-sections.
+$\varpi_p = \varpi_{\rm geo} + \varpi_{\rm e} + \Delta\varpi_p$ is the Doppler
+shift predicted from an estimate of the antenna pointing, and $\Delta\varpi_g$
+is the residual error. Moreover, $\varpi_{\rm geo}$ is a geometric term related
+to the antenna pointing via the satellite's orbit and attitude, $\varpi_{\rm
+e}$ is an electronic term resulting from antenna mis-pointing, and
+$\Delta\varpi_p$ is the prediction uncertainty. The estimate of each term comes
+with uncertainty as described in the following sub-sections.
 
 \subsubsection{Traceability Diagram}
 
@@ -299,7 +299,7 @@ sub-sections.
           text width = 5cm,
           align = center,
           minimum width=2cm,
-          minimum height=1cm] (dc) {$\varpi_{\rm dc}=g(I, D, \varpi, t) + \Delta\varpi$};
+          minimum height=1cm] (dc) {$\varpi_{\rm dc}=g(I, D, \varpi, t) + \Delta\varpi_{\rm dc}$};
 
     \draw[-latex] (dgdc) edge (fg)
         (dc) edge (dgdc)
@@ -333,8 +333,6 @@ sub-sections.
   \caption{Uncertainty tree diagram for the geophysical Doppler shift, $\varpi_{\rm g}$.}
   \label{fig:scene_calibration}
 \end{figure*}
-
-
 
 \subsubsection{Uncertainty of the Doppler Centroid Frequency Shift}
 
