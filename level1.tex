@@ -1,0 +1,352 @@
+\section{Uncertainty estimation for SAR Remote Sensing}
+
+\begin{itemize}
+  \item Generate documentation about the application of GUM principles to SAR.
+\end{itemize}
+
+\lipsum[1]
+
+% \section{Applicability of Metrology Standards to SAR Cal/Val procedures}
+
+\subsection{Uncertainty by Instrumental effects} %signal-to-noise
+
+\subsection{Uncertainty in Radiometric Calibration}
+
+\lipsum[2-3]
+
+\subsection{Uncertainty in Geometric Calibration}
+
+\subsection{Uncertainty in Polarimetric Calibration}
+
+\subsection{Uncertainty in Interferometric Calibration}
+
+\subsection{Uncertainty in Doppler Shift}
+
+\subsubsection{Measurand and measurement model}
+
+The geophysical Doppler frequency shift, the measurand, is given by
+\begin{equation}
+  \varpi_g = \varpi_{\rm dc} - \varpi_p + \Delta\varpi_g
+  \label{eq:DCcomponents}
+\end{equation}
+
+\noindent where $\varpi_{\rm dc}$ is the Doppler centroid frequency shift,
+$\varpi_p = \varpi_{\rm geo} + \varpi_{\rm e} + \Delta\varpi_p$ is the Doppler
+shift predicted from an estimate of the antenna pointing, and $\Delta\varpi_g$
+is the residual error. Moreover, $\varpi_{\rm geo}$ is a geometric term related
+to the antenna pointing via the satellite's orbit and attitude, $\varpi_{\rm
+e}$ is an electronic term resulting from antenna mis-pointing, and
+$\Delta\varpi_p$ is the prediction uncertainty. The estimate of each term comes
+with uncertainty as described in the following sub-sections.
+
+\subsubsection{Traceability Diagram}
+
+\begin{figure*}
+  \centering
+  \begin{tikzpicture}
+    \node[draw,
+          text width = 5cm,
+          align = center,
+          minimum width=2cm,
+          minimum height=1cm] (pred) {$\varpi_{\rm p} = g(\varpi_{\rm geo}, \varpi_{\rm e}) + \Delta\varpi_{\rm p}$};
+ 
+    \node[draw,
+          left = of pred,
+          text width = 0.9cm,
+          align = center,
+          minimum width=1cm,
+          minimum height=1cm] (dpreddgeo) {$\frac{\partial\varpi_{\rm p}}{\partial\varpi_{\rm geo}}$};
+
+    \node[draw,
+          above = of dpreddgeo,
+          text width = 6cm,
+          align = center,
+          minimum width=2cm,
+          minimum height=1cm] (geo) {$\varpi_{\rm geo} = I(\varpi_{\rm aux}, \varpi_{\rm fit}, \varpi_{\rm orb}) + \Delta\varpi_{\rm geo}$};
+ 
+    \node[draw,
+          above = of geo,
+          text width = 0.9cm,
+          align = center,
+          minimum width=1cm,
+          minimum height=1cm] (dgeodfit) {$\frac{\partial\varpi_{\rm geo}}{\partial\varpi_{\rm fit}}$};
+
+    \node[draw,
+          above = of dgeodfit,
+          text width = 4.5cm,
+          align = center,
+          minimum width=2cm,
+          minimum height=1cm] (aux) {$\varpi_{\rm aux} = J(\vec{P},\alpha)+ \Delta\varpi_{\rm aux}$};
+
+    \node[draw,
+          above = of aux,
+          text width = 0.9cm,
+          align = center,
+          minimum width=1cm,
+          minimum height=1cm] (uP) {$u(\vec{P})$};
+
+    \node[draw,
+          left = of uP,
+          text width = 0.9cm,
+          align = center,
+          minimum width=1cm,
+          minimum height=1cm] (dauxdP) {$\frac{\partial\varpi_{\rm aux}}{\partial\vec{P}}$};
+
+    \node[above = of uP, text width = 4cm] (uPleaves) {DORIS uncertainty};
+
+    \node[draw,
+          above = of uPleaves,
+          text width = 3cm,
+          align = center,
+          minimum width=1cm,
+          minimum height=1cm] (A) {$\alpha=A(\psi,\gamma,\phi)$};
+
+    \node[draw,
+          left = of A,
+          text width = 1.5cm,
+          align = center,
+          minimum width=1cm,
+          minimum height=1cm] (dauxdA) {$\frac{\partial\varpi_{\rm aux}}{\partial \alpha}$};
+
+    \node[draw,
+          right = of A,
+          text width = 0.9cm,
+          align = center,
+          minimum width=1cm,
+          minimum height=1cm] (uA) {$u(A)$};
+
+    \node[right = of uA, text width = 4cm] (uAleaves) {Uncertainty in restituted attitude data\\Missing attitude data};
+
+    \node[draw,
+          left = of dgeodfit,
+          text width = 0.9cm,
+          align = center,
+          minimum width=1cm,
+          minimum height=1cm] (dgeodaux) {$\frac{\partial\varpi_{\rm geo}}{\partial\varpi_{\rm aux}}$};
+
+    \node[draw,
+          right = of dgeodfit,
+          text width = 0.9cm,
+          align = center,
+          minimum width=1cm,
+          minimum height=1cm] (dgeodorb) {$\frac{\partial\varpi_{\rm geo}}{\partial\varpi_{\rm orb}}$};
+
+    \node[draw,
+          right = of dgeodorb,
+          text width = 5.5cm,
+          align = center,
+          minimum width=2cm,
+          minimum height=1cm] (orb) {$\varpi_{\rm orb} = L(\gamma_h) + \Delta\varpi_{\rm orb}$};
+
+    \node[draw,
+          above = of orb,
+          text width = 0.8cm,
+          align = center,
+          minimum width=0.8cm,
+          minimum height=1cm] (uorb) {$u(L)$};
+
+    \node[right = of uorb, text width = 3cm] (orbleaves) {Random noise\\Mismatch};
+ 
+    \node[draw,
+          above = of uorb,
+          text width = 5.5cm,
+          align = center,
+          minimum width=2cm,
+          minimum height=1cm] (fit) {$\varpi_{\rm fit} = K(\Delta\gamma, \Delta\psi, \Delta\phi) + \Delta\varpi_{\rm fit}$};
+
+    \node[draw,
+          above = of fit,
+          text width = 0.8cm,
+          align = center,
+          minimum width=0.8cm,
+          minimum height=1cm] (ufit) {$u(K)$};
+
+    \node[right = of ufit, text width = 3cm] (fitleaves) {Random noise\\Mismatch};
+ 
+    \node[draw,
+          right = of pred,
+          text width = 0.7cm,
+          align = center,
+          minimum width=.8cm,
+          minimum height=1cm] (dpreddelec) {$\frac{\partial\varpi_{\rm p}}{\partial\varpi_{\rm e}}$};
+
+    \node[draw,
+          above = of dpreddelec,
+          text width = 4cm,
+          align = center,
+          minimum width=0.8cm,
+          minimum height=1cm] (elec) {$\varpi_{\rm e} = h(\theta_{\rm n}) + \Delta\varpi_{\rm e}$};
+
+    \node[draw,
+          right = of dpreddelec,
+          text width = 0.8cm,
+          align = center,
+          minimum width=0.8cm,
+          minimum height=1cm] (uelec) {$u(h)$};
+
+    \node[below = of uelec, text width = 3cm] (elecleaves) {Random noise\\Pointing error\\Empirical antenna model error};
+
+    \node[draw,
+          below = of pred,
+          text width = 0.7cm,
+          align = center,
+          minimum width=0.8cm,
+          minimum height=1cm] (dgdpred) {$\frac{\partial\varpi_{\rm g}}{\partial\varpi_{\rm p}}$};
+  
+    \node[draw,
+          below = of dgdpred,
+          text width = 5cm,
+          align = center,
+          trapezium,
+          trapezium left angle = 80,
+          trapezium right angle = 100,
+          trapezium stretches] (fg) {$\varpi_{\rm g} = f(\varpi_{\rm dc}, \varpi_{\rm p}) + \Delta\varpi_{\rm g}$};
+
+    \node[draw,
+          below = of fg,
+          text width = 0.7cm,
+          align = center,
+          minimum width=0.8cm,
+          minimum height=1cm] (dgdc) {$\frac{\partial\varpi_{\rm g}}{\partial\varpi_{\rm dc}}$};
+  
+    \node[draw,
+          left = of dgdc,
+          text width = 5cm,
+          align = center,
+          minimum width=2cm,
+          minimum height=1cm] (dc) {$\varpi_{\rm dc}=g(I, D, \varpi, t) + \Delta\varpi_{\rm dc}$};
+
+    \draw[-latex] (dgdc) edge (fg)
+        (dc) edge (dgdc)
+        (dgdpred) edge (fg)
+        (pred) edge (dgdpred)
+        (dpreddgeo) edge (pred)
+        (geo) edge (dpreddgeo)
+        (dgeodaux) edge (geo)
+        (dgeodfit) edge (geo)
+        (aux) edge (dgeodaux)
+        (dauxdA) edge (aux)
+        (A) edge (dauxdA)
+        (uA) edge (A)
+        (uAleaves) edge (uA)
+        (dauxdP) edge (aux)
+        (uP) edge (dauxdP)
+        (uPleaves) edge (uP)
+        (fit) edge (dgeodfit)
+        (ufit) edge (fit)
+        (fitleaves) edge (ufit)
+        (uorb) edge (orb)
+        (orbleaves) edge (uorb)
+        (orb) edge (dgeodorb)
+        (dgeodorb) edge (geo)
+        (dpreddelec) edge (pred)
+        (uelec) edge (elec)
+        (elecleaves) edge (uelec)
+        (elec) edge (dpreddelec);
+
+  \end{tikzpicture}
+  \caption{Uncertainty tree diagram for the geophysical Doppler shift, $\varpi_{\rm g}$.}
+  \label{fig:scene_calibration}
+\end{figure*}
+
+\subsubsection{Uncertainty of the Doppler Centroid Frequency Shift}
+
+The Doppler centroid frequency shift (DC) is usually estimated from the azimuth
+power spectrum of the SAR beam. For ASAR data published at
+\url{https://data.met.no/dataset/e19b9c36-a9dc-4e13-8827-c998b9045b54}, the
+estimation algorithm is based on \cite{bamler91}, but extended to correct the
+azimuth spectra for energy aliased from neighboring areas \cite{hansen26}. The
+same model is used to calculate the standard deviation of the DC estimate,
+which gives the standard uncertainty, $\sigma_{\rm dc}$, of $\varpi_{\rm dc}$.
+Figure~\ref{fig:dc} shows $\sigma_{\rm dc}$ and $\varpi_{\rm dc}$ of an Envisat
+ASAR acquisition over the Amazon rain forest on
+2010-02-19T14:02:27.240842+00:00.
+
+\begin{figure}
+  \centering
+  \includegraphics[width=0.3\paperwidth]{figures/dc}
+  \includegraphics[width=0.3\paperwidth]{figures/dc_std}
+
+  \caption{Doppler centroid frequency shift (DC) estimates (Hz; left) and their
+  standard uncertainty (Hz; right), given by the experimental standard deviation.}
+
+  \label{fig:dc}
+\end{figure}
+
+\subsubsection{Uncertainty of the Estimates of Doppler Shifts caused by Mis-Pointing}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=0.3\paperwidth]{figures/range_bias_LUT_2012-01-27_2012-02-16_VV.dcgeo_residual}
+  \includegraphics[width=0.3\paperwidth]{figures/range_bias_LUT_2012-01-27_2012-02-16_VV.oacorr_residual}
+  \includegraphics[width=0.3\paperwidth]{figures/orbital_residual_2012-01-27_2012-02-16_VV}
+  \includegraphics[width=0.3\paperwidth]{figures/antenna_mispointing_2012-01-27_2012-02-16_VV}
+
+  \caption{Distributions of global Doppler centroid anomaly (DCA; VV
+  polarization) measurements over land between the 27th January and 16th
+  February 2012 following (a) subtraction of the Doppler shift resulting from a-priori
+  orbit and attitude estimates given in auxiliary orbit and attitude data files
+  from DC, and (b) after attitude correction by manual fit. Panel (c) shows the
+  orbital variation of the residual geometric Doppler frequency shift,
+  $\varpi^{\rm r}_1(\gamma_h)$ (dots), and the interpolated signal,
+  $\varpi^{\rm r}_2(\gamma_h)$ (solid line), and panel (d) shows the DCA
+  distribution attributed to electronic mis-pointing, $\varpi_e$, and random
+  noise, $\Delta\varpi$, after also correcting for the orbital variation.}
+
+  \label{fig:mispointing-corr}
+\end{figure}
+
+Figure~\ref{fig:mispointing-corr} shows the DC measurements over land after
+step-wise subtraction of (a) the Doppler shift resulting from a-priori orbit
+and attitude estimates given in auxiliary orbit and attitude data files and (b)
+after attitude correction obtained by manual fit.
+Figure~\ref{fig:mispointing-corr}(c) shows the remaining residual as a function
+of the satellite hour angle, i.e., its orbit, and
+Figure~\ref{fig:mispointing-corr}(d) shows the DC measurements, or Doppler
+Centroid Anomaly (DCA), after subtraction of the orbital bias. The uncertainty
+of the corrections can be described by the variance around the mean DCA in bins
+of the sensor view angle, as shown in
+Figure~\ref{fig:antenna-pattern-with-errorbars} for the third sub-swath, where
+the error bars represent the experimental standard deviation in each bin.
+
+\begin{figure}
+  \centering
+  \includegraphics[width=0.6\paperwidth]{figures/antenna-pattern-with-errorbars}
+
+  \caption{Antenna pattern DCA bias with error bars for the third sub-swath of
+  the data shown in Figure~\ref{fig:mispointing-corr}d.}
+
+  \label{fig:antenna-pattern-with-errorbars}
+\end{figure}
+
+\noindent {\bf Uncertainty of the Antenna Pattern.} Equation E.3 from GUM?
+
+$z=f(w_1, w_2, ..., w_N)$
+
+$\displaystyle\sigma_z^2 = \sum_{i=1}^N (\frac{\partial f}{\partial w_i})^2\sigma_i^2 + 2\sum_{i=1}^{N-1}\sum_{j=i+1}^N \frac{\partial f}{\partial w_i}\frac{\partial f}{\partial w_j}\sigma_i\sigma_j\rho_{ij}$
+
+What about the Mean vs the Shape?
+
+\subsubsection{Uncertainty of the Geophysical Doppler Shift}
+
+\begin{equation}
+  \Delta\varpi^* = \Delta\varpi_{\rm lb} + \Delta\varpi,
+  \label{eq:final-residual}
+\end{equation}
+
+{\bf By propagation of errors.}
+
+{\bf By considering the variance over land.}
+
+See Figure~\ref{fig:fg_plot}. The mean is here $-0.10$~Hz, with standard deviation $6.9$~Hz.
+
+\begin{figure}
+  \centering
+  \includegraphics[width=0.6\paperwidth]{figures/fg_plot}
+
+  \caption{Remaining bias after subtraction of $\varpi_{\rm geo}$ and $\varpi_{\rm e}$.}
+
+  \label{fig:fg-plot}
+\end{figure}
+
+
