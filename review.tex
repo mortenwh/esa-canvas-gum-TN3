@@ -1,111 +1,21 @@
 \section{The GUM Principles: A review}
 
-\subsection{Introduction}
 
 %Summary of QA4EO 1 (Executive Summary) and contextualization for QA4SAR
 
-Using gum principles as reference in general. If a reference is not explicitly
-given, the described terms are based on \cite{JCGMGUM}.
 
-
-
-\subsection{Terminology}
 
 %No need to redefine anything, better to follow same descriptions from:
 %Sources: QA4EO, CEOS, SARCALNET, JCGM and its GUM, BIPM, VIM
 
-\begin{itemize}
-  \item Interoperability: the ability of data or tools from non-cooperating resources to integrate or work together with minimal effort \cite{wilkinson16}.
-  \item Traceability: is a property of a measurement that relates the measured value to a stated metrological reference through an unbroken chain of calibrations or comparisons. It requires, for each step in the traceability chain, that uncertainties are evaluated and that methodologies are documented.
-    
-    \item Uncertainty Analysis: is the review of all sources of uncertainty and the propagation of that uncertainty through the traceability chain.
-    
-    \item Procedure
-    
-    \item Measurement
-    
-    \item Quantity: Variable/parameter
-    
-    \item Measurand: The quantity intended to be measured. Also the single output quantity from a measurement 
-    model.
-    
-    \item Multivariate measurands:
-    
-    \item Measurement model: Mathematical expression to calculate the measurand. Sometimes it could only be described as a coded algorithm such as an iterative process or machine learning method.
-    
-    \item Metrology
-    
-    \item Comparison: Comparisons are used to validate uncertainty analyses and to confirm traceability.
-    
-    \item Fiducial Reference Measurement (FRM): A suite of independent, fully characterized, and traceable sub-orbital measurements that follow the guidelines outlined by the GEO/CEOS Quality Assurance framework for Earth Observation (QA4EO) and have value for space-based observations.
-    
-    \item Fundamental Data Record (FDR) : A record of sufficient duration for its application, of uncertainty-quantified sensor observations calibrated to physical units, and located in time and space, together with all ancillary and lower-level instrument data used to calibrate and locate the observations and to estimate uncertainty.
-    
-    \item Climate Data Record (CDR) is a TDP
-    
-    \item Fundamental Climate Data Record (FCDR) is a FDR
-    
-    \item Thematic Data Product (TDP) : A record of sufficient duration for its application, of uncertainty-quantified retrieved values of a geophysical variable, along with all ancillary data used in retrieval and uncertainty estimation.
-    
-    \item Observations
-    
-    \item Ancillary information
-    
-    \item Reference dataset
-    
-    \item Calibration target
-    
-    \item Calibration
-    
-    \item Pre-flight calibration
-    
-    \item In-orbit calibration
-    
-    \item Vicarious calibration
-    
-    \item Validation
-    
-    \item Uncertainty: A quantification of doubt about a measurement result. It describes the spread of values around the measured value that can be ascribed to the measurand, i.e. the true value. 
-    
-    \item Accuracy: Closeness in agreement between a measurement result and true value.
-    
-    \item Precision: A measure of the scatter of a number of measured values.
-    
-    \item Trueness: Closeness of a measurement to the average of a large set of measurements.
-    
-    \item Bias: Opposite of trueness, as occurs when the indication of a measuring instrument is consistently too high or low.
-    
-    \item Uncertainty propagation
-    
-    \item Uncertainty budget: table of different sources of uncertainty. The term is somewhat out-of-date and uncertainty analysis is preferable.
-    
-    \item Uncertainty analysis
-    
-    \item Error: Difference between a measured and true value (considering a true value will always be unknown). It is the difference between the true value and the measured value. In some occasions, the term is also used as statistical distribution of errors. 
-    
-    \item Consistency:
-    
-    \item Error analysis: 
-    
-    \item Error correlations: is a common underlying principle or input quantity that explains errors observed in different measurements. Correlations may be produced by underlying physical processes or measurement errors.
-    
-    \item Effect: source of uncertainty.
-    
-    \item Processing level
-    
-    \item Dimensions
-    
-    \item Phenomenon covariance
-    
-    \item Error covariance
-    
-    \item Phenomenon correlation
-    
-    \item Analysis Ready Data (ARD)
+\paragraph{QA4EO}
 
-\end{itemize}
+\paragraph{CEOS}
 
-
+\paragraph{SARCALNET}
+\paragraph{GUM}
+\paragraph{BIPM}
+\paragraph{VIM}
 
 
 \subsection{Metrology}
@@ -121,7 +31,7 @@ The European Space Agency
 \begin{itemize}
     \item Fundamental Data Record (FDR)
     \item Thematic Data Product (TDP)
-    \item Fiducial Reference Measurement (FRM)
+    \item \ac{FRM}
 \end{itemize}
 
 \paragraph{Uncertainty and error}
@@ -141,7 +51,7 @@ The European Space Agency
 
 \subsubsection{Principles}
 
-FDRs, TDPs, and FRMs require a metrological approach. Metrology has three principles:
+FDRs, TDPs, and \acp{FRM} require a metrological approach. Metrology has three principles:
 
 \begin{enumerate}
     \item Traceability: Documenting the chain of calibrations
@@ -167,7 +77,7 @@ As a graphical summary, Figure 1 summarizes the three metrology principles inclu
 
 
 
-\subsection{Methodology for uncertainty analysis}
+\subsection{Uncertainty Analysis}
 
 %This is well explained in QA4EO 3 (Process)
 
@@ -189,7 +99,7 @@ In some cases the measurement model cannot be described as an analytical model n
 
 \subsubsection{Step 2: Traceability diagram}
 
-Diagrams can be very useful for traceability purposes, identifying sources of uncertainty in input quantities, approximations and assumptions. Four types of diagram have been reported within EO: Uncertainty Tree Diagrams, Processing Diagrams, Metrological Traceability Diagrams, and Derivation Diagrams.
+Diagrams can be very useful for \gls{traceability} purposes, identifying sources of uncertainty in input quantities, approximations and assumptions. Four types of diagram have been reported within EO: Uncertainty Tree Diagrams, Processing Diagrams, Metrological \gls{traceability} Diagrams, and Derivation Diagrams.
 
 \paragraph{Uncertainty Tree Diagrams}
 
@@ -215,12 +125,12 @@ Representing processing steps or non-analytical processes in a uncertainty tree 
 
 \paragraph{Metrological Traceability Diagrams}
 
-Metrological traceability diagrams are a simplified version of processing diagrams, which are suitable for straightforward instruments. The diagram represents the unbroken chain of calibrations. This diagram can also be an auxiliary flow chart for uncertainty tree diagrams. Figure 4 represents a simplified traceability chain where the different shapes have different meanings, e.g. processes, auxiliary data, etc.
+Metrological \gls{traceability} diagrams are a simplified version of processing diagrams, which are suitable for straightforward instruments. The diagram represents the unbroken chain of calibrations. This diagram can also be an auxiliary flow chart for uncertainty tree diagrams. Figure 4 represents a simplified \gls{traceability} chain where the different shapes have different meanings, e.g. processes, auxiliary data, etc.
 
 \begin{figure}
     \centering
     \includegraphics[width=0.7\linewidth]{figures/metrology_diagram.png}
-    \caption{Metrological traceability diagram for the calibration of the APEX spectrometer carried on the DLR research aircraft.}
+    \caption{Metrological Traceability Diagram for the calibration of the APEX spectrometer carried on the DLR research aircraft.}
     \label{fig:placeholder}
 \end{figure}
 
@@ -235,7 +145,7 @@ Derivation diagrams are similar to uncertainty tree diagrams in the sense that e
     \label{fig:placeholder}
 \end{figure}
 
-Although four diagram types are here described, a new, different diagram can be design in order to draw a picture of our system for traceability purposes. Different type of diagrams can also be combined.
+Although four diagram types are here described, a new, different diagram can be design in order to draw a picture of our system for \gls{traceability} purposes. Different type of diagrams can also be combined.
 
 \subsubsection{Step 3: Evaluation of each source of uncertainty}
 
@@ -289,7 +199,7 @@ magnitude &  &  \\ \hline
 \label{tab:descriptor}
 \end{table}
 
-\subsubsection{Step 4: Calculate FRM/FDR/TDP associated uncertainties}
+\subsubsection{Step 4: Calculate \ac{FRM}/FDR/TDP associated uncertainties}
 
 A robust uncertainty analysis should highlight where the model can be improved. So, a correction for an effect can be proposed. It is important to identify how large the uncertainty associated is and how it propagates to the measurand. The propagation can be undertaken by the Monte Carlo (MC) method, with PDFs of each effect, or by the Law of Propagation of Uncertainties (LPU), with sensitivity coefficient and error covariance matrix for each effect. Propagation is further described in section 1.5.
 

@@ -26,6 +26,7 @@
 \usepackage{amsmath} %For both in-line and equation mode
 \usepackage{amssymb}
 \numberwithin{equation}{section} %Numbering of our equations per section
+
 \usepackage{algorithm}
 \usepackage{algorithmic} %Algorithm styles, need to be nested for the example shown
 \usepackage{acronym}
@@ -55,6 +56,8 @@
 \usepackage[absolute,overlay]{textpos}
 %\usepackage{subfig}
 
+% Needs to come after hyperref..
+\usepackage[toc]{glossaries-extra}
 
 
 %This will tell the compiler to do the header style, page and spacing between the header and text
@@ -63,12 +66,12 @@
 \fancyfoot[C]{\thepage}
 \renewcommand{\headrulewidth}{0.2pt}
 
+\makeglossaries
+\input{./glossary.tex}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%% DOCUMENT STARTS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-
 %Lets begin the document, some chapters have examples in to give you an idea 
+
 \begin{document}
 
 \include{./gum4sar_frontpage}
@@ -76,6 +79,23 @@
 %%%%%%%%%%%%%%%%%%%%% SIGNATURES %%%%%%%%%%%%%%%%%%%%%%%%
 
 \include{signature}
+
+%%%%%%%%%%%%%%%%%% ACRONYMS %%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%\clearpage
+\newpage
+\input{acronyms}
+
+%%%%%%%%%%%%%%%%%% Glossary %%%%%%%%%%%%%%%%%%%%%%%%%%%
+\clearpage
+\newpage
+\printglossaries
+
+
+%%%%%%%%%%%%%%%%%%%%%%%% ABSTRACT (IF NEEDED) %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\clearpage
+\newpage
+\include{./abstract}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% INDEX %%%%%%%%%%%%%%%%%%%%%%
 
@@ -85,19 +105,6 @@
 \tableofcontents
 \thispagestyle{fancy}
 \vspace{2cm}
-
-%%%%%%%%%%%%%%%%%% ACRONYMS %%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%\clearpage
-\newpage
-\input{acronyms}
-
-
-%%%%%%%%%%%%%%%%%%%%%%%% ABSTRACT (IF NEEDED) %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\clearpage
-\newpage
-
-\include{./abstract}
 
 
 %%%%%%%%%%%%%%%%%%%%%% BODY %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

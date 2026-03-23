@@ -5,7 +5,7 @@
 \subsection{Example: SAR Wind Retrieval}
 \label{sec: OSWV}
 
-The traceability diagram for OSWV retrieval is presented for an algorithm that uses a Bayesian approach.
+The \gls{traceability} diagram for OSWV retrieval is presented for an algorithm that uses a Bayesian approach.
 The a-posteriori conditional probability density function (pdf) of the retrieved ocean surface wind vector (OSWV) $\mathbf{u}$ can be modeled as reported in Equation \ref{eq: AP pdf}, which is a generalization of the approach proposed in \cite{PortabellaJGRO2002}.
 
 \begin{equation}
@@ -78,7 +78,7 @@ In the last term, the additional error sources are:
 	\item $\epsilon(f_{ss})$: uncertainty of the estimate of the DCA sea state component;
 \end{itemize}
 
-Figure \ref{fig: OSWV diag} shows the uncertainty traceability diagram for the OSWV algorithm discussed in this section.
+Figure \ref{fig: OSWV diag} shows the uncertainty \gls{traceability} diagram for the OSWV algorithm discussed in this section.
 
 \begin{figure}[h]
 	\centering
@@ -178,7 +178,7 @@ Figure \ref{fig: OSWV diag} shows the uncertainty traceability diagram for the O
 	\path [black, thick, ->] (ufss.120) edge node {} (ffM.320);
 	\path [black, thick, ->] (dJdfM.120) edge node {} (J.290);
 \end{tikzpicture}
-\caption{Uncertainty traceability diagram for the ocean surface wind vector retrieval algorithm presented.}
+\caption{Uncertainty Traceability Diagram for the ocean surface wind vector retrieval algorithm presented.}
 \label{fig: OSWV diag}
 \end{figure}
 
@@ -231,7 +231,7 @@ Note that $\lambda_{C}$ is estimated through several steps. Starting from $\sigm
 \end{itemize}
 
 Each step is supposed to introduce additional error, which finally cumulate in $\epsilon(\lambda_{C})$.
-Figure \ref{fig: SWH diag} shows the uncertainty traceability diagram.
+Figure \ref{fig: SWH diag} shows the uncertainty \gls{traceability} diagram.
 
 \begin{figure}[h]
 	\centering
@@ -255,7 +255,7 @@ Figure \ref{fig: SWH diag} shows the uncertainty traceability diagram.
 		\path [black, thick, ->] (ea.270) edge node {} (dHda.90);
 		\path [black, thick, ->] (eb.270) edge node {} (dHdb.90);
 	\end{tikzpicture}
-	\caption{Uncertainty traceability diagram for the significant wave height retrieval algorithm presented.}
+        \caption{Uncertainty Traceability Diagram for the significant wave height retrieval algorithm presented.}
 	\label{fig: SWH diag}
 \end{figure}
 
