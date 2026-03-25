@@ -1,4 +1,47 @@
-\section{The GUM Principles: A review}
+\section{Introduction}
+
+The ``Evaluation of measurement data -- \ac{GUM}'' \cite{JCGMGUM}, or the
+``\ac{GUM} bible'', is a foundational international document that provides a
+conceptual and mathematical framework for identifying sources of uncertainty,
+quantifying them in a consistent way (as standard deviations), combining them
+into a single uncertainty figure, and reporting the result and its uncertainty
+clearly and comparably across disciplines and countries. Focusing on evaluation
+and expression of uncertainty in measurement it is an important component of
+the science of measurement and application, known as \gls{metrology} (e.g.,
+\cite{JCGMVIM}).
+
+The \ac{GEO} is an international partnership of governments and organizations
+acting as a policy and coordination body to promote global sharing and use of
+\ac{EO} data, for example to support work on climate, disaster management,
+agriculture, water, and ecosystems. The \ac{GEOSS} is the global, distributed
+infrastructure that \ac{GEO} is building and coordinating.  Rather than being a
+single system, it connects many independent \ac{EO} systems -- such as
+satellites, ground networks, and ocean buoys -- from different countries and
+agencies, and aims to make them \gls{interoperable}, accessible through common
+standards and interfaces, and accompanied by information about data quality and
+uncertainty. As such, \ac{GEO} is the partnership, and \ac{GEOSS} is the
+``system of systems'' that \ac{GEO} oversees.
+
+To support its mission, \ac{GEOSS} needs a metrological framework. As such, the
+2010 endorsement of the \ac{QA4EO} by the \ac{CEOS} (part of \ac{GEOSS}), has
+defined guidelines for \ac{EO} applications based on principles adapted from
+the metrology community \cite{QA4EO1}. \ac{QA4EO} aims to ensure that \ac{EO}
+data are accessible, of known and documented quality, traceable to reference
+standards, in particular the \ac{SI}, and suitable for user application
+(``fit for purpose''). 
+
+This report aims to further narrow down the scope in applying the \ac{GUM}
+principles to \ac{SAR} data. As such, section~\ref{sec:review} provides a
+review of the basic and general concepts and terms in \gls{metrology} (the
+\ac{VIM}; \cite{JCGMVIM}), the \ac{GUM} \cite{JCGMGUM}, and the \ac{QA4EO}
+framework. Section~\ref{sec:level1} and section~\ref{sec:level2} provide the
+guidelines to uncertainty estimation for SAR level-1 and level-2 data products,
+respectively, as developed in the \ac{ESA} funded \ac{CANVAS} project. Finally,
+section~\ref{sec:error_propagation} describes the methods for propagating
+errors \ldots, and section~\ref{sec:conclusion} provides the summary and
+concluding remarks.
+
+\section{The GUM Principles: A review} \label{sec:review}
 
 
 %Summary of QA4EO 1 (Executive Summary) and contextualization for QA4SAR
@@ -8,14 +51,73 @@
 %No need to redefine anything, better to follow same descriptions from:
 %Sources: QA4EO, CEOS, SARCALNET, JCGM and its GUM, BIPM, VIM
 
-\paragraph{QA4EO}
+%\paragraph{CEOS}
 
-\paragraph{CEOS}
+\subsection{The International Vocabulary of Metrology (VIM)}
 
-\paragraph{SARCALNET}
-\paragraph{GUM}
-\paragraph{BIPM}
-\paragraph{VIM}
+The International Vocabulary of Metrology (\acs{VIM}; \cite{JCGMVIM}) defines
+and organizes key concepts in metrology to ensure global consistency in
+measurement science. It provides standardized terminology covering quantities,
+units, and measuring instruments, with a focus on measurement uncertainty rather
+than error.
+
+The document explains critical properties of measuring devices, such as
+precision, stability, and sensitivity, and highlights the importance of
+traceability and standards for reliability. 
+
+Its applications span various fields, including physics, chemistry, biology,
+medicine, and emerging areas like forensic science and food technology.
+Harmonization of terms is emphasized to ensure coherence in the various
+scientific, engineering, regulatory, and quality assurance fields.
+
+\subsection{Guide to the Expression of Uncertainty in Measurement (GUM)}
+
+The \acf{GUM} establishes general rules for evaluating and expressing
+uncertainty in measurement that are intended to be applicable to a broad
+spectrum of measurements \cite{JCGMGUM}.  The guide was developed to solve the
+challenge of different laboratories and disciplines using different methods and
+terminology for uncertainty, which made measurement results difficult to
+compare.
+
+The central idea of the \ac{GUM} is to treat all components of uncertainty in
+the same mathematical way, regardless of whether they arise from random
+variation or systematic effects. Every component is represented by a
+probability distribution and a standard uncertainty.  To obtain standard
+uncertainties, the \ac{GUM} distinguishes between two kinds of evaluation.
+``Type A'' evaluations use statistical analysis of repeated measurements,
+whereas ``Type B'' evaluations use all other available information, such as
+instrument specifications, calibration certificates, or expert judgment.  The
+results of both evaluation types can be converted into standard uncertainties
+so they can be used on the same terms.
+
+Measurements are described by a mathematical model that links the quantity
+being measured (the \gls{measurand}) to various input, or influence,
+quantities. Once standard uncertainties of the influence quantities are
+estimated, they are combined -- taking into account any correlations -- using
+standard rules for propagating variances. This yields the combined standard
+uncertainty of the \gls{measurand}, taken as the estimated standard deviation
+associated with the result. An expanded uncertainty is obtained by multiplying
+the standard uncertainty by a coverage factor $k$. The purpose of the expanded
+uncertainty is  to provide an interval about the result of a measurement that
+may be expected to encompass a large fraction of the distribution of values
+that could reasonably be attributed to the \gls{measurand}. The value of $k$
+and how it was chosen must always be stated.
+
+A key emphasis of the \ac{GUM} is transparency. An uncertainty statement should
+clearly describe which inputs were considered, how each uncertainty component
+was obtained, what assumptions were made, and how the components were combined.
+The document supplements this framework with definitions, statistical
+background, guidance on practical evaluation, and worked examples. In doing so,
+it provides a common language and method that allow measurement results and
+their uncertainties to be understood and compared across borders and domains.
+
+
+%\paragraph{BIPM}
+
+\subsection{QA4EO}
+
+\ac{QA4EO} has defined three classes of data, or ``key concepts'', of relevance
+to \ac{EO} data; (1) \ac{FDR}, (2) \ac{TDP}, and (3) \ac{FRM}.
 
 
 \subsection{Metrology}
@@ -58,7 +160,7 @@ FDRs, TDPs, and \acp{FRM} require a metrological approach. Metrology has three p
     Tractability includes calibration for both the SAR instrument, and the reference instrument (e.g. in situ observations). EO instruments usually require pre-flight, in-orbit and vicarious calibrations, which must be documented. Ancillary and auxiliary data incorporated during the processing of products must also be taken into account along with corrections of any nature (e.g. atmospheric, topographic, etc) and sensitivities to the environment. Similarly, for the reference instrument this principle also includes the deployment calibration and sensitivities to environmental conditions if any. 
 
     \item Uncertainty Analysis: A systematic approach
-    An identification of sources of uncertainties must consider any calibration, instrument changes in orbit and sensitivities to onboard conditions. An analysis of inputs to the measurement model aids to identify those sources. The propagation of those uncertainties through the traceability chain is also part of the analysis. A systematic approach was defined by CEOS and the QA4EO with five steps: Definition of measurand and measurement model, creation of a traceability diagram, evaluation of effects, calculation and propagation of uncertainties, and finally documenting. The methodology for this analysis and its five steps is detailed in section 1.4.
+      An identification of sources of uncertainties must consider any calibration, instrument changes in orbit and sensitivities to onboard conditions. An analysis of inputs to the measurement model aids to identify those sources. The propagation of those uncertainties through the traceability chain is also part of the analysis. A systematic approach was defined by CEOS and the QA4EO with five steps: Definition of \gls{measurand} and measurement model, creation of a traceability diagram, evaluation of effects, calculation and propagation of uncertainties, and finally documenting. The methodology for this analysis and its five steps is detailed in section 1.4.
 
     \item Comparison: Validation of uncertainty statements
     EO comparisons are carried out between sensors and between sensors and sub-orbital observations. For metrologists, the purpose of comparisons is to test and validate uncertainty claims. Comparisons are not not performed to estimate uncertainties, but the equivalence ratio. For EO, comparisons are usually performed due to multiple scenes, obervations, and collocations in time. Multiple comparisons require a strong understanding of error correlation structures in the data.  
@@ -85,14 +187,14 @@ There is a consensus in the metrology community about how an uncertainty analysi
 
 \subsubsection{Step 1: Measurand and Measurement model definition}
 
-Defining the measurand is often the most difficult step, and involves some deep thinking and a challenging conversation between experts. Some experts do not believe that they measure the measurand, since the measurand may be obtained through a group of algorithms with multiple levels. For these cases, a multi-stage measurement model is considered. The term measurand can be applied at different levels of a process and may include both models and observations. The measurand can be considered a single point of measurement, e.g. pixel, specific location and/or time, or can represent an area or time period in case of averaged quantities.
+Defining the \gls{measurand} is often the most difficult step, and involves some deep thinking and a challenging conversation between experts. Some experts do not believe that they measure the \gls{measurand}, since the \gls{measurand} may be obtained through a group of algorithms with multiple levels. For these cases, a multi-stage measurement model is considered. The term \gls{measurand} can be applied at different levels of a process and may include both models and observations. The \gls{measurand} can be considered a single point of measurement, e.g. pixel, specific location and/or time, or can represent an area or time period in case of averaged quantities.
 
-The measurement model describes the relationship between the raw input quantities and the measurand. This can be an iterative process starting with a more basic model and then including additional quantities to represent the necessary and model approximations. The model should include all the quantities that affects the measurement result. These quantities includes observations and corrections. Well understood effects (i.e. sources of uncertainty) can be directly incorporated as input quantity in the model. Poorly understood effects are usually included in a random variable. It is important to highlight that measurement models are a simplification of a complex reality. A general form of a measurement is describe as:
+The measurement model describes the relationship between the raw input quantities and the \gls{measurand}. This can be an iterative process starting with a more basic model and then including additional quantities to represent the necessary and model approximations. The model should include all the quantities that affects the measurement result. These quantities includes observations and corrections. Well understood effects (i.e. sources of uncertainty) can be directly incorporated as input quantity in the model. Poorly understood effects are usually included in a random variable. It is important to highlight that measurement models are a simplification of a complex reality. A general form of a measurement is describe as:
 
 
 \[Y=f(X_1,....,X_n; E_1,...., E_n; \Delta_0)\]
 
-Where \(Y\) is the measurand as a function of different input quantities from understood effects, \(E\) quantities from poorly understood effects and associated assumptions or approximations.
+Where \(Y\) is the \gls{measurand} as a function of different input quantities from understood effects, \(E\) quantities from poorly understood effects and associated assumptions or approximations.
 
 In some cases the measurement model cannot be described as an analytical model nor a functional relationship. However a description of the different effects can still be produced in order to bring the uncertainty analysis to the next steps. Within EO, many models can be written as univariate or multivariate according to the number of measured values, where one observations can be considered as many observations. As an example, observations of multiple spectral bands or polarizations.
 
@@ -149,7 +251,7 @@ Although four diagram types are here described, a new, different diagram can be 
 
 \subsubsection{Step 3: Evaluation of each source of uncertainty}
 
-After Steps 1 and 2, sources of uncertainty (i.e. effects), assumptions, approximations and corrections  during the observational process have been identified. Then, uncertainties can be propagated though the measurement model, multi-stage or single-stage, until the measurand. Before uncertainty propagation some description is necessary for each effect. Hence, the use of an "effect table" is convenient, which provides:
+After Steps 1 and 2, sources of uncertainty (i.e. effects), assumptions, approximations and corrections  during the observational process have been identified. Then, uncertainties can be propagated though the measurement model, multi-stage or single-stage, until the \gls{measurand}. Before uncertainty propagation some description is necessary for each effect. Hence, the use of an "effect table" is convenient, which provides:
 
 \begin{itemize}
     \item Unique identifier of the effect.
@@ -201,7 +303,7 @@ magnitude &  &  \\ \hline
 
 \subsubsection{Step 4: Calculate \ac{FRM}/FDR/TDP associated uncertainties}
 
-A robust uncertainty analysis should highlight where the model can be improved. So, a correction for an effect can be proposed. It is important to identify how large the uncertainty associated is and how it propagates to the measurand. The propagation can be undertaken by the Monte Carlo (MC) method, with PDFs of each effect, or by the Law of Propagation of Uncertainties (LPU), with sensitivity coefficient and error covariance matrix for each effect. Propagation is further described in section 1.5.
+A robust uncertainty analysis should highlight where the model can be improved. So, a correction for an effect can be proposed. It is important to identify how large the uncertainty associated is and how it propagates to the \gls{measurand}. The propagation can be undertaken by the Monte Carlo (MC) method, with PDFs of each effect, or by the Law of Propagation of Uncertainties (LPU), with sensitivity coefficient and error covariance matrix for each effect. Propagation is further described in section 1.5.
 
 \subsubsection{Step 5: Documenting}
 
