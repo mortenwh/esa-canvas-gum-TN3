@@ -1,108 +1,356 @@
-\newglossaryentry{traceability}
-{name={Traceability},
-description={is a property of a measurement that relates the measured value to
-a stated metrological reference through an unbroken chain of calibrations or
-comparisons. It requires, for each step in the traceability chain, that
-uncertainties are evaluated and that methodologies are documented}}
+\newglossaryentry{accuracy}
+{name={Accuracy},
+description={The quality of being near to the true value.}}
+
+\newglossaryentry{analysis_ready_data}
+{name={Analysis Ready Data (ARD)},
+description={Satellite data that have been processed to a minimum set of requirements and organised into a form that allows immediate analysis with a minimum of additional user effort and interoperability both through time and with other datasets.}}
+
+\newglossaryentry{ancillary_information}
+{name={Ancillary information},
+description={Supplementary data that supports the interpretation or processing of primary data, such as calibration data, metadata, or environmental conditions.}}
+
+\newglossaryentry{auxiliary_information}
+{name={Auxiliary information},
+description={Additional data or parameters used to support data processing or analysis but not directly measured or observed.}}
+
+\newglossaryentry{backscatter}
+{name={Backscatter},
+description={Backscatter is the portion of the outgoing radar signal that the target redirects directly back towards the radar antenna. Backscattering is the process by which backscatter is formed. The scattering cross section in the direction toward the radar is called the backscattering cross section. The usual notation is the symbol sigma (?). It is a measure of the reflective strength of a radar target. The normalised measure of the radar return from a distributed target is called the backscatter coefficient, or sigma nought, and is defined as per unit area on the ground. If the signal formed by backscatter is undesired, it is called clutter. Other portions of the incident radar energy may be reflected and scattered away from the radar or absorbed.}}
+
+\newglossaryentry{band}
+{name={Band},
+description={A selection of wavelengths or range of radar frequencies. For example, Sentinel-1 operates at C-band (central frequency of 5.404 GHz). Other spaceborne SARs operate at L-band (1.3 GHz) or X-band (9.6 GHz).}}
+
+\newglossaryentry{beam}
+{name={Beam},
+description={A selection of wavelengths or range of radar frequencies. For example, Sentinel-1 operates at C-band (central frequency of 5.404 GHz). Other spaceborne SARs operate at L-band (1.3 GHz) or X-band (9.6 GHz).}}
+
+\newglossaryentry{beam_mode}
+{name={Beam Mode},
+description={The SAR operating configuration defined by the swath width and spatial resolution.}}
+
+\newglossaryentry{beam_position}
+{name={Beam Position},
+description={The area within the total possible swath that is actually illuminated while being governed by the characteristics of a specific beam mode.}}
+
+\newglossaryentry{beta_nought}
+{name={Beta Nought},
+description={ß° radar brightness coefficient. The reflectivity per unit area in slant range, which is dimensionless.}}
+
+\newglossaryentry{bias}
+{name={Bias},
+description={Opposite of trueness, as occurs when the indication of a measuring instrument is consistently too high or low.}}
+
+\newglossaryentry{calibration}
+{name={Calibration},
+description={Calibration is the process of quantitatively defining the system response to known controlled signal inputs. Process in which an instrument or piece of equipment's accuracy is compared with a recognised standard. The timely and correct calibration of measurement equipment is essential for compliance with standards and for trusted measurements.}}
+
+\newglossaryentry{calibration_target}
+{name={Calibration target},
+description={A reference object or surface used during calibration to ensure the accuracy of instrument measurements.}}
+
+\newglossaryentry{c_band}
+{name={C-Band},
+description={A nominal frequency range, from 8 to 4 GHz (3.75 to 7.5 cm wavelength) within the microwave (radar) portion of the electromagnetic spectrum. Imaging radars equipped with C-band are generally not hindered by atmospheric effects and are capable of imaging through tropical clouds and rain showers. Its penetration capability with regard to vegetation canopies or soils is limited and is restricted to the top layers.}}
+
+\newglossaryentry{climate_data_record}
+{name={Climate Data Record (CDR)},
+description={A Thematic Data Product, a dataset that provides long-term, consistent, and calibrated records of geophysical variables derived from satellite observations, used for climate monitoring.}}
+
+\newglossaryentry{coherence}
+{name={Coherence},
+description={Coherence is the fixed relationship between waves in a beam of electromagnetic (EM) radiation. Two wave trains of EM radiation are coherent when they are in phase. That is, they vibrate in unison. In terms of the application to things like radar, the term coherence is also used to describe systems that preserve the phase of the received signal.}}
+
+\newglossaryentry{commissioning}
+{name={Commissioning},
+description={Verification and validation activities conducted after the launch and before the entry into operational service either on the space segment elements only or on the overall system.}}
 
 \newglossaryentry{comparison}
 {name={Comparison},
-description={Comparisons are used to validate uncertainty analyses and to confirm \gls{traceability}}}
+description={Comparisons are used to validate uncertainty analyses and to confirm \gls{traceability}.}}
+
+\newglossaryentry{complex_number}
+{name={Complex Number},
+description={For radar systems, a complex number implies that the representation of a signal, or data file, includes both magnitude and phase values. In the digital SAR context, a complex number is often represented by an equivalent pair of numbers, the real in-phase component (I) and the imaginary quadrature component (Q).}}
+
+\newglossaryentry{consistency}
+{name={Consistency},
+description={The degree to which repeated measurements or observations under unchanged conditions yield the same results.}}
+
+\newglossaryentry{data_take}
+{name={Data take},
+description={A data take is a continuous temporal segment of SAR acquisition without instrument mode change (due to on-board memory handling, a data take can be downlinked in distinct moments and in different channels).}}
+
+\newglossaryentry{detection_radar}
+{name={Detection (Radar)},
+description={Processing stage at which the strength of the signal is determined for each pixel value. Detection removes phase information from the data file. The preferred detection scheme uses a magnitude squared method, which is energy conserving, and has units of voltage squared per pixel.}}
+
+\newglossaryentry{dimensions}
+{name={Dimensions},
+description={The measurable extents of an object or dataset, such as length, width, height, or time.}}
+
+\newglossaryentry{doppler_frequency}
+{name={Doppler Frequency},
+description={The Doppler frequency depends on the component of satellite velocity in the line-of-sight direction to the target. This direction changes with each satellite position along the flight path, so the Doppler frequency varies with azimuth time. For this reason, azimuth frequency is often referred to as Doppler frequency.}}
+
+\newglossaryentry{effect}
+{name={Effect},
+description={A factor or phenomenon that causes uncertainty or influences the outcome of a measurement or process.}}
+
+\newglossaryentry{error}
+{name={Error},
+description={Difference between a measured and true value (considering a true value will always be unknown). It is the difference between the true value and the measured value. In some occasions, the term is also used as statistical distribution of errors.}}
+
+\newglossaryentry{error_analysis}
+{name={Error analysis},
+description={The process of identifying, quantifying, and understanding the sources of error in a measurement or calculation.}}
+
+\newglossaryentry{error_correlations}
+{name={Error correlations},
+description={A common underlying principle or input quantity that explains errors observed in different measurements. Correlations may be produced by underlying physical processes or measurement errors.}}
+
+\newglossaryentry{error_covariance}
+{name={Error covariance},
+description={A measure of the joint variability of errors in two or more measurements.}}
 
 \newglossaryentry{frm}
-{name={Fiducial Reference Measurement},
-description={A suite of independent, fully characterized, and traceable
-sub-orbital measurements that follow the guidelines outlined by the GEO/CEOS
-Quality Assurance framework for Earth Observation (QA4EO) and have value for
-space-based observations}}
+{name={Fiducial Reference Measurement (FRM)},
+description={A suite of independent, fully characterized, and traceable sub-orbital measurements that follow the guidelines outlined by the GEO/CEOS Quality Assurance framework for Earth Observation (QA4EO) and have value for space-based observations.}}
+
+\newglossaryentry{fundamental_climate_data_record}
+{name={Fundamental Climate Data Record (FCDR)},
+description={A Fundamental Data Record, a dataset of calibrated and uncertainty-characterized sensor observations that serves as a foundation for Climate Data Records.}}
+
+\newglossaryentry{fundamental_data_record}
+{name={Fundamental Data Record (FDR)},
+description={A record of sufficient duration for its application, of uncertainty-quantified sensor observations calibrated to physical units, and located in time and space, together with all ancillary and lower-level instrument data used to calibrate and locate the observations and to estimate uncertainty.}}
+
+\newglossaryentry{horizontal_polarisation}
+{name={Horizontal Polarisation},
+description={Linear polarisation with the electric vector oriented in the horizontal direction in antenna co-ordinates.}}
+
+\newglossaryentry{hh_polarisation}
+{name={Horizontal Transmit - Horizontal Receive Polarisation (HH)},
+description={A mode of radar polarisation where the microwaves of the electric field are oriented in the horizontal plane for both signal transmission and reception by means of a radar antenna.}}
+
+\newglossaryentry{hv_polarisation}
+{name={Horizontal Transmit - Vertical Receive Polarisation (HV)},
+description={A mode of radar polarisation where the microwaves of the electric field are oriented in the horizontal plane for signal transmission, and where the vertically polarised electric field of the backscattered energy is received by the radar antenna.}}
+
+\newglossaryentry{imaging_radar}
+{name={Imaging Radar},
+description={Most imaging radars produce two-dimensional images. The two dimensions are called range, and azimuth.}}
+
+\newglossaryentry{impulse_response_function}
+{name={Impulse Response Function (IRF)},
+description={Also known as the point spread function, the impulse response function is the two-dimensional brightness pattern in an image (after processing) of a point target such as a corner reflector or transponder. The 3dB width of IRF gives the spatial resolution of the product while IRF sidelobes give an indication of the performance of the SAR instrument and the SAR processor.}}
+
+\newglossaryentry{in_orbit_calibration}
+{name={In-orbit calibration},
+description={Calibration activities performed while the instrument is in space to ensure measurement accuracy.}}
+
+\newglossaryentry{interferometry}
+{name={Interferometry},
+description={A technique that uses the measured differences in the phase of the return signal between two satellite passes to detect slight changes of locations on the Earth's surface. Mapping height changes provides information on, for example, earthquake damage, volcanic activity, landslides and glacier movement.}}
 
 \newglossaryentry{interoperability}
 {name={Interoperability},
-description={The ability of data or tools from non-cooperating resources to
-integrate or work together with minimal effort \cite{wilkinson16}}}
+description={The ability of data or tools from non-cooperating resources to integrate or work together with minimal effort \cite{wilkinson16}.}}
 
-%
-%  \item Measurand: The quantity intended to be measured. Also the single output quantity from a measurement model.
-%  \item Measurement:
-%  \item Measurement model: Mathematical expression to calculate the measurand. Sometimes it could only be described as a coded algorithm such as an iterative process or machine learning method.
-%  \item Metrology:
-%  \item Multivariate measurands:
-%  \item Procedure:
-%  \item Quantity: Variable/parameter
-%  \item Uncertainty Analysis: is the review of all sources of uncertainty and the propagation of that uncertainty through the traceability chain.
-%    
-%    
-%    
-%    
-%    
-%    
-%    
-%    
-%    
-%    
-%    \item Fundamental Data Record (FDR) : A record of sufficient duration for its application, of uncertainty-quantified sensor observations calibrated to physical units, and located in time and space, together with all ancillary and lower-level instrument data used to calibrate and locate the observations and to estimate uncertainty.
-%    
-%    \item Climate Data Record (CDR) is a TDP
-%    
-%    \item Fundamental Climate Data Record (FCDR) is a FDR
-%    
-%    \item Thematic Data Product (TDP) : A record of sufficient duration for its application, of uncertainty-quantified retrieved values of a geophysical variable, along with all ancillary data used in retrieval and uncertainty estimation.
-%    
-%    \item Observations
-%    
-%    \item Ancillary information
-%    
-%    \item Reference dataset
-%    
-%    \item Calibration target
-%    
-%    \item Calibration
-%    
-%    \item Pre-flight calibration
-%    
-%    \item In-orbit calibration
-%    
-%    \item Vicarious calibration
-%    
-%    \item Validation
-%    
-%    \item Uncertainty: A quantification of doubt about a measurement result. It describes the spread of values around the measured value that can be ascribed to the measurand, i.e. the true value. 
-%    
-%    \item Accuracy: Closeness in agreement between a measurement result and true value.
-%    
-%    \item Precision: A measure of the scatter of a number of measured values.
-%    
-%    \item Trueness: Closeness of a measurement to the average of a large set of measurements.
-%    
-%    \item Bias: Opposite of trueness, as occurs when the indication of a measuring instrument is consistently too high or low.
-%    
-%    \item Uncertainty propagation
-%    
-%    \item Uncertainty budget: table of different sources of uncertainty. The term is somewhat out-of-date and uncertainty analysis is preferable.
-%    
-%    \item Uncertainty analysis
-%    
-%    \item Error: Difference between a measured and true value (considering a true value will always be unknown). It is the difference between the true value and the measured value. In some occasions, the term is also used as statistical distribution of errors. 
-%    
-%    \item Consistency:
-%    
-%    \item Error analysis: 
-%    
-%    \item Error correlations: is a common underlying principle or input quantity that explains errors observed in different measurements. Correlations may be produced by underlying physical processes or measurement errors.
-%    
-%    \item Effect: source of uncertainty.
-%    
-%    \item Processing level
-%    
-%    \item Dimensions
-%    
-%    \item Phenomenon covariance
-%    
-%    \item Error covariance
-%    
-%    \item Phenomenon correlation
-%    
-%    \item Analysis Ready Data (ARD)
-%
-%\end{itemize}
-%
+\newglossaryentry{level_0}
+{name={Level-0},
+description={Reconstructed unprocessed data at full space-time resolution with all available supplemental information to be used in subsequent processing (e.g. orbit ephemeris) appended. SAR Level-0 products may cover part of an acquisition segment (in case only part of a segment is downlinked at a certain ground station in the same pass) or a full acquisition segment. Level-0 products are generated at the receiving station right after acquisition.}}
+
+\newglossaryentry{level_1}
+{name={Level-1},
+description={Reconstructed data at full resolution, time-referenced, and annotated with ancillary information, including radiometric and geometric calibration coefficients and geo-referencing parameters. Data may be radiometrically corrected and calibrated at full spatial resolution, and re-sampled to a specified grid.}}
+
+\newglossaryentry{level_2}
+{name={Level-2},
+description={Derived geophysical parameters derived from Level-1 data.}}
+
+\newglossaryentry{level_3}
+{name={Level-3},
+description={Data that has been spatially and/or temporally resampled, often combining multiple Level-2 products, and presented on a uniform grid for analysis.}}
+
+\newglossaryentry{level_4}
+{name={Level-4},
+description={Model output or results derived from analysis of lower-level data (e.g., Level-3) that are not directly measured but synthesized using algorithms, models, or statistical techniques.}}
+
+\newglossaryentry{look_direction}
+{name={Look Direction},
+description={The radar look direction defines the angle in the horizontal plane in which the radar antenna is pointing when transmitting a pulse and receiving the return signal from the ground or from an object. The look direction is an angular measurement (in degrees) and is usually made with respect to true North. In side-looking imaging radar, the look direction is often orthogonal (normal) to the flight trajectory (azimuth) of the platform carrying the radar and is thus synonymous with the range direction. The radar look direction is an important parameter when analysing features with a preferred orientation, for example fracture patterns in rock formations, regular street patterns, or ocean waves, as these may be enhanced through choice of appropriate radar illumination direction.}}
+
+\newglossaryentry{looks}
+{name={Looks},
+description={Radar terminology refers to individual looks as groups of signal samples in a SAR processor that splits the full synthetic aperture into several sub-apertures, each representing an independent look of the identical scene. The resulting image formed by incoherent summing of these looks is characterised by reduced speckle and degraded spatial resolution. The SAR signal processor can use the full synthetic aperture and the complete signal data history in order to produce the highest possible spatial resolution, albeit very speckled, single-look complex (SLC) SAR image product. Multiple looks may be generated by averaging over range and/or azimuth bandwidths. For an improvement in radiometric resolution using multiple looks there is an associated degradation in spatial resolution.}}
+
+\newglossaryentry{measurement}
+{name={Measurement},
+description={The process of obtaining the value of a physical quantity. Measurement is the quantitative comparison of something against a reference. A measurement result is expressed as a number, or value, together with one or more units of measurement.}}
+
+\newglossaryentry{measurement_data}
+{name={Measurement Data},
+description={Data produced directly by a measurement process. Measurement data are all scientific data generated by an instrument containing information on the geophysical variable(s) of interest or are needed for the interpretation of the geophysical variable(s).}}
+
+\newglossaryentry{measurement_model}
+{name={Measurement model},
+description={Mathematical expression to calculate the measurand. Sometimes it could only be described as a coded algorithm such as an iterative process or machine learning method.}}
+
+\newglossaryentry{measurand}
+{name={Measurand},
+description={The quantity intended to be measured. Also the single output quantity from a measurement model.}}
+
+\newglossaryentry{metrology}
+{name={Metrology},
+description={The science of measurement and its applications.}}
+
+\newglossaryentry{multivariate_measurands}
+{name={Multivariate measurands},
+description={Quantities that depend on multiple variables or parameters.}}
+
+\newglossaryentry{noise_equivalent_sigma_nought}
+{name={Noise Equivalent Sigma Nought},
+description={The backscatter or sigma nought of the thermal noise in SAR imagery.}}
+
+\newglossaryentry{observable}
+{name={Observable},
+description={The quantity targeted by the observing system, i.e. geophysical parameter.}}
+
+\newglossaryentry{observation}
+{name={Observation},
+description={The process of quantification of an observable through measurements by an observing system.}}
+
+\newglossaryentry{observation_data}
+{name={Observation Data},
+description={Data produced by the observing system.}}
+
+\newglossaryentry{parameter}
+{name={Parameter},
+description={A measurable or derived variable occurring in the physical or digital world.}}
+
+\newglossaryentry{phenomenon_correlation}
+{name={Phenomenon correlation},
+description={The relationship between two or more natural events or measured quantities.}}
+
+\newglossaryentry{phenomenon_covariance}
+{name={Phenomenon covariance},
+description={A measure of how two or more phenomena vary together.}}
+
+\newglossaryentry{polarisation}
+{name={Polarisation},
+description={The process of confining the vibrations of the magnetic, or electric field, vector of light or other radiation to one plane.}}
+
+\newglossaryentry{pre_flight_calibration}
+{name={Pre-flight calibration},
+description={Calibration performed before the instrument is launched into space to ensure accurate measurements.}}
+
+\newglossaryentry{precision}
+{name={Precision},
+description={A measure of the scatter of a number of measured values.}}
+
+\newglossaryentry{procedure}
+{name={Procedure},
+description={A set of established steps or operations to perform a specific task or measurement.}}
+
+\newglossaryentry{processing_level}
+{name={Processing level},
+description={The stage of data processing, ranging from raw data (Level-0) to fully processed geophysical products (Level-2 or higher).}}
+
+\newglossaryentry{pulse_repetition_frequency}
+{name={Pulse Repetition Frequency (PRF)},
+description={Rate of recurrence of the pulses transmitted by a radar.}}
+
+\newglossaryentry{quantity}
+{name={Quantity},
+description={Variable or parameter.}}
+
+\newglossaryentry{reference_dataset}
+{name={Reference dataset},
+description={A dataset used as a standard or benchmark for comparison or validation.}}
+
+\newglossaryentry{requirement}
+{name={Requirement},
+description={Specifies a critical condition, parameter, or capability that shall be fulfilled to achieve the mission aim and objectives. It shall be possible to verify and validate every requirement using a practical approach.}}
+
+\newglossaryentry{sar_focusing}
+{name={SAR Focusing},
+description={In a long synthetic aperture, SAR focusing involves the removal and compensation of path length differences from the antenna to the target on the ground. The main advantage of a focused synthetic aperture is that it increases its array length over those radar signals that can be processed, and thus increases potential SAR resolution at any range. SAR focusing is a necessary process when the length of a synthetic array is a significant fraction of the range to ground being imaged, as the lines-of-sight (range) from a particular point on the ground to each individual element of the array differ in distance. These range differences, or path length differences, of the radar signals can affect image quality. In a focused SAR image these phase errors can be compensated for by applying a phase correction to the return signal at each synthetic aperture element.}}
+
+\newglossaryentry{sigma}
+{name={Sigma},
+description={The conventional measure of the strength of a radar signal reflected from a geometric object (natural or manufactured) such as a corner reflector. Sigma specifies the strength of reflection in terms of the geometric cross section of a conducting sphere that would give rise to the same level of reflectivity. (Units of area, such as metres squared).}}
+
+\newglossaryentry{sigma_nought}
+{name={Sigma Nought},
+description={Scattering coefficient, or the conventional measure of the strength of radar signals reflected by a distributed scatterer, usually expressed in dB. It is a normalised dimensionless number, comparing the strength observed to that expected from an area of one square meter. Sigma nought is defined with respect to the nominally horizontal plane, and in general has a significant variation with incidence angle, wavelength, and polarisation, as well as with properties of the scattering surface itself. This is also known as Normalized Radar Cross Section (NRCS).}}
+
+\newglossaryentry{swath}
+{name={Swath},
+description={The width of an imaged scene in the range dimension, measured in either ground range or slant range.}}
+
+\newglossaryentry{synthetic_aperture_radar}
+{name={Synthetic Aperture Radar (SAR)},
+description={A synthetic aperture radar, or SAR, is a coherent radar system that generates high-resolution remote sensing imagery. Signal processing uses magnitude and phase of the received signals over successive pulses from elements of a synthetic aperture to create an image. As the line of sight direction changes along the radar platform trajectory, a synthetic aperture is produced by signal processing that has the effect of lengthening the antenna. The achievable azimuth resolution of a SAR is approximately equal to one-half the length of the actual (real) antenna and does not depend on platform altitude (distance). High range resolution is achieved through pulse compression techniques.}}
+
+\newglossaryentry{thematic_data_product}
+{name={Thematic Data Product (TDP)},
+description={A record of sufficient duration for its application, of uncertainty-quantified retrieved values of a geophysical variable, along with all ancillary data used in retrieval and uncertainty estimation.}}
+
+\newglossaryentry{traceability}
+{name={Traceability},
+description={A property of a measurement that relates the measured value to a stated metrological reference through an unbroken chain of calibrations or comparisons. It requires, for each step in the traceability chain, that uncertainties are evaluated and that methodologies are documented.}}
+
+\newglossaryentry{trueness}
+{name={Trueness},
+description={Closeness of a measurement to the average of a large set of measurements.}}
+
+\newglossaryentry{uncertainty}
+{name={Uncertainty},
+description={A quantification of doubt about a measurement result. It describes the spread of values around the measured value that can be ascribed to the measurand, i.e. the true value.}}
+
+\newglossaryentry{uncertainty_analysis}
+{name={Uncertainty Analysis},
+description={The review of all sources of uncertainty and the propagation of that uncertainty through the traceability chain.}}
+
+\newglossaryentry{uncertainty_budget}
+{name={Uncertainty budget},
+description={Table of different sources of uncertainty. The term is somewhat out-of-date and uncertainty analysis is preferable.}}
+
+\newglossaryentry{uncertainty_propagation}
+{name={Uncertainty propagation},
+description={The process of determining how uncertainty in input parameters affects the output of a model or system.}}
+
+\newglossaryentry{variable}
+{name={Variable},
+description={A quantity or parameter that can change or take on different values during observations or experiments.}}
+
+\newglossaryentry{validation}
+{name={Validation},
+description={The process of demonstrating that a requirement has been achieved based on independent and traceable evidence.}}
+
+\newglossaryentry{verification}
+{name={Verification},
+description={Activity aiming to confirm that requirements and specifications are actually achieved/met. A verification process is designed to confirm that the output(s) of a process are correct and consistent with the process specifications.}}
+
+\newglossaryentry{vertical_polarisation}
+{name={Vertical Polarisation},
+description={Linear polarisation with the electric vector oriented in the vertical direction in antenna co-ordinates.}}
+
+\newglossaryentry{vh_polarisation}
+{name={Vertical Transmit-Horizontal Receive Polarisation (VH)},
+description={A mode of radar polarisation where the microwaves of the electric field are oriented in the vertical plane for signal transmission, and where the horizontally polarised electric field of the backscattered energy is received by the radar antenna.}}
+
+\newglossaryentry{vv_polarisation}
+{name={Vertical Transmit-Vertical Receive Polarisation (VV)},
+description={A mode of radar polarisation where the microwaves of the electric field are oriented in the vertical plane for both signal transmission and reception.}}
+
+\newglossaryentry{vicarious_calibration}
+{name={Vicarious calibration},
+description={Calibration performed by comparing measurements from an instrument with those from a reference or benchmark instrument.}}
+
+\newglossaryentry{zero_doppler_time}
+{name={Zero Doppler Time},
+description={Zero Doppler time is the along-track (azimuth) time at which a target on the ground would have a Doppler shift of zero with respect to the satellite (i.e. when the target was perpendicular to the flight path). Also called the closest approach azimuth time. The SAR processor locates targets in the image at the zero-Doppler azimuth time.}}
+
