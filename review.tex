@@ -114,10 +114,59 @@ their uncertainties to be understood and compared across borders and domains.
 
 %\paragraph{BIPM}
 
-\subsection{QA4EO}
+\subsection{Quality Assurance Framework for Earth Observation (QA4EO)}
 
-\ac{QA4EO} has defined three classes of data, or ``key concepts'', of relevance
-to \ac{EO} data; (1) \ac{FDR}, (2) \ac{TDP}, and (3) \ac{FRM}.
+% Motivation and specific context of EO
+
+\ac{GEOSS} depends on \gls{interoperable} and quality-assured data to derive
+comprehensive information about climate and environment, as well as, e.g.,
+food, water and energy security. To achieve \gls{interoperability} across
+systems and datasets, common and well-defined data and metadata formats are
+needed, but also metrological principles such as \gls{traceability} to \ac{SI},
+documented \gls{uncertainty analysis} and \gls{comparison} between different
+measurement references must be followed, and are key to the \ac{QA4EO} reports
+\cite{QA4EO1}.
+
+% Relation to existing work and projects
+Beside \cite{JCGMVIM,JCGMGUM}, \ac{QA4EO} also builds on \ac{EO}-metrology
+collaboration in the \ac{EU} \ac{FP7} and Horizon 2020, \ac{ESA} and Copernicus
+projects and, in particular, the FIDUCEO project \cite{mittaz19}.
+
+% Principles
+As summarized in \cite{QA4EO2}, three basic metrology principles generally
+apply to \ac{EO} data:
+
+\begin{enumerate}
+  \item {\bf Traceability:}  Metrological traceability is a property of a measurement that relates the measured value to a stated metrological reference through an unbroken chain of calibrations or comparisons. It requires, for each step in the traceability chain, that uncertainties are evaluated and that methodologies are documented.
+  \item {\bf Uncertainty Analysis:} Uncertainty analysis is the review of all sources of uncertainty and the propagation of that uncertainty through the traceability chain. It is based on the suite of documents prepared by the \ac{JCGM} and together known as the \ac{GUM}.
+  \item {\bf Comparison:} Metrologists validate uncertainty analysis and confirm traceability through comparisons. The Mutual Recognition Arrangement (a formal arrangement to confirm the degree-of-equivalence between \ac{SI} realisations and disseminations in different countries) requires regular, formal international comparisons that are conducted under strict rules.
+\end{enumerate}
+
+\noindent The uncertainty analysis, as outlined in the \ac{GUM}, should follow these principles.
+
+% Key Concepts
+\ac{ESA} has initially applied the terms \acf{FRM}, \acf{FDR} and \acf{TDP} to
+describe metrologically rigorous observations of specific relevance to
+space-based observations \cite{QA4EO2}. The terms are increasingly being used
+by the broader \ac{EO} community, although they have not yet been formally
+endorsed. The terms are defined in \cite{QA4EO2}, as follows:
+
+\begin{itemize}
+  \item {\bf Fundamental Data Record (FDR):} An \ac{FDR} is a record, of sufficient duration for its application, of uncertainty-quantified sensor observations calibrated to physical units and located in time and space, together with all ancillary and lower-level instrument data used to calibrate and locate the observations and to estimate uncertainty.
+  \item {\bf Thematic Data Product (TDP):} A \ac{TDP} is a record, of sufficient duration for its application, of uncertainty-quantified retrieved values of a geophysical variable, along with all ancillary data used in retrieval and uncertainty estimation.
+  \item {\bf Fiducial Reference Measurement (FRM):} An \ac{FRM} is a suite of independent, fully characterised, and traceable (to a community agreed reference, ideally \ac{SI}) measurements of a satellite relevant \gls{measurand}, tailored specifically to address the calibration/validation needs of a class of satellite borne sensors and that follow the guidelines outlined by the \ac{GEO}/\ac{CEOS} \ac{QA4EO}.
+\end{itemize}
+
+As highlighted by \cite{QA4EO2}, ``\acp{TDP} provide higher level products that
+have been processed from \acp{FDR}, through algorithms which also often combine
+information from other \acp{FDR} (e.g., from other satellite sensors) or from
+external information (such as reanalysis models and/or certain non-satellite
+data), along with such additional information''. Guidelines for assessing
+observational systems with respect to \acp{FRM} have been established by
+\ac{CEOS} to support the \gls{comparison} principle.
+
+
+% Approach
 
 
 \subsection{Metrology}
