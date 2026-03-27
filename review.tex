@@ -32,26 +32,16 @@ standards, in particular the \ac{SI}, and suitable for user application
 
 This report aims to further narrow down the scope in applying the \ac{GUM}
 principles to \ac{SAR} data. As such, section~\ref{sec:review} provides a
-review of the basic and general concepts and terms in \gls{metrology} (the
-\ac{VIM}; \cite{JCGMVIM}), the \ac{GUM} \cite{JCGMGUM}, and the \ac{QA4EO}
-framework. Section~\ref{sec:level1} and section~\ref{sec:level2} provide the
-guidelines to uncertainty estimation for SAR level-1 and level-2 data products,
-respectively, as developed in the \ac{ESA} funded \ac{CANVAS} project. Finally,
+review of the existing frameworks supporting \gls{metrology}, i.e., the
+\ac{VIM} \cite{JCGMVIM}, the \ac{GUM} \cite{JCGMGUM}, and the \ac{QA4EO}.
+Section~\ref{sec:level1} and section~\ref{sec:level2} provide the guidelines to
+uncertainty estimation for SAR level-1 and level-2 data products, respectively,
+as developed in the \ac{ESA} funded \ac{CANVAS} project. Finally,
 section~\ref{sec:error_propagation} describes the methods for propagating
 errors \ldots, and section~\ref{sec:conclusion} provides the summary and
 concluding remarks.
 
 \section{The GUM Principles: A review} \label{sec:review}
-
-
-%Summary of QA4EO 1 (Executive Summary) and contextualization for QA4SAR
-
-
-
-%No need to redefine anything, better to follow same descriptions from:
-%Sources: QA4EO, CEOS, SARCALNET, JCGM and its GUM, BIPM, VIM
-
-%\paragraph{CEOS}
 
 \subsection{The International Vocabulary of Metrology (VIM)}
 
@@ -111,13 +101,9 @@ background, guidance on practical evaluation, and worked examples. In doing so,
 it provides a common language and method that allow measurement results and
 their uncertainties to be understood and compared across borders and domains.
 
-
-%\paragraph{BIPM}
-
 \subsection{Quality Assurance Framework for Earth Observation (QA4EO)}
 
 % Motivation and specific context of EO
-
 \ac{GEOSS} depends on \gls{interoperable} and quality-assured data to derive
 comprehensive information about climate and environment, as well as, e.g.,
 food, water and energy security. To achieve \gls{interoperability} across
@@ -163,228 +149,247 @@ information from other \acp{FDR} (e.g., from other satellite sensors) or from
 external information (such as reanalysis models and/or certain non-satellite
 data), along with such additional information''. Guidelines for assessing
 observational systems with respect to \acp{FRM} have been established by
-\ac{CEOS} to support the \gls{comparison} principle.
-
+\ac{CEOS}.
 
 % Approach
-
-
-\subsection{Metrology}
-
-%Summary of QA4EO 2 (Metrology Theoretical basis)
-
-\subsubsection{Basic concepts}
-
-\paragraph{Metrological observations in EO}
-
-The European Space Agency 
+In order to establish a systematic process for generating uncertainty budgets,
+and ensuring that \ac{EO} data are interoperable, temporally stable, and fit
+for scientific, operational and decision-making purposes, the \ac{QA4EO} and
+\ac{EO} projects acknowledged in \cite{QA4EO3} have adapted the stages,
+suggested in \ac{GUM}, required to support the development of a measurement
+model and from that an uncertainty analysis. These \ac{EO} specific stages of
+uncertainty analysis are given by \cite{QA4EO3} as follows:
 
 \begin{itemize}
-    \item Fundamental Data Record (FDR)
-    \item Thematic Data Product (TDP)
-    \item \ac{FRM}
+  \item Step 1: Define the \gls{measurand} and measurement model.
+  \item Step 2: Establish the \gls{traceability} with a diagram.
+  \item Step 3: Evaluate each source of uncertainty and fill out an effects table.
+  \item Step 4: Calculate the data product and uncertainties.
+  \item Step 5: Record information about the \gls{uncertainty analysis} for long term data preservation purposes and summarise for today's users.
 \end{itemize}
 
-\paragraph{Uncertainty and error}
-
-%Differences
-
-
-
-%Types
-
-\paragraph{Correlation and covariance}
-%Correlation
-%covariance
-
-\paragraph{The measurement model}
-
-
-\subsubsection{Principles}
-
-FDRs, TDPs, and \acp{FRM} require a metrological approach. Metrology has three principles:
-
-\begin{enumerate}
-    \item Traceability: Documenting the chain of calibrations
-    Tractability includes calibration for both the SAR instrument, and the reference instrument (e.g. in situ observations). EO instruments usually require pre-flight, in-orbit and vicarious calibrations, which must be documented. Ancillary and auxiliary data incorporated during the processing of products must also be taken into account along with corrections of any nature (e.g. atmospheric, topographic, etc) and sensitivities to the environment. Similarly, for the reference instrument this principle also includes the deployment calibration and sensitivities to environmental conditions if any. 
-
-    \item Uncertainty Analysis: A systematic approach
-      An identification of sources of uncertainties must consider any calibration, instrument changes in orbit and sensitivities to onboard conditions. An analysis of inputs to the measurement model aids to identify those sources. The propagation of those uncertainties through the traceability chain is also part of the analysis. A systematic approach was defined by CEOS and the QA4EO with five steps: Definition of \gls{measurand} and measurement model, creation of a traceability diagram, evaluation of effects, calculation and propagation of uncertainties, and finally documenting. The methodology for this analysis and its five steps is detailed in section 1.4.
-
-    \item Comparison: Validation of uncertainty statements
-    EO comparisons are carried out between sensors and between sensors and sub-orbital observations. For metrologists, the purpose of comparisons is to test and validate uncertainty claims. Comparisons are not not performed to estimate uncertainties, but the equivalence ratio. For EO, comparisons are usually performed due to multiple scenes, obervations, and collocations in time. Multiple comparisons require a strong understanding of error correlation structures in the data.  
-    
-\end{enumerate}
-
-
-As a graphical summary, Figure 1 summarizes the three metrology principles including the five steps  within Uncertainty Analysis. The flowchart is designed as an iterative process where lessons learned after Comparisons are taken into account for future calibrations.
-
-\begin{figure}
-    \centering
-    \includegraphics[width=1\linewidth]{figures/Principles.png}
-    \caption{An iterative framework for the CEOS Five Steps. Summary of principles including the Uncertainty Analysis five steps.}
-    \label{fig:placeholder}
-\end{figure}
-
-
-
-\subsection{Uncertainty Analysis}
-
-%This is well explained in QA4EO 3 (Process)
-
-There is a consensus in the metrology community about how an uncertainty analysis should be developed. Different EO metrology projects (references) have adapted these stages to emphasize covariance more strongly and have have provided standardized tools for performing some of the analysis.
-
-\subsubsection{Step 1: Measurand and Measurement model definition}
-
-Defining the \gls{measurand} is often the most difficult step, and involves some deep thinking and a challenging conversation between experts. Some experts do not believe that they measure the \gls{measurand}, since the \gls{measurand} may be obtained through a group of algorithms with multiple levels. For these cases, a multi-stage measurement model is considered. The term \gls{measurand} can be applied at different levels of a process and may include both models and observations. The \gls{measurand} can be considered a single point of measurement, e.g. pixel, specific location and/or time, or can represent an area or time period in case of averaged quantities.
-
-The measurement model describes the relationship between the raw input quantities and the \gls{measurand}. This can be an iterative process starting with a more basic model and then including additional quantities to represent the necessary and model approximations. The model should include all the quantities that affects the measurement result. These quantities includes observations and corrections. Well understood effects (i.e. sources of uncertainty) can be directly incorporated as input quantity in the model. Poorly understood effects are usually included in a random variable. It is important to highlight that measurement models are a simplification of a complex reality. A general form of a measurement is describe as:
-
-
-\[Y=f(X_1,....,X_n; E_1,...., E_n; \Delta_0)\]
-
-Where \(Y\) is the \gls{measurand} as a function of different input quantities from understood effects, \(E\) quantities from poorly understood effects and associated assumptions or approximations.
-
-In some cases the measurement model cannot be described as an analytical model nor a functional relationship. However a description of the different effects can still be produced in order to bring the uncertainty analysis to the next steps. Within EO, many models can be written as univariate or multivariate according to the number of measured values, where one observations can be considered as many observations. As an example, observations of multiple spectral bands or polarizations.
-
-
-\subsubsection{Step 2: Traceability diagram}
-
-Diagrams can be very useful for \gls{traceability} purposes, identifying sources of uncertainty in input quantities, approximations and assumptions. Four types of diagram have been reported within EO: Uncertainty Tree Diagrams, Processing Diagrams, Metrological \gls{traceability} Diagrams, and Derivation Diagrams.
-
-\paragraph{Uncertainty Tree Diagrams}
-
-Measurement model is put in the centre of the picture and shows the origin of each term of the model. An example from the FIDUCEO project is shown in Figure 2.
-
-\begin{figure}
-    \centering
-    \includegraphics[width=0.7\linewidth]{figures/tree_diagram.png}
-    \caption{FIDUCEO uncertainty tree diagram from Mittaz et al 2019}
-    \label{fig:placeholder}
-\end{figure}
-
-\paragraph{Processing Diagrams}
-
-Representing processing steps or non-analytical processes in a uncertainty tree diagram is difficult. A flow chart is preferable in such cases. Auxiliary information, assumptions and approximations need to be identified for each step of the diagram. Figure 3 shows an example numbering each process. Numbers 1 to 9 belongs to the main processing chain, while other processes for auxiliary and ancillary data are numbered subsequently with the first digit pointing to the linked step from the main chain.
-
-\begin{figure}
-    \centering
-    \includegraphics[width=0.7\linewidth]{figures/processing_diagram.png}
-    \caption{Example of a processing chain for a RS92 radiosonde temperature measurement}
-    \label{fig:placeholder}
-\end{figure}
-
-\paragraph{Metrological Traceability Diagrams}
-
-Metrological \gls{traceability} diagrams are a simplified version of processing diagrams, which are suitable for straightforward instruments. The diagram represents the unbroken chain of calibrations. This diagram can also be an auxiliary flow chart for uncertainty tree diagrams. Figure 4 represents a simplified \gls{traceability} chain where the different shapes have different meanings, e.g. processes, auxiliary data, etc.
-
-\begin{figure}
-    \centering
-    \includegraphics[width=0.7\linewidth]{figures/metrology_diagram.png}
-    \caption{Metrological Traceability Diagram for the calibration of the APEX spectrometer carried on the DLR research aircraft.}
-    \label{fig:placeholder}
-\end{figure}
-
-\paragraph{Derivation Diagrams}
-
-Derivation diagrams are similar to uncertainty tree diagrams in the sense that equations are also provided. However, derivation diagrams are focused on the assumptions within the measurement model. Therefore, derivation diagrams can be described as a uncertainty tree diagram where assumptions and approximations are extensively detailed instead of being represented by a negligible value.
-
-\begin{figure}
-    \centering
-    \includegraphics[width=0.7\linewidth]{figures/derivation_diagram.png}
-    \caption{Part of the derivation diagram for sea level rise where assumptions are detailed}
-    \label{fig:placeholder}
-\end{figure}
-
-Although four diagram types are here described, a new, different diagram can be design in order to draw a picture of our system for \gls{traceability} purposes. Different type of diagrams can also be combined.
-
-\subsubsection{Step 3: Evaluation of each source of uncertainty}
-
-After Steps 1 and 2, sources of uncertainty (i.e. effects), assumptions, approximations and corrections  during the observational process have been identified. Then, uncertainties can be propagated though the measurement model, multi-stage or single-stage, until the \gls{measurand}. Before uncertainty propagation some description is necessary for each effect. Hence, the use of an "effect table" is convenient, which provides:
-
-\begin{itemize}
-    \item Unique identifier of the effect.
-    \item The measurement model term affected by the effect.
-    \item Magnitude of the uncertainty.
-    \item Existent error correlations, when applicable.
-    \item The form of the error correlation for each dimension of interest.
-    \item A maturity indicator.
-    \item The probability density function (PDF) and/or sensitivity coefficient.
-\end{itemize}
-
-Error correlations must also be described for both, correlations between input quantities and between terms within the measurement model. The error correlation structure of each effect must also be determined for each dimension of interest. Dimensions for which different observations will be combined or compared at later processing level.
-
-The maturity of an uncertainty estimate is a qualitative concept. The highest maturity is achieved when two conditions are met: the effect has been evaluated robustly, i.e. properly modeled or repeatedly, and validated by comparison to independent data sets. If only one of the conditions applies, then maturity is moderate. In a low maturity none of the conditions have been met. Instead, expert judgment has been used to estimate the uncertainty magnitude. Table 1 summarizes the requirements of the evaluation of effects into a effects table. An extensive guideline for filling the table is available at QA4EO 3 Appendix B!!!!!! 
-
-
-\begin{table}[ht]
-\centering
-\begin{tabular}{|l|l|l|}
-\hline
-\multicolumn{3}{|c|}{\textbf{EFFECTS TABLE}} \\ \hline
-\textbf{Name of effect} & Effect name 1.1 & Effect name 1.2 \\ \hline
-\textbf{Effect identifier} & 1.1 & 1.2 \\ \hline
-\textbf{Affected term in measurement function} &  &  \\ \hline
-\textbf{Maturity of analysis} &  &  \\ \hline
-Maturity of uncertainty estimate &  &  \\ \hline
-Maturity of correlation scale estimate &  &  \\ \hline
-For low maturity, is effect negligible? &  &  \\ \hline
-\textbf{Correlation type and form} &  &  \\ \hline
-Within dimension 1 &  &  \\ \hline
-Within dimension 2 &  &  \\ \hline
-Within dimension 3 &  &  \\ \hline
-Within dimension 4 &  &  \\ \hline
-\textbf{Correlation scale} &  &  \\ \hline
-Within dimension 1 &  &  \\ \hline
-Within dimension 2 &  &  \\ \hline
-Within dimension 3 &  &  \\ \hline
-Within dimension 4 &  &  \\ \hline
-\textbf{Uncertainty} &  &  \\ \hline
-PDF shape &  &  \\ \hline
-units &  &  \\ \hline
-magnitude &  &  \\ \hline
-\textbf{Sensitivity coefficient} &  &  \\ \hline
-\end{tabular}
-
-\caption{Example of blank effects table.}
-\label{tab:descriptor}
-\end{table}
-
-\subsubsection{Step 4: Calculate \ac{FRM}/FDR/TDP associated uncertainties}
-
-A robust uncertainty analysis should highlight where the model can be improved. So, a correction for an effect can be proposed. It is important to identify how large the uncertainty associated is and how it propagates to the \gls{measurand}. The propagation can be undertaken by the Monte Carlo (MC) method, with PDFs of each effect, or by the Law of Propagation of Uncertainties (LPU), with sensitivity coefficient and error covariance matrix for each effect. Propagation is further described in section 1.5.
-
-\subsubsection{Step 5: Documenting}
-
-There are three types of environmental dataset with different requirements when providing uncertainties. 
-
-\begin{enumerate}
-    \item Operational data. For near-real time applications timeliness and consistency are extremely important. Uncertainties are often less critical and usually indicated as noise. It may contain quality flags, but covariance information is rarely calculated.
-    \item Research data. A combination of near-real time and historical data. Ideally, uncertainty and covariance should be provided, but in simplified format, since the data is provided for applications at higher level.
-    \item Long term data preservation. This is the data for future scientists. It should include all the associated metadata and documentation in order to reproduce results and undertake future reanalysis.
-\end{enumerate}
-
-\subsection{Uncertainty Propagation}
-
-As mentioned in previous sections, there are two methodologies to propagate uncertainties through the measurement model until the measureand. The first method is the Law of Propagation of Uncertainties (LPU) relies on the error covariance matrices and sensitivity coefficient produced for each output quantity. The second method is the Monte Carlo (MC) method relies on the probability distribution function of each source of uncertainty or, in a compact way, the output quantities. This section details how to apply these methods during the uncertainty analysis.
-
-\subsubsection{Law of Propagation of Uncertainties method}
-
-This method is based on a locally linear approximation to combine uncertainties using the expresion:
-
-
-\[u^2(y) = \sum_{i=1}^N c_i^2 u^2(x_i) + 2 \sum_{i=1}^{N-1} \sum_{j=i+1}^N c_i c_j u(x_i, x_j)\]
-
-Where \(u^2(y)\) is the combined uncertainty associated with the measured value \(y\). \(u(x_i)\) is the uncertainty associated with the input quantity \(x_i\). \(u(x_i, x_j)\) is the covariance between \(x_i\) and \(x_j\). \(c_i=\delta y/ \delta x_i \) is the sensitivity coefficient, i.e. the relationship between an uncertainty associated to an input quantity and the uncertainty associated to the measured quantity. \(N\) represents the number of input quantities. In this equation the first term, \(\sum_{i=1}^N c_i^2 u^2(x_i)\) is fully independent, while the second term \(2 \sum_{i=1}^{N-1} \sum_{j=i+1}^N c_i c_j u(x_i, x_j)\) stands for the error correlation.
-
-The expression can also be written in matrix form as:
-
-
-\[u²(y)=cS(x)c^T\]
-
-where \(c=[\delta y/\delta x_1, ..., \delta y/\delta x_N]\) is a row vector of sensitivity coefficients and \(S(x)\) is the error covariance matrix for the input quantities with diagonals \(u²(x_i)\) and off-diagonals \(u(x_i, x_j)\)
-
-\subsubsection{MonteCarlo method}
-
-
-
+These steps are discussed in detail in \cite{QA4EO3}. In
+sections~\ref{sec:level1} and \ref{sec:level2}, the process is applied to SAR
+level-1 and level-2 data.
+
+% \subsection{Uncertainty Propagation}
+% 
+% \subsection{Metrology}
+% 
+% %Summary of QA4EO 2 (Metrology Theoretical basis)
+% 
+% \subsubsection{Basic concepts}
+% 
+% \paragraph{Metrological observations in EO}
+% 
+% The European Space Agency 
+% 
+% \begin{itemize}
+%     \item Fundamental Data Record (FDR)
+%     \item Thematic Data Product (TDP)
+%     \item \ac{FRM}
+% \end{itemize}
+% 
+% \paragraph{Uncertainty and error}
+% 
+% %Differences
+% 
+% 
+% 
+% %Types
+% 
+% \paragraph{Correlation and covariance}
+% %Correlation
+% %covariance
+% 
+% \paragraph{The measurement model}
+% 
+% 
+% \subsubsection{Principles}
+% 
+% FDRs, TDPs, and \acp{FRM} require a metrological approach. Metrology has three principles:
+% 
+% \begin{enumerate}
+%     \item Traceability: Documenting the chain of calibrations
+%     Tractability includes calibration for both the SAR instrument, and the reference instrument (e.g. in situ observations). EO instruments usually require pre-flight, in-orbit and vicarious calibrations, which must be documented. Ancillary and auxiliary data incorporated during the processing of products must also be taken into account along with corrections of any nature (e.g. atmospheric, topographic, etc) and sensitivities to the environment. Similarly, for the reference instrument this principle also includes the deployment calibration and sensitivities to environmental conditions if any. 
+% 
+%     \item Uncertainty Analysis: A systematic approach
+%       An identification of sources of uncertainties must consider any calibration, instrument changes in orbit and sensitivities to onboard conditions. An analysis of inputs to the measurement model aids to identify those sources. The propagation of those uncertainties through the traceability chain is also part of the analysis. A systematic approach was defined by CEOS and the QA4EO with five steps: Definition of \gls{measurand} and measurement model, creation of a traceability diagram, evaluation of effects, calculation and propagation of uncertainties, and finally documenting. The methodology for this analysis and its five steps is detailed in section 1.4.
+% 
+%     \item Comparison: Validation of uncertainty statements
+%     EO comparisons are carried out between sensors and between sensors and sub-orbital observations. For metrologists, the purpose of comparisons is to test and validate uncertainty claims. Comparisons are not not performed to estimate uncertainties, but the equivalence ratio. For EO, comparisons are usually performed due to multiple scenes, obervations, and collocations in time. Multiple comparisons require a strong understanding of error correlation structures in the data.  
+%     
+% \end{enumerate}
+% 
+% 
+% As a graphical summary, Figure 1 summarizes the three metrology principles including the five steps  within Uncertainty Analysis. The flowchart is designed as an iterative process where lessons learned after Comparisons are taken into account for future calibrations.
+% 
+% \begin{figure}
+%     \centering
+%     \includegraphics[width=1\linewidth]{figures/Principles.png}
+%     \caption{An iterative framework for the CEOS Five Steps. Summary of principles including the Uncertainty Analysis five steps.}
+%     \label{fig:placeholder}
+% \end{figure}
+% 
+% 
+% 
+% \subsection{Uncertainty Analysis}
+% 
+% %This is well explained in QA4EO 3 (Process)
+% 
+% There is a consensus in the metrology community about how an uncertainty analysis should be developed. Different EO metrology projects (references) have adapted these stages to emphasize covariance more strongly and have have provided standardized tools for performing some of the analysis.
+% 
+% \subsubsection{Step 1: Measurand and Measurement model definition}
+% 
+% Defining the \gls{measurand} is often the most difficult step, and involves some deep thinking and a challenging conversation between experts. Some experts do not believe that they measure the \gls{measurand}, since the \gls{measurand} may be obtained through a group of algorithms with multiple levels. For these cases, a multi-stage measurement model is considered. The term \gls{measurand} can be applied at different levels of a process and may include both models and observations. The \gls{measurand} can be considered a single point of measurement, e.g. pixel, specific location and/or time, or can represent an area or time period in case of averaged quantities.
+% 
+% The measurement model describes the relationship between the raw input quantities and the \gls{measurand}. This can be an iterative process starting with a more basic model and then including additional quantities to represent the necessary and model approximations. The model should include all the quantities that affects the measurement result. These quantities includes observations and corrections. Well understood effects (i.e. sources of uncertainty) can be directly incorporated as input quantity in the model. Poorly understood effects are usually included in a random variable. It is important to highlight that measurement models are a simplification of a complex reality. A general form of a measurement is describe as:
+% 
+% 
+% \[Y=f(X_1,....,X_n; E_1,...., E_n; \Delta_0)\]
+% 
+% Where \(Y\) is the \gls{measurand} as a function of different input quantities from understood effects, \(E\) quantities from poorly understood effects and associated assumptions or approximations.
+% 
+% In some cases the measurement model cannot be described as an analytical model nor a functional relationship. However a description of the different effects can still be produced in order to bring the uncertainty analysis to the next steps. Within EO, many models can be written as univariate or multivariate according to the number of measured values, where one observations can be considered as many observations. As an example, observations of multiple spectral bands or polarizations.
+% 
+% 
+% \subsubsection{Step 2: Traceability diagram}
+% 
+% Diagrams can be very useful for \gls{traceability} purposes, identifying sources of uncertainty in input quantities, approximations and assumptions. Four types of diagram have been reported within EO: Uncertainty Tree Diagrams, Processing Diagrams, Metrological \gls{traceability} Diagrams, and Derivation Diagrams.
+% 
+% \paragraph{Uncertainty Tree Diagrams}
+% 
+% Measurement model is put in the centre of the picture and shows the origin of each term of the model. An example from the FIDUCEO project is shown in Figure 2.
+% 
+% \begin{figure}
+%     \centering
+%     \includegraphics[width=0.7\linewidth]{figures/tree_diagram.png}
+%     \caption{FIDUCEO uncertainty tree diagram from Mittaz et al 2019}
+%     \label{fig:placeholder}
+% \end{figure}
+% 
+% \paragraph{Processing Diagrams}
+% 
+% Representing processing steps or non-analytical processes in a uncertainty tree diagram is difficult. A flow chart is preferable in such cases. Auxiliary information, assumptions and approximations need to be identified for each step of the diagram. Figure 3 shows an example numbering each process. Numbers 1 to 9 belongs to the main processing chain, while other processes for auxiliary and ancillary data are numbered subsequently with the first digit pointing to the linked step from the main chain.
+% 
+% \begin{figure}
+%     \centering
+%     \includegraphics[width=0.7\linewidth]{figures/processing_diagram.png}
+%     \caption{Example of a processing chain for a RS92 radiosonde temperature measurement}
+%     \label{fig:placeholder}
+% \end{figure}
+% 
+% \paragraph{Metrological Traceability Diagrams}
+% 
+% Metrological \gls{traceability} diagrams are a simplified version of processing diagrams, which are suitable for straightforward instruments. The diagram represents the unbroken chain of calibrations. This diagram can also be an auxiliary flow chart for uncertainty tree diagrams. Figure 4 represents a simplified \gls{traceability} chain where the different shapes have different meanings, e.g. processes, auxiliary data, etc.
+% 
+% \begin{figure}
+%     \centering
+%     \includegraphics[width=0.7\linewidth]{figures/metrology_diagram.png}
+%     \caption{Metrological Traceability Diagram for the calibration of the APEX spectrometer carried on the DLR research aircraft.}
+%     \label{fig:placeholder}
+% \end{figure}
+% 
+% \paragraph{Derivation Diagrams}
+% 
+% Derivation diagrams are similar to uncertainty tree diagrams in the sense that equations are also provided. However, derivation diagrams are focused on the assumptions within the measurement model. Therefore, derivation diagrams can be described as a uncertainty tree diagram where assumptions and approximations are extensively detailed instead of being represented by a negligible value.
+% 
+% \begin{figure}
+%     \centering
+%     \includegraphics[width=0.7\linewidth]{figures/derivation_diagram.png}
+%     \caption{Part of the derivation diagram for sea level rise where assumptions are detailed}
+%     \label{fig:placeholder}
+% \end{figure}
+% 
+% Although four diagram types are here described, a new, different diagram can be design in order to draw a picture of our system for \gls{traceability} purposes. Different type of diagrams can also be combined.
+% 
+% \subsubsection{Step 3: Evaluation of each source of uncertainty}
+% 
+% After Steps 1 and 2, sources of uncertainty (i.e. effects), assumptions, approximations and corrections  during the observational process have been identified. Then, uncertainties can be propagated though the measurement model, multi-stage or single-stage, until the \gls{measurand}. Before uncertainty propagation some description is necessary for each effect. Hence, the use of an "effect table" is convenient, which provides:
+% 
+% \begin{itemize}
+%     \item Unique identifier of the effect.
+%     \item The measurement model term affected by the effect.
+%     \item Magnitude of the uncertainty.
+%     \item Existent error correlations, when applicable.
+%     \item The form of the error correlation for each dimension of interest.
+%     \item A maturity indicator.
+%     \item The probability density function (PDF) and/or sensitivity coefficient.
+% \end{itemize}
+% 
+% Error correlations must also be described for both, correlations between input quantities and between terms within the measurement model. The error correlation structure of each effect must also be determined for each dimension of interest. Dimensions for which different observations will be combined or compared at later processing level.
+% 
+% The maturity of an uncertainty estimate is a qualitative concept. The highest maturity is achieved when two conditions are met: the effect has been evaluated robustly, i.e. properly modeled or repeatedly, and validated by comparison to independent data sets. If only one of the conditions applies, then maturity is moderate. In a low maturity none of the conditions have been met. Instead, expert judgment has been used to estimate the uncertainty magnitude. Table 1 summarizes the requirements of the evaluation of effects into a effects table. An extensive guideline for filling the table is available at QA4EO 3 Appendix B!!!!!! 
+% 
+% 
+% \begin{table}[ht]
+% \centering
+% \begin{tabular}{|l|l|l|}
+% \hline
+% \multicolumn{3}{|c|}{\textbf{EFFECTS TABLE}} \\ \hline
+% \textbf{Name of effect} & Effect name 1.1 & Effect name 1.2 \\ \hline
+% \textbf{Effect identifier} & 1.1 & 1.2 \\ \hline
+% \textbf{Affected term in measurement function} &  &  \\ \hline
+% \textbf{Maturity of analysis} &  &  \\ \hline
+% Maturity of uncertainty estimate &  &  \\ \hline
+% Maturity of correlation scale estimate &  &  \\ \hline
+% For low maturity, is effect negligible? &  &  \\ \hline
+% \textbf{Correlation type and form} &  &  \\ \hline
+% Within dimension 1 &  &  \\ \hline
+% Within dimension 2 &  &  \\ \hline
+% Within dimension 3 &  &  \\ \hline
+% Within dimension 4 &  &  \\ \hline
+% \textbf{Correlation scale} &  &  \\ \hline
+% Within dimension 1 &  &  \\ \hline
+% Within dimension 2 &  &  \\ \hline
+% Within dimension 3 &  &  \\ \hline
+% Within dimension 4 &  &  \\ \hline
+% \textbf{Uncertainty} &  &  \\ \hline
+% PDF shape &  &  \\ \hline
+% units &  &  \\ \hline
+% magnitude &  &  \\ \hline
+% \textbf{Sensitivity coefficient} &  &  \\ \hline
+% \end{tabular}
+% 
+% \caption{Example of blank effects table.}
+% \label{tab:descriptor}
+% \end{table}
+% 
+% \subsubsection{Step 4: Calculate \ac{FRM}/FDR/TDP associated uncertainties}
+% 
+% A robust uncertainty analysis should highlight where the model can be improved. So, a correction for an effect can be proposed. It is important to identify how large the uncertainty associated is and how it propagates to the \gls{measurand}. The propagation can be undertaken by the Monte Carlo (MC) method, with PDFs of each effect, or by the Law of Propagation of Uncertainties (LPU), with sensitivity coefficient and error covariance matrix for each effect. Propagation is further described in section 1.5.
+% 
+% \subsubsection{Step 5: Documenting}
+% 
+% There are three types of environmental dataset with different requirements when providing uncertainties. 
+% 
+% \begin{enumerate}
+%     \item Operational data. For near-real time applications timeliness and consistency are extremely important. Uncertainties are often less critical and usually indicated as noise. It may contain quality flags, but covariance information is rarely calculated.
+%     \item Research data. A combination of near-real time and historical data. Ideally, uncertainty and covariance should be provided, but in simplified format, since the data is provided for applications at higher level.
+%     \item Long term data preservation. This is the data for future scientists. It should include all the associated metadata and documentation in order to reproduce results and undertake future reanalysis.
+% \end{enumerate}
+% 
+% \subsection{Uncertainty Propagation}
+% 
+% As mentioned in previous sections, there are two methodologies to propagate uncertainties through the measurement model until the measureand. The first method is the Law of Propagation of Uncertainties (LPU) relies on the error covariance matrices and sensitivity coefficient produced for each output quantity. The second method is the Monte Carlo (MC) method relies on the probability distribution function of each source of uncertainty or, in a compact way, the output quantities. This section details how to apply these methods during the uncertainty analysis.
+% 
+% \subsubsection{Law of Propagation of Uncertainties method}
+% 
+% This method is based on a locally linear approximation to combine uncertainties using the expresion:
+% 
+% 
+% \[u^2(y) = \sum_{i=1}^N c_i^2 u^2(x_i) + 2 \sum_{i=1}^{N-1} \sum_{j=i+1}^N c_i c_j u(x_i, x_j)\]
+% 
+% Where \(u^2(y)\) is the combined uncertainty associated with the measured value \(y\). \(u(x_i)\) is the uncertainty associated with the input quantity \(x_i\). \(u(x_i, x_j)\) is the covariance between \(x_i\) and \(x_j\). \(c_i=\delta y/ \delta x_i \) is the sensitivity coefficient, i.e. the relationship between an uncertainty associated to an input quantity and the uncertainty associated to the measured quantity. \(N\) represents the number of input quantities. In this equation the first term, \(\sum_{i=1}^N c_i^2 u^2(x_i)\) is fully independent, while the second term \(2 \sum_{i=1}^{N-1} \sum_{j=i+1}^N c_i c_j u(x_i, x_j)\) stands for the error correlation.
+% 
+% The expression can also be written in matrix form as:
+% 
+% 
+% \[u²(y)=cS(x)c^T\]
+% 
+% where \(c=[\delta y/\delta x_1, ..., \delta y/\delta x_N]\) is a row vector of sensitivity coefficients and \(S(x)\) is the error covariance matrix for the input quantities with diagonals \(u²(x_i)\) and off-diagonals \(u(x_i, x_j)\)
+% 
+% \subsubsection{MonteCarlo method}
+% 
+% 
+% 
