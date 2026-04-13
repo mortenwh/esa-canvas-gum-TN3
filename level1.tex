@@ -33,7 +33,7 @@ shift, i.e., the measurand, is given by
 
 \noindent where $\varpi_{\rm dc}$ is the Doppler centroid frequency shift,
 $\varpi_p$ is the Doppler shift predicted from an estimate of the antenna
-pointing, and $\Delta\varpi_g$ is the residual \textcolor{red}{error(?)}. The
+pointing, and $\Delta\varpi_g$ is the residual uncertainty. The
 mathematical model for the predicted Doppler shift is $\varpi_p = \varpi_{\rm
 geo} + \varpi_{\rm e} + \Delta\varpi_p$, where $\varpi_{\rm geo}$ is a
 geometric term related to the antenna pointing via the satellite's orbit and
@@ -284,37 +284,52 @@ other level-1 sections. Wait for their completion by NORCE.}
 
 \subsubsection{Step 3: Evaluation of Uncertainties}
 
-\begin{table}[ht]
+\begin{table}[h]
+  \footnotesize
   \centering
 
   \caption{Uncertainty effects table for the geophysical Doppler shift,
   $\varpi_{\rm g}$.}
 
-  \begin{tabular}{|l|c|c|c|c|c|c|}
+  \begin{tabular}{|l|c|c|c|c|c|}
     \hline
     % \multicolumn{3}{|c|}{\textbf{EFFECTS TABLE}} \\ \hline
-    \textbf{Name of effect} & Missing attitude data & Attitude Uncertainty & Position Uncertainty & Attitude Fitting & Orbital Fitting & Antenna Fitting \\ \hline
-    \textbf{Effect identifier} & 1.1 & 1.2 & 3 & 4 & 5 & 6 \\ \hline
-    \textbf{Affected term in measurement function} &  &  & 3 & 4 & 5 & 6\\ \hline
-    \textbf{Maturity of analysis} &  &  & 3 & 4 & 5 & 6\\ \hline
-    Maturity of uncertainty estimate &  & & 3 & 4 & 5 & 6 \\ \hline
-    Maturity of correlation scale estimate &  & & 3 & 4 & 5 & 6 \\ \hline
-    For low maturity, is effect negligible? &  & & 3 & 4 & 5 & 6 \\ \hline
-    \textbf{Correlation type and form} &  & & 3 & 4 & 5 & 6 \\ \hline
-    Within dimension 1 &  & & 3 & 4 & 5 & 6 \\ \hline
-    Within dimension 2 &  & & 3 & 4 & 5 & 6 \\ \hline
-    Within dimension 3 &  & & 3 & 4 & 5 & 6 \\ \hline
-    Within dimension 4 &  & & 3 & 4 & 5 & 6 \\ \hline
-    \textbf{Correlation scale} &  & & 3 & 4 & 5 & 6 \\ \hline
-    Within dimension 1 &  & & 3 & 4 & 5 & 6 \\ \hline
-    Within dimension 2 &  & & 3 & 4 & 5 & 6 \\ \hline
-    Within dimension 3 &  & & 3 & 4 & 5 & 6 \\ \hline
-    Within dimension 4 &  & & 3 & 4 & 5 & 6 \\ \hline
-    \textbf{Uncertainty} &  & & 3 & 4 & 5 & 6 \\ \hline
-    PDF shape &  & & 3 & 4 & 5 & 6 \\ \hline
-    units &  & & 3 & 4 & 5 & 6 \\ \hline
-    magnitude &  & & 3 & 4 & 5 & 6 \\ \hline
-    \textbf{Sensitivity coefficient} &  & & 3 & 4 & 5 & 6 \\ \hline
+    \textbf{Name of effect} & Attitude & Position & Manual & Orbital & Antenna \\
+    & & and & Attitude & Fit & Pattern \\
+    & & Velocity & Fit & & Fit \\ \hline
+    \textbf{Effect} &  &  &  &  &  \\
+    \textbf{identifier} & 1 & 2 & 3 & 4 & 5 \\ \hline
+    \textbf{Affected term} &  &  &  &  &  \\
+    \textbf{term in} &  &  &  &  &  \\
+    \textbf{measurement} &  &  &  &  &  \\
+    \textbf{function} & $\varpi_p$ & $\varpi_p$  & $\varpi_p$  & $\varpi_p$  & $\varpi_p$ \\ \hline
+    \textbf{Maturity of} &  &  &  &  & \\
+    \textbf{analysis} & High & High & Moderate & Moderate & Moderate \\ \hline
+    Maturity of &  & &  &  &   \\
+    uncertainty &  & &  &  &   \\
+    estimate & Moderate & Moderate & Moderate & Moderate & Moderate \\ \hline
+    Maturity of &  & &  &  &   \\
+    correlation scale &  & &  &  &   \\
+    estimate &  & &  &  &   \\ \hline
+    For low maturity, &  & &  &  &   \\
+    is effect negligible? &  & &  &  &   \\ \hline
+    \textbf{Correlation type} &  & &  &  &  \\
+    \textbf{and form} &  & &  &  &   \\ \hline
+    Within dimension 1 &  & &  &  &  \\ \hline
+    Within dimension 2 &  & &  &  &  \\ \hline
+    Within dimension 3 &  & &  &  &  \\ \hline
+    Within dimension 4 &  & &  &  &  \\ \hline
+    \textbf{Correlation scale} &  & &  &  &  \\ \hline
+    Within dimension 1 &  & &  &  &  \\ \hline
+    Within dimension 2 &  & &  &  &  \\ \hline
+    Within dimension 3 &  & &  &  &  \\ \hline
+    Within dimension 4 &  & &  &  &  \\ \hline
+    \textbf{Uncertainty} &  & &  &  &  \\ \hline
+    PDF shape &  & &  &  &  \\ \hline
+    Units &  & &  &  &  \\ \hline
+    Magnitude &  & & &  &  \\ \hline
+    \textbf{Sensitivity} &  & &  &  &  \\
+    \textbf{coefficient} &  & &  &  &  \\ \hline
   \end{tabular}
 
   \label{tab:doppler_effects_table}
@@ -322,31 +337,45 @@ other level-1 sections. Wait for their completion by NORCE.}
 
 \subsubsection{Step 4: Data Product and Uncertainties}
 
-\paragraph{Uncertainty of the Doppler Centroid Frequency Shift}
+\paragraph{Uncertainty and Correlation Scale of the Satellite Position and Velocity}
 
-The Doppler centroid frequency shift (DC) is usually estimated from the azimuth
-power spectrum of the SAR beam. For ASAR data published at
-\url{https://data.met.no/dataset/e19b9c36-a9dc-4e13-8827-c998b9045b54}, the
-estimation algorithm is based on \cite{bamler91}, but extended to correct the
-azimuth spectra for energy aliased from neighboring areas \cite{hansen26}. The
-same model is used to calculate the standard deviation of the DC estimate,
-which gives the standard uncertainty, $\sigma_{\rm dc}$, of $\varpi_{\rm dc}$.
-Figure~\ref{fig:dc} shows $\sigma_{\rm dc}$ and $\varpi_{\rm dc}$ of an Envisat
-ASAR acquisition over the Amazon rain forest on
-2010-02-19T14:02:27.240842+00:00.
+\begin{itemize}
+  \item Find documentation
+  \item Estimate total Doppler uncertainty (std from zero over land, all view angles, to get an idea) after correction
+\end{itemize}
 
-\begin{figure}
-  \centering
-  \includegraphics[width=0.3\paperwidth]{figures/dc}
-  \includegraphics[width=0.3\paperwidth]{figures/dc_std}
+\paragraph{Uncertainty and Correlation Scale of the Satellite Attitude}
 
-  \caption{Doppler centroid frequency shift (DC) estimates (Hz; left) and their
-  standard uncertainty (Hz; right), given by the experimental standard deviation.}
+\begin{itemize}
+  \item Find documentation
+  \item Estimate total Doppler uncertainty (std from zero over land, all view angles, to get an idea) after correction (answer is total minus previous estimate (based on pos/vel)?)
+\end{itemize}
 
-  \label{fig:dc}
-\end{figure}
+\paragraph{Uncertainty and Correlation Scale of the Manual Attitude Fit}
 
-\paragraph{Uncertainty of the Estimates of Doppler Shifts caused by Mis-Pointing}
+\begin{itemize}
+  \item Estimate total Doppler uncertainty (std from zero over land, all view angles, to get an idea) after correction (answer is total minus previous estimate (based on pos/vel/att)?)
+\end{itemize}
+
+\paragraph{Uncertainty and Correlation Scale of the Orbital Fit}
+
+\begin{itemize}
+  \item Estimate total Doppler uncertainty (std from zero over land, all view angles, to get an idea) after correction (answer is total minus previous estimate (based on pos/vel/att/datt)?)
+\end{itemize}
+
+\paragraph{Uncertainty and Correlation Scale of the Antenna Pattern} 
+
+Equation E.3 from GUM?
+
+$z=f(w_1, w_2, ..., w_N)$
+
+$\displaystyle\sigma_z^2 = \sum_{i=1}^N (\frac{\partial f}{\partial w_i})^2\sigma_i^2 + 2\sum_{i=1}^{N-1}\sum_{j=i+1}^N \frac{\partial f}{\partial w_i}\frac{\partial f}{\partial w_j}\sigma_i\sigma_j\rho_{ij}$
+
+What about the Mean vs the Shape?
+
+
+
+\paragraph{Uncertainty and Correlation Scale of the Estimates of Doppler Shifts caused by Mis-Pointing}
 
 \begin{figure}
   \centering
@@ -392,17 +421,32 @@ the error bars represent the experimental standard deviation in each bin.
   \label{fig:antenna-pattern-with-errorbars}
 \end{figure}
 
-\paragraph{Uncertainty of the Antenna Pattern} 
 
-Equation E.3 from GUM?
+\paragraph{Uncertainty and Correlation Scale of the Doppler Centroid Frequency Shift}
 
-$z=f(w_1, w_2, ..., w_N)$
+The Doppler centroid frequency shift (DC) is usually estimated from the azimuth
+power spectrum of the SAR beam. For ASAR data published at
+\url{https://data.met.no/dataset/e19b9c36-a9dc-4e13-8827-c998b9045b54}, the
+estimation algorithm is based on \cite{bamler91}, but extended to correct the
+azimuth spectra for energy aliased from neighboring areas \cite{hansen26}. The
+same model is used to calculate the standard deviation of the DC estimate,
+which gives the standard uncertainty, $\sigma_{\rm dc}$, of $\varpi_{\rm dc}$.
+Figure~\ref{fig:dc} shows $\sigma_{\rm dc}$ and $\varpi_{\rm dc}$ of an Envisat
+ASAR acquisition over the Amazon rain forest on
+2010-02-19T14:02:27.240842+00:00.
 
-$\displaystyle\sigma_z^2 = \sum_{i=1}^N (\frac{\partial f}{\partial w_i})^2\sigma_i^2 + 2\sum_{i=1}^{N-1}\sum_{j=i+1}^N \frac{\partial f}{\partial w_i}\frac{\partial f}{\partial w_j}\sigma_i\sigma_j\rho_{ij}$
+\begin{figure}
+  \centering
+  \includegraphics[width=0.3\paperwidth]{figures/dc}
+  \includegraphics[width=0.3\paperwidth]{figures/dc_std}
 
-What about the Mean vs the Shape?
+  \caption{Doppler centroid frequency shift (DC) estimates (Hz; left) and their
+  standard uncertainty (Hz; right), given by the experimental standard deviation.}
 
-\paragraph{Uncertainty of the Geophysical Doppler Shift}
+  \label{fig:dc}
+\end{figure}
+
+\paragraph{Uncertainty and Correlation Scale of the Geophysical Doppler Shift}
 
 \begin{equation}
   \Delta\varpi^* = \Delta\varpi_{\rm lb} + \Delta\varpi,
