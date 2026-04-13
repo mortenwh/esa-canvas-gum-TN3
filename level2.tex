@@ -6,7 +6,19 @@
 
 \subsubsection{Uncertainty in Auxiliary Wind Directions used for SAR Wind Retrieval}
 
+\subsubsection{Uncertainty in auxiliary backscatter reference data}
+Backscatter reference datasets are used for soil moisture and wet snow detection, in slightly different implementations. Soil moisture hinges on two references, dry and wet, whereas wet snow detection uses reference images that should be representative for the dry snow winter case. For both reference types, time series are used to acquire good statistics (typically averages for several seasons) and outlier handling. There are several uncertainties that can enter and pose challenges.  1) Changes after avaraging due to man made changes, 2) inaccuracies in filtering out undesired data, e.g. wet snow occurring during mid winter etc. 
+
+In reality, when averaging over many >100 scenes, we expect that the uncertainties are low. Uncertainties can also be characterized by considering variance and trends over time.
+
+\subsubsection{Uncertainty in auxiliary masks}
+TBD
+
+
+
+
 \subsection{Uncertainties by the retrieval algorithm}
+
 \subsection{Representation uncertainties}
 
 
