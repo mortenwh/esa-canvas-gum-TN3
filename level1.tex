@@ -284,52 +284,68 @@ other level-1 sections. Wait for their completion by NORCE.}
 
 \subsubsection{Step 3: Evaluation of Uncertainties}
 
-\begin{table}[h]
+The Maturity of Uncertainty estimate is defined as
+\begin{enumerate}
+    \setcounter{enumi}{-1}
+  \item Effect identified, no quantification;
+  \item Estimates only;
+  \item Some analysis performed to evaluate; and
+  \item Rigorous analysis performed.
+\end{enumerate}
+
+\noindent The Maturity of Correlation Scale estimate is defined as
+\begin{enumerate}
+    \setcounter{enumi}{-1}
+  \item Not done;
+  \item Estimated;
+  \item Scale based on analysis, unsure about correlation shape; and
+  \item Strong evidence for correlation scale and shape.
+\end{enumerate}
+
+\begin{table}[ht]
   \footnotesize
   \centering
 
   \caption{Uncertainty effects table for the geophysical Doppler shift,
   $\varpi_{\rm g}$.}
 
-  \begin{tabular}{|l|c|c|c|c|c|}
+  \begin{tabular}{|l|c|c|c|c|c|c|}
     \hline
     % \multicolumn{3}{|c|}{\textbf{EFFECTS TABLE}} \\ \hline
-    \textbf{Name of effect} & Attitude & Position & Manual & Orbital & Antenna \\
-    & & and & Attitude & Fit & Pattern \\
-    & & Velocity & Fit & & Fit \\ \hline
-    \textbf{Effect} &  &  &  &  &  \\
-    \textbf{identifier} & 1 & 2 & 3 & 4 & 5 \\ \hline
-    \textbf{Affected term} &  &  &  &  &  \\
-    \textbf{term in} &  &  &  &  &  \\
-    \textbf{measurement} &  &  &  &  &  \\
-    \textbf{function} & $\varpi_p$ & $\varpi_p$  & $\varpi_p$  & $\varpi_p$  & $\varpi_p$ \\ \hline
-    \textbf{Maturity of} &  &  &  &  & \\
-    \textbf{analysis} & High & High & Moderate & Moderate & Moderate \\ \hline
-    Maturity of &  & &  &  &   \\
-    uncertainty &  & &  &  &   \\
-    estimate & Moderate & Moderate & Moderate & Moderate & Moderate \\ \hline
-    Maturity of &  & &  &  &   \\
-    correlation scale &  & &  &  &   \\
-    estimate &  & &  &  &   \\ \hline
-    For low maturity, &  & &  &  &   \\
-    is effect negligible? &  & &  &  &   \\ \hline
-    \textbf{Correlation type} &  & &  &  &  \\
-    \textbf{and form} &  & &  &  &   \\ \hline
-    Within dimension 1 &  & &  &  &  \\ \hline
-    Within dimension 2 &  & &  &  &  \\ \hline
-    Within dimension 3 &  & &  &  &  \\ \hline
-    Within dimension 4 &  & &  &  &  \\ \hline
-    \textbf{Correlation scale} &  & &  &  &  \\ \hline
-    Within dimension 1 &  & &  &  &  \\ \hline
-    Within dimension 2 &  & &  &  &  \\ \hline
-    Within dimension 3 &  & &  &  &  \\ \hline
-    Within dimension 4 &  & &  &  &  \\ \hline
-    \textbf{Uncertainty} &  & &  &  &  \\ \hline
-    PDF shape &  & &  &  &  \\ \hline
-    Units &  & &  &  &  \\ \hline
-    Magnitude &  & & &  &  \\ \hline
-    \textbf{Sensitivity} &  & &  &  &  \\
-    \textbf{coefficient} &  & &  &  &  \\ \hline
+    \textbf{Name of effect} & Attitude & Position & Manual & Orbital & Antenna & Total\\
+    & & and & Attitude & Fit & Pattern & Correction\\
+    & & Velocity & Fit & & Fit & ($\varpi_p$) \\ \hline
+    \textbf{Effect} &  &  &  &  & & \\
+    \textbf{identifier} & 1 & 2 & 3 & 4 & 5 & 6 \\ \hline
+    \textbf{Affected term} &  &  &  &  & & \\
+    \textbf{term in} &  &  &  &  &  &\\
+    \textbf{measurement} &  &  &  &  &  &\\
+    \textbf{function} & $\varpi_p$ & $\varpi_p$  & $\varpi_p$  & $\varpi_p$  & $\varpi_p$ & $\varpi_p$ \\ \hline
+    \textbf{Maturity of} &  &  &  &  & & \\
+    \textbf{analysis} & 0 & 0 & 0 & 0 & 0 & 2 \\ \hline
+    Maturity of &  & &  &  & &  \\
+    uncertainty &  & &  &  & &  \\
+    estimate & 0& 0& 0& 0&0 & 3 \\ \hline
+    Maturity of &  & &  &  & &  \\
+    correlation scale &  & &  &  & &  \\
+    estimate &  0& 0&  0&  0& 0& 0 \\ \hline
+    For low maturity, &  & &  &  & &  \\
+    is effect negligible? &  Yes& Yes&  Yes&  Yes&  Yes& No\\ \hline
+    \textbf{Correlation type} &  & &  &  &  &\\
+    \textbf{and form} &  & &  &  &   &\\ \hline
+    Range & - & - & - & - & - & Random \\ \hline
+    Azimuth & - & - & - & - & - & Random \\ \hline
+    Over time & - & - & - & - & - & - \\ \hline
+    \textbf{Correlation scale} &  & & &  &  &  \\ \hline
+    Range     & - & - & - & - & - & None\\ \hline
+    Azimuth   & - & - & - & - & - & None\\ \hline
+    Over time & - & - & - & - & - & - \\ \hline
+    \textbf{Uncertainty} &  & &  &  &&  \\ \hline
+    PDF shape & - & - & - & - & - & Gaussian \\ \hline
+    Units & - & -&  -&  -&  -& Hz \\ \hline
+    Magnitude & - & -& -&  -&  -& 6 \\ \hline
+    \textbf{Sensitivity} & & & &  &  &  \\
+    \textbf{coefficient} & & & &  &  &  \\ \hline
   \end{tabular}
 
   \label{tab:doppler_effects_table}
