@@ -1,18 +1,14 @@
-\section{Uncertainty estimation for SAR Remote Sensing} \label{sec:level1}
+\section{Uncertainty Estimation for SAR Level-1 Products} \label{sec:level1}
 
 \begin{itemize}
   \item Generate documentation about the application of GUM principles to SAR.
 \end{itemize}
 
-\lipsum[1]
-
 % \section{Applicability of Metrology Standards to SAR Cal/Val procedures}
 
-\subsection{Uncertainty by Instrumental effects} %signal-to-noise
+\subsection{Uncertainty by Instrumental effects}
 
 \subsection{Uncertainty in Radiometric Calibration}
-
-\lipsum[2-3]
 
 \subsection{Uncertainty in Geometric Calibration}
 
@@ -282,6 +278,9 @@ other level-1 sections. Wait for their completion by NORCE.}
   \label{fig:dc_uncertainty_trace}
 \end{figure*}
 
+\clearpage
+%\FloatBarrier
+
 \subsubsection{Step 3: Evaluation of Uncertainties}
 
 Table~\ref{tab:doppler_effects_table} shows the sources of uncertainty (or
@@ -292,28 +291,8 @@ variance of $\varpi_{\rm g}$ over land, the Correlation Type and Form, the
 Correlation Scale, and the Uncertainty are only calculated for the Total
 Correction, $\varpi_{\rm p}$.
 
-Moreover, the Maturity of Uncertainty estimate given in
-Table~\ref{tab:doppler_effects_table} is defined as
-\begin{enumerate}
-    \setcounter{enumi}{-1}
-  \item Effect identified, no quantification;
-  \item Estimates only;
-  \item Some analysis performed to evaluate; and
-  \item Rigorous analysis performed.
-\end{enumerate}
-
-\noindent Likewise, the Maturity of Correlation Scale estimate given in
-Table~\ref{tab:doppler_effects_table} is defined as
-\begin{enumerate}
-    \setcounter{enumi}{-1}
-  \item Not done;
-  \item Estimated;
-  \item Scale based on analysis, unsure about correlation shape; and
-  \item Strong evidence for correlation scale and shape.
-\end{enumerate}
-
 \begin{table}[ht]
-  \footnotesize
+  \scriptsize
   \centering
 
   \caption{Uncertainty effects table for the geophysical Doppler shift,
@@ -351,9 +330,9 @@ Table~\ref{tab:doppler_effects_table} is defined as
     Azimuth   & - & - & - & - & - & None\\ \hline
     Over time & - & - & - & - & - & - \\ \hline
     \textbf{Uncertainty} &  & &  &  &&  \\ \hline
-    PDF shape & - & - & - & - & - & Gaussian \\ \hline
+    PDF shape & - & - & - & - & - & Gaussian/t \\ \hline
     Units & - & -&  -&  -&  -& Hz \\ \hline
-    Magnitude & - & -& -&  -&  -& 6 \\ \hline
+    Magnitude & - & -& -&  -&  -& 4.7-6.2 \\ \hline
     \textbf{Sensitivity} & & & &  &  &  \\
     \textbf{coefficient} & 1 & 1 & 1 & 1 & 1 & 1 \\ \hline
   \end{tabular}
@@ -361,101 +340,54 @@ Table~\ref{tab:doppler_effects_table} is defined as
   \label{tab:doppler_effects_table}
 \end{table}
 
+\noindent The Maturity of Uncertainty estimate given in
+Table~\ref{tab:doppler_effects_table} is defined as
+\begin{enumerate}
+    \setcounter{enumi}{-1}
+  \item Effect identified, no quantification;
+  \item Estimates only;
+  \item Some analysis performed to evaluate; and
+  \item Rigorous analysis performed.
+\end{enumerate}
+
+\noindent Likewise, the Maturity of Correlation Scale estimate given in
+Table~\ref{tab:doppler_effects_table} is defined as
+\begin{enumerate}
+    \setcounter{enumi}{-1}
+  \item Not done;
+  \item Estimated;
+  \item Scale based on analysis, unsure about correlation shape; and
+  \item Strong evidence for correlation scale and shape.
+\end{enumerate}
+
+\clearpage
+%\FloatBarrier
+
 \subsubsection{Step 4: Data Product and Uncertainties}
 
 % USE PDF PLOTS
+Once the geophysical Doppler shift, $\varpi_{\rm g}$, i.e., the measurand, has
+been calculated, its uncertainty can be calculated by considering its variance
+over land areas with uniform backscatter, such as the Amazon region. Since the
+complete analysis is performed by using land cover data, there is no need to do
+a complete error tracing. Figure~\ref{fig:PDFs} shows the \ac{PDF} of each of
+the five subswaths in the \ac{WS} mode Envisat \ac{ASAR} data.
 
-
-
-\paragraph{Uncertainty and Correlation Scale of the Geophysical Doppler Shift}
-
-{\bf By considering the variance over land.}
-
-See Figure~\ref{fig:fg_plot}. The mean is here $-0.10$~Hz, with standard deviation $6.9$~Hz.
+As shown, the uncertainty is between 4.7 and 6.2 Hz depending on the subswath.
+The larger uncertainties of subswaths 1, 3, and 5 are expected from increased
+aliasing due to the low azimuth sampling rate (about 1700 Hz) in those
+subswaths, compared to subswaths 2 and 4 (about 2100 Hz) \cite{hansen26}.
 
 \begin{figure}
   \centering
-  \includegraphics[width=0.6\paperwidth]{figures/fg_plot}
+  \includegraphics[width=0.6\paperwidth]{figures/pdf_land_doppler_subswaths_20070101_20111231.png}
 
-  \caption{Remaining bias after subtraction of $\varpi_{\rm geo}$ and $\varpi_{\rm e}$.}
+  \caption{\acfp{PDF} of geopysical Doppler shift retrievals over the Amazon
+  region for the five subswaths in Envisat \ac{ASAR} \ac{WS} data.}
 
-  \label{fig:fg-plot}
+  \label{fig:PDFs}
 \end{figure}
 
-
-
-
-%%% Probably the commented text is not needed %%%
-%\paragraph{Uncertainty and Correlation Scale of the Estimates of Doppler Shifts caused by Mis-Pointing}
-%
-%\begin{figure}
-%  \centering
-%  \includegraphics[width=0.3\paperwidth]{figures/range_bias_LUT_2012-01-27_2012-02-16_VV.dcgeo_residual}
-%  \includegraphics[width=0.3\paperwidth]{figures/range_bias_LUT_2012-01-27_2012-02-16_VV.oacorr_residual}
-%  \includegraphics[width=0.3\paperwidth]{figures/orbital_residual_2012-01-27_2012-02-16_VV}
-%  \includegraphics[width=0.3\paperwidth]{figures/antenna_mispointing_2012-01-27_2012-02-16_VV}
-%
-%  \caption{Distributions of global Doppler centroid anomaly (DCA; VV
-%  polarization) measurements over land between the 27th January and 16th
-%  February 2012 following (a) subtraction of the Doppler shift resulting from a-priori
-%  orbit and attitude estimates given in auxiliary orbit and attitude data files
-%  from DC, and (b) after attitude correction by manual fit. Panel (c) shows the
-%  orbital variation of the residual geometric Doppler frequency shift,
-%  $\varpi^{\rm r}_1(\gamma_h)$ (dots), and the interpolated signal,
-%  $\varpi^{\rm r}_2(\gamma_h)$ (solid line), and panel (d) shows the DCA
-%  distribution attributed to electronic mis-pointing, $\varpi_e$, and random
-%  noise, $\Delta\varpi$, after also correcting for the orbital variation.}
-%
-%  \label{fig:mispointing-corr}
-%\end{figure}
-%
-%Figure~\ref{fig:mispointing-corr} shows the DC measurements over land after
-%step-wise subtraction of (a) the Doppler shift resulting from a-priori orbit
-%and attitude estimates given in auxiliary orbit and attitude data files and (b)
-%after attitude correction obtained by manual fit.
-%Figure~\ref{fig:mispointing-corr}(c) shows the remaining residual as a function
-%of the satellite hour angle, i.e., its orbit, and
-%Figure~\ref{fig:mispointing-corr}(d) shows the DC measurements, or Doppler
-%Centroid Anomaly (DCA), after subtraction of the orbital bias. The uncertainty
-%of the corrections can be described by the variance around the mean DCA in bins
-%of the sensor view angle, as shown in
-%Figure~\ref{fig:antenna-pattern-with-errorbars} for the third sub-swath, where
-%the error bars represent the experimental standard deviation in each bin.
-%
-%\begin{figure}
-%  \centering
-%  \includegraphics[width=0.6\paperwidth]{figures/antenna-pattern-with-errorbars}
-%
-%  \caption{Antenna pattern DCA bias with error bars for the third sub-swath of
-%  the data shown in Figure~\ref{fig:mispointing-corr}d.}
-%
-%  \label{fig:antenna-pattern-with-errorbars}
-%\end{figure}
-%
-%
-% BUT THIS PART SHOULD BE DESCRIBED AS WELL, PERHAPS IN THE TABLE..
-%\paragraph{Uncertainty and Correlation Scale of the Doppler Centroid Frequency Shift}
-%
-%The Doppler centroid frequency shift (DC) is usually estimated from the azimuth
-%power spectrum of the SAR beam. For ASAR data published at
-%\url{https://data.met.no/dataset/e19b9c36-a9dc-4e13-8827-c998b9045b54}, the
-%estimation algorithm is based on \cite{bamler91}, but extended to correct the
-%azimuth spectra for energy aliased from neighboring areas \cite{hansen26}. The
-%same model is used to calculate the standard deviation of the DC estimate,
-%which gives the standard uncertainty, $\sigma_{\rm dc}$, of $\varpi_{\rm dc}$.
-%Figure~\ref{fig:dc} shows $\sigma_{\rm dc}$ and $\varpi_{\rm dc}$ of an Envisat
-%ASAR acquisition over the Amazon rain forest on
-%2010-02-19T14:02:27.240842+00:00.
-%
-%\begin{figure}
-%  \centering
-%  \includegraphics[width=0.3\paperwidth]{figures/dc}
-%  \includegraphics[width=0.3\paperwidth]{figures/dc_std}
-%
-%  \caption{Doppler centroid frequency shift (DC) estimates (Hz; left) and their
-%  standard uncertainty (Hz; right), given by the experimental standard deviation.}
-%
-%  \label{fig:dc}
-%\end{figure}
-
 \subsubsection{Step 5: Documentation}
+
+
