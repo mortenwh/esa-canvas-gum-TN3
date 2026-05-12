@@ -1,24 +1,577 @@
 \section{Uncertainty Estimation for SAR Level-2 Products} \label{sec:level2}
 
-\subsection{Uncertainty in Auxiliary Data}
 
-\subsubsection{E.g., Uncertainty in Wave Spectrum used to Estimate Azimuth Cut-Off}
+This section expands the treatment of SAR-based Level-2 land products.  
 
-\subsubsection{Uncertainty in Auxiliary Wind Directions used for SAR Wind Retrieval}
+\subsubsection{Surface soil moisture}
 
-\subsubsection{Uncertainty in auxiliary backscatter reference data}
-Backscatter reference datasets are used for soil moisture and wet snow detection, in slightly different implementations. Soil moisture hinges on two references, dry and wet, whereas wet snow detection uses reference images that should be representative for the dry snow winter case. For both reference types, time series are used to acquire good statistics (typically averages for several seasons) and outlier handling. There are several uncertainties that can enter and pose challenges.  1) Changes after avaraging due to man made changes, 2) inaccuracies in filtering out undesired data, e.g. wet snow occurring during mid winter etc. 
+This section sets up a framework for uncertainty analysis of Level-2 soil moisture
+products derived from \ac{SAR} observations in an ESA/Copernicus context. The
+framework is intended for a retrieved surface soil moisture quantity reported
+per acquisition time and grid cell, with uncertainty information that remains
+traceable to the calibrated radar observation, the inversion model, ancillary
+data and the post-processing chain. The structure is consistent with established
+\ac{SAR} soil-moisture retrieval literature, where calibration, incidence
+angle, vegetation, roughness and representativeness are recurring contributors
+to the uncertainty budget \cite{wagner07,zribi11,piles21,massart24}. In a
+Copernicus context, this generic framework is also directly relevant to the
+CLMS Surface Soil Moisture 1~km product and to downstream soil-water products
+that ingest SAR-based near-surface moisture information \cite{clms_ssm1km,clms_swi}.
 
-In reality, when averaging over many >100 scenes, we expect that the uncertainties are low. Uncertainties can also be characterized by considering variance and trends over time.
+\paragraph{Step 1: Definition of measurand and measurement model}
 
-\subsubsection{Uncertainty in auxiliary masks}
-TBD
+The measurand is defined as the Level-2 surface soil moisture,
+$\theta_{\rm sm}$, expressed in volumetric units (m$^3$/m$^3$), representative of
+the sensed near-surface soil layer and of the spatial support of the product
+cell. For a \ac{SAR}-based product, a generic measurement model may be written
+as
+\begin{equation}
+  \theta_{\rm sm} = R(\sigma^0_{\rm cal}, \vartheta, x_{\rm aux}, p_{\rm ret}, c_{\rm pp}) + \Delta\theta_{\rm sm},
+  \label{eq:sm_measurement_model}
+\end{equation}
+where $\sigma^0_{\rm cal}$ denotes the calibrated and geolocated radar
+backscatter coefficient, $\vartheta$ is the local incidence angle and viewing
+geometry, $x_{\rm aux}$ is the vector of ancillary inputs, $p_{\rm ret}$ is the
+set of retrieval parameters and assumptions, $c_{\rm pp}$ denotes processing,
+resampling and screening choices, and $\Delta\theta_{\rm sm}$ is the residual
+uncertainty.
+
+\noindent The ancillary vector $x_{\rm aux}$ may include land-cover class,
+vegetation descriptors, surface roughness descriptors where available, digital
+elevation information, soil texture and porosity, freeze/thaw state,
+open-water fraction and masks required by the product specification. The
+parameter set $p_{\rm ret}$ contains the coefficients, scattering-model choices
+and empirical or semi-empirical assumptions used to invert the \ac{SAR}
+observation into soil moisture. The term $c_{\rm pp}$ captures speckle
+filtering, temporal compositing, spatial averaging, quality screening,
+resampling and scaling where applicable.
+
+\noindent For uncertainty propagation, it is useful to decompose the retrieval into
+observation, ancillary and model terms as
+\begin{equation}
+  \theta_{\rm sm} = R\bigl(O(\sigma^0_{\rm raw}, g, n), A(z, m), p_{\rm ret}, c_{\rm pp}\bigr)
+  + \Delta\theta_{\rm sm},
+  \label{eq:sm_decomposition}
+\end{equation}
+where $O(\cdot)$ represents the observation operator including radiometric
+calibration, terrain correction and geolocation, $A(\cdot)$ represents the
+generation of ancillary inputs from external data $z$ and masks $m$, $g$
+denotes geometric information and $n$ collects thermal noise, speckle and other
+stochastic measurement errors.
+
+\noindent Under a first-order GUM approximation, the combined variance of the
+retrieved soil moisture may be written as
+\begin{equation}
+  u^2(\theta_{\rm sm}) \approx \sum_i \left(\frac{\partial \theta_{\rm sm}}{\partial x_i}\right)^2 u^2(x_i)
+  + 2\sum_{i<j} \frac{\partial \theta_{\rm sm}}{\partial x_i}\frac{\partial \theta_{\rm sm}}{\partial x_j}\,\mathrm{cov}(x_i,x_j),
+  \label{eq:sm_gum_propagation}
+\end{equation}
+where the input vector $x_i$ comprises, as appropriate, calibrated backscatter,
+incidence angle, ancillary variables, retrieval parameters and post-processing
+terms. This form is useful when the retrieval can be linearized locally around
+the operating point and when correlation terms are available or can be
+approximated.
+
+\noindent For \mbox{L-band} \ac{SAR} systems such as NISAR and ROSE-L, the same
+general framework applies, but additional attention is needed for increased
+penetration into vegetation and the upper soil layer, stronger sensitivity to
+forest and shrub canopies than at \mbox{C-band}, and potentially different
+roughness and volume-scattering regimes. In practice, this means that the error
+budget may require explicit terms for vegetation attenuation and structure,
+subsurface scattering contributions, and transferability of retrieval
+coefficients between \mbox{C-band} and \mbox{L-band} implementations. These are
+well aligned with official mission descriptions emphasizing \mbox{L-band}'s
+stronger vegetation penetration and land-surface sensitivity.
+
+\paragraph{Step 2: Traceability diagram}
+
+The corresponding uncertainty traceability can be organised as a tree rooted in
+$\theta_{\rm sm}$. At the first level, the total uncertainty is separated into
+contributions from the observation, the ancillary inputs, the retrieval model,
+and the post-processing chain. A practical uncertainty tree for an ESA/Copernicus
+Level-2 \ac{SAR} soil moisture product should contain at least the following
+branches:
+\begin{enumerate}
+  \item \textbf{Observation branch:} radiometric calibration, thermal noise,
+  speckle, geolocation, local incidence angle determination, terrain correction,
+  shadow/layover handling and border-noise or artefact screening.
+  \item \textbf{Ancillary-data branch:} land cover, vegetation descriptors,
+  topographic information, soil texture, porosity, freeze/thaw and snow masks,
+  and open-water fraction.
+  \item \textbf{Retrieval-model branch:} scattering-model approximation,
+  parameter fitting, correction for vegetation and roughness, transfer
+  functions, possible saturation behaviour at very dry or very wet conditions,
+  and model-form uncertainty.
+  \item \textbf{Post-processing branch:} speckle filtering, temporal
+  compositing, spatial resampling, gap filling, scaling to a reference data set,
+  and quality filtering and flagging.
+  \item \textbf{Representativeness branch:} mismatch between the sensor support,
+  the product grid cell, the depth represented by the retrieval, and the target
+  application variable used in validation or downstream data assimilation.
+\end{enumerate}
+
+\noindent The traceability diagram should support both pixel-level uncertainty and
+correlation information. In particular, the analysis should explicitly describe
+which effects are expected to be correlated in space, time and surface state.
+For Copernicus products this is important because calibration, ancillary maps,
+retrieval coefficients and topographic corrections can generate structured
+uncertainties rather than purely random noise. Figure~\ref{fig:sm_uncertainty_trace}
+shows a compact uncertainty tree diagram for the Level-2 \ac{SAR} soil moisture
+product.
+
+\begingroup
+\hfuzz=2pt
+\begin{figure*}[t]
+  \centering
+  \makebox[\textwidth][c]{\resizebox{0.92\textwidth}{!}{%
+  \begin{tikzpicture}[node distance=8mm and 7mm, every node/.style={font=\footnotesize}]
+    \node[draw,
+          text width = 4.6cm,
+          align = center,
+          trapezium,
+          trapezium left angle = 80,
+          trapezium right angle = 100,
+          trapezium stretches,
+          minimum height=9mm] (sm) {$\theta_{\rm sm} = R(\sigma^0_{\rm cal}, \vartheta, x_{\rm aux}, p_{\rm ret}, c_{\rm pp}) + \Delta\theta_{\rm sm}$};
+
+    \node[draw, above left = 10mm and 10mm of sm, text width = 3.5cm, align = center, minimum height=9mm] (obs)
+      {$\sigma^0_{\rm cal} = O(\sigma^0_{\rm raw}, g, n) + \Delta\sigma^0$};
+    \node[draw, left = 7mm of sm, text width = 9mm, align = center, minimum height=9mm] (dsmdobs)
+      {$\frac{\partial\theta_{\rm sm}}{\partial\sigma^0_{\rm cal}}$};
+    \node[draw, above = 7mm of obs, text width = 9mm, align = center, minimum height=9mm] (uobs) {$u(O)$};
+    \node[left = 7mm of uobs, text width = 2.8cm, align = center] (obsleaf) {Calibration\\Thermal noise\\Speckle};
+
+    \node[draw, above = 8mm of sm, text width = 9mm, align = center, minimum height=9mm] (dsmdgeom)
+      {$\frac{\partial\theta_{\rm sm}}{\partial\vartheta}$};
+    \node[draw, above = 8mm of dsmdgeom, text width = 3.1cm, align = center, minimum height=9mm] (geom)
+      {$\vartheta = G(g, h_{\rm DEM}) + \Delta\vartheta$};
+    \node[draw, above = 7mm of geom, text width = 9mm, align = center, minimum height=9mm] (ugeom) {$u(G)$};
+    \node[right = 7mm of ugeom, text width = 2.7cm, align = center] (geomleaf) {Geolocation\\DEM uncertainty\\Topography};
+
+    \node[draw, above right = 10mm and 10mm of sm, text width = 3.5cm, align = center, minimum height=9mm] (anc)
+      {$x_{\rm aux} = A(z,m) + \Delta x_{\rm aux}$};
+    \node[draw, right = 7mm of sm, text width = 9mm, align = center, minimum height=9mm] (dsmdanc)
+      {$\frac{\partial\theta_{\rm sm}}{\partial x_{\rm aux}}$};
+    \node[draw, above = 7mm of anc, text width = 9mm, align = center, minimum height=9mm] (uanc) {$u(A)$};
+    \node[right = 7mm of uanc, text width = 2.8cm, align = center] (ancleaf) {Vegetation\\Land cover\\Freeze/thaw\\Soil texture};
+
+    \node[draw, below left = 10mm and 10mm of sm, text width = 3.4cm, align = center, minimum height=9mm] (model)
+      {$p_{\rm ret} = M(r_{\rm surf}, v_{\rm veg}) + \Delta p_{\rm ret}$};
+    \node[draw, below = 7mm of dsmdobs, text width = 9mm, align = center, minimum height=9mm] (dsmdmodel)
+      {$\frac{\partial\theta_{\rm sm}}{\partial p_{\rm ret}}$};
+    \node[draw, below = 7mm of model, text width = 9mm, align = center, minimum height=9mm] (umodel) {$u(M)$};
+    \node[left = 7mm of umodel, text width = 2.9cm, align = center] (modelleaf) {Roughness\\Vegetation correction\\Model-form uncertainty};
+
+    \node[draw, below right = 10mm and 10mm of sm, text width = 3.3cm, align = center, minimum height=9mm] (pp)
+      {$c_{\rm pp} = P(f_{\rm sp}, q, s) + \Delta c_{\rm pp}$};
+    \node[draw, below = 7mm of dsmdanc, text width = 9mm, align = center, minimum height=9mm] (dsmdpp)
+      {$\frac{\partial\theta_{\rm sm}}{\partial c_{\rm pp}}$};
+    \node[draw, below = 7mm of pp, text width = 9mm, align = center, minimum height=9mm] (upp) {$u(P)$};
+    \node[right = 7mm of upp, text width = 2.8cm, align = center] (ppleaf) {Filtering\\Resampling\\Quality screening\\Scaling};
+
+    \draw[-latex] (obsleaf) edge (uobs) (uobs) edge (obs) (obs) edge (dsmdobs) (dsmdobs) edge (sm)
+        (geomleaf) edge (ugeom) (ugeom) edge (geom) (geom) edge (dsmdgeom) (dsmdgeom) edge (sm)
+        (ancleaf) edge (uanc) (uanc) edge (anc) (anc) edge (dsmdanc) (dsmdanc) edge (sm)
+        (modelleaf) edge (umodel) (umodel) edge (model) (model) edge (dsmdmodel) (dsmdmodel) edge (sm)
+        (ppleaf) edge (upp) (upp) edge (pp) (pp) edge (dsmdpp) (dsmdpp) edge (sm);
+  \end{tikzpicture}%
+  }}
+  \caption{Uncertainty tree diagram for Level-2 \ac{SAR} soil moisture, $\theta_{\rm sm}$.}
+  \label{fig:sm_uncertainty_trace}
+\end{figure*}
+\endgroup
+
+\paragraph{Step 3: Evaluation of uncertainties}
+
+Table~\ref{tab:sm_effects_table} provides a framework for documenting the main
+uncertainty effects for a Level-2 \ac{SAR} soil moisture product. The table is intended to be completed during the product-specific error-budget analysis. The column headers denote effect categories rather than individual effects, and the rows labelled "Maturity" are placeholders to be populated during the product-specific assessment; they should not be interpreted as fixed maturity scores.
+
+\begin{table}[ht]
+  \scriptsize
+  \centering
+
+  \caption{Framework uncertainty effects table for Level-2 \ac{SAR} soil moisture,
+  $\theta_{\rm sm}$.}
+
+  \begin{tabular}{|l|c|c|c|c|c|c|}
+    \hline
+    \textbf{Effect category} & Observation & Geometry & Vegetation & Surface & Ancillary / & Total\\
+    & noise/cal. & /topography & correction & model & post-proc. & product\\ \hline
+    \textbf{Effect} &  &  &  &  & & \\
+    \textbf{identifier} & 1 & 2 & 3 & 4 & 5 & 6 \\ \hline
+    \textbf{Affected term} &  &  &  &  & & \\
+    \textbf{term in} &  &  &  &  &  &\\
+    \textbf{measurement} &  &  &  &  &  &\\
+    \textbf{function} & $\sigma^0_{\rm cal}$ & $\vartheta$ & $x_{\rm veg}$ & $p_{\rm ret}$ & $x_{\rm aux}, c_{\rm pp}, R_{\rm sm}$ & $\theta_{\rm sm}$ \\ \hline
+    \textbf{Maturity of} &  &  &  &  & & \\
+    \textbf{analysis} & TBD & TBD & TBD & TBD & TBD & TBD \\ \hline
+    Maturity of &  & &  &  & &  \\
+    uncertainty &  & &  &  & &  \\
+    estimate & TBD& TBD& TBD& TBD&TBD & TBD \\ \hline
+    Maturity of &  & &  &  & &  \\
+    correlation scale &  & &  &  & &  \\
+    estimate & TBD& TBD& TBD& TBD& TBD& TBD \\ \hline
+    For low maturity, &  & &  &  & &  \\
+    is effect negligible? & No & No & No & No & No & No\\ \hline
+    \textbf{Correlation type} &  & &  &  &  &\\
+    \textbf{and form} &  & &  &  &   &\\ \hline
+    Range/cross-track & TBD & TBD & TBD & TBD & TBD & TBD \\ \hline
+    Azimuth/along-track & TBD & TBD & TBD & TBD & TBD & TBD \\ \hline
+    Over time & TBD & TBD & TBD & TBD & TBD & TBD \\ \hline
+    Between land-cover classes & TBD & TBD & TBD & TBD & TBD & TBD \\ \hline
+    \textbf{Correlation scale} &  & & &  &  &  \\ \hline
+    Space & TBD & TBD & TBD & TBD & TBD & TBD\\ \hline
+    Time & TBD & TBD & TBD & TBD & TBD & TBD\\ \hline
+    Conditions & TBD & TBD & TBD & TBD & TBD & TBD \\ \hline
+    \textbf{Uncertainty} &  & &  &  &&  \\ \hline
+    PDF shape & TBD & TBD & TBD & TBD & TBD & TBD \\ \hline
+    Units & input units & radians/deg & input units & input units & input units & m$^3$/m$^3$ \\ \hline
+    Magnitude & TBD & TBD & TBD & TBD & TBD & TBD \\ \hline
+    \textbf{Sensitivity} & & & &  &  &  \\
+    \textbf{coefficient} & $\frac{\partial\theta_{\rm sm}}{\partial \sigma^0_{\rm cal}}$ & $\frac{\partial\theta_{\rm sm}}{\partial \vartheta}$ & $\frac{\partial\theta_{\rm sm}}{\partial x_{\rm veg}}$ & $\frac{\partial\theta_{\rm sm}}{\partial p_{\rm ret}}$ & branch-wise / combined & 1 \\ \hline
+  \end{tabular}
+
+  \label{tab:sm_effects_table}
+\end{table}
+
+\noindent In a product-specific implementation, the evaluation should distinguish
+between Type-A components estimated statistically from repeat observations or
+matchups, and Type-B components derived from calibration knowledge, model
+assumptions, ancillary-data specifications and expert judgement. The total
+uncertainty reported with the Level-2 product should state clearly whether it is
+an estimate of retrieval uncertainty, representativeness uncertainty, or a
+combined quantity.
+
+\noindent In particular, a surface-soil-moisture product should not
+automatically receive low maturity scores in every branch: observation
+calibration and parts of the retrieval model may be comparatively mature,
+whereas correlation-scale estimates, representativeness terms and some
+ancillary or post-processing effects may still have substantially lower
+maturity.
+
+\noindent For ESA/Copernicus delivery, the final analysis should also document:
+\begin{enumerate}
+  \item the product definition, including sensing depth, spatial support and
+  masking rules;
+  \item the list of uncertainty components that are included and excluded;
+  \item the propagation method, whether analytical, ensemble-based or Monte
+  Carlo;
+  \item the treatment of spatial and temporal correlations; and
+  \item the validation strategy against in situ networks and reference products.
+\end{enumerate}
+
+\subsubsection{Surface Wet Snow}
+
+This section applies the same general methodology to a Level-2 Surface Wet Snow
+product derived from \ac{SAR}. In contrast to soil moisture, the measurand is
+not a continuous geophysical variable but a categorical class assigned to each
+pixel or grid cell. The uncertainty analysis must therefore address both the
+quality of the underlying radar evidence and the probability of classification
+errors between the classes \texttt{WET}, \texttt{NO-WET} and \texttt{MASK}.
+
+\paragraph{Step 1: Definition of measurand and measurement model}
+
+The measurand is defined as the surface wet-snow state, $S_{\rm ws}$,
+classified into the mutually exclusive categories
+\begin{equation}
+  S_{\rm ws} \in \{\mathrm{WET},\, \mathrm{NO\mbox{-}WET},\, \mathrm{MASK}\}.
+  \label{eq:wetsnow_classes}
+\end{equation}
+A generic classification model can be written as
+\begin{equation}
+  S_{\rm ws} = C(\sigma^0_{\rm cal}, \Delta\sigma^0, \vartheta, x_{\rm aux}, t_{\rm ref}, q) + \Delta S_{\rm ws},
+  \label{eq:wetsnow_measurement_model}
+\end{equation}
+where $\sigma^0_{\rm cal}$ is the calibrated and geolocated \ac{SAR}
+backscatter, $\Delta\sigma^0$ denotes the change metric relative to a dry-snow
+or reference state where such a method is used, $\vartheta$ is the local
+incidence angle and geometry, $x_{\rm aux}$ collects masks and ancillary data,
+$t_{\rm ref}$ denotes reference-period information, $q$ is the decision logic
+or threshold set, and $\Delta S_{\rm ws}$ represents residual classification
+uncertainty. This formulation is consistent with the classical multitemporal
+SAR wet-snow change-detection approach and with later Sentinel-1-based
+extensions that combine backscatter change with auxiliary information and
+terrain constraints \cite{nagler00,tsai19}.
+
+\noindent In this case, the uncertainty analysis should not rely only on standard
+error propagation for a continuous variable. Instead, it should explicitly
+address probabilities of false wet detection, missed wet snow, and erroneous
+masking. The natural output quantities are therefore class probabilities,
+confusion-matrix elements, or confidence scores associated with each class.
+
+\noindent A useful intermediate quantity is a continuous decision variable,
+$D_{\rm ws}$, for example based on a backscatter change metric and ancillary
+screening:
+\begin{equation}
+  D_{\rm ws} = F(\sigma^0_{\rm cal}, \Delta\sigma^0, \vartheta, x_{\rm aux}, t_{\rm ref}),
+  \label{eq:wetsnow_decision_variable}
+\end{equation}
+with the final class assignment obtained from thresholding and masking logic,
+\begin{equation}
+  S_{\rm ws} = C(D_{\rm ws}, q, m),
+  \label{eq:wetsnow_classification_rule}
+\end{equation}
+where $q$ denotes thresholds or class boundaries and $m$ denotes the relevant
+mask set. For this product, uncertainty is therefore better characterized
+through class-transition probabilities such as $P(\mathrm{WET}\!\mid\!\mathrm{NO\mbox{-}WET})$,
+$P(\mathrm{NO\mbox{-}WET}\!\mid\!\mathrm{WET})$, and $P(\mathrm{MASK}\!\mid\!\cdot)$ than through a
+single variance alone.
 
 
+Figure~\ref{fig:wetsnow_sigmoid_concept} illustrates a more concrete
+interpretation of these transition probabilities for the common wet-snow
+change-detection case in which the decision variable is based on the
+backscatter difference relative to a dry-snow reference. The horizontal axis is
+therefore written as $\Delta\sigma^0$ in dB. A nominal wet/no-wet threshold is
+shown at $-3$~dB, which is a commonly used order-of-magnitude threshold in SAR
+wet-snow detection, while the smooth crossing of the curves illustrates how
+uncertainty can still be represented probabilistically around the threshold.
+
+\begin{figure}[ht]
+  \centering
+  \begin{tikzpicture}[x=0.88cm,y=4.1cm,font=\footnotesize]
+    \draw[-latex] (-8.4,0) -- (9.0,0) node[below] {$\Delta\sigma^0$ [dB]};
+    \draw[-latex] (0,-0.02) -- (0,1.08) node[left] {Probability};
+
+    \foreach \y/\label in {0/0,0.5/0.5,1/1}
+      \draw (-0.09,\y) -- (0.09,\y) node[left=2mm] {\label};
+
+    \foreach \x/\label in {-8/-8,-6/-6,-4/-4,-3/-3,-2/-2,0/0,2/2,4/4}
+      \draw (\x,0.015) -- (\x,-0.015) node[below=1.5mm] {\label};
+
+    \draw[dashed] (-3,0) -- (-3,1.0);
+    \node[above left, align=right] at (-3.08,0.98) {wet/no-wet\\threshold};
+
+    \draw[thick,blue,samples=150,smooth,domain=-8:4] plot(\x,{1/(1+exp(1.35*(\x+3)))});
+    \draw[thick,red,samples=150,smooth,domain=-8:4] plot(\x,{1 - 1/(1+exp(1.35*(\x+3)))});
+    \draw[thick,orange!85!black,samples=150,smooth,domain=-8:4] plot(\x,{0.42*exp(-((\x+3)*(\x+3))/1.8)});
+
+    \node[blue,anchor=west] at (-7.8,0.92) {$P(\mathrm{WET}\mid \Delta\sigma^0)$};
+    \node[red,anchor=west] at (0.2,0.9) {$P(\mathrm{NO\mbox{-}WET}\mid \Delta\sigma^0)$};
+    \node[orange!85!black,anchor=west] at (-0.1,0.44) {$P(\mathrm{low\ confidence}\mid \Delta\sigma^0)$};
+
+    \node[draw,align=center,anchor=west,text width=3.2cm] at (4.65,0.81)
+      {$P(\mathrm{MASK}\mid\cdot)$ is mainly controlled by auxiliary masks,\ quality flags and missing/invalid data, not by $\Delta\sigma^0$ alone.};
+  \end{tikzpicture}
+  \caption[Conceptual wet-snow transition probabilities]{Conceptual wet-snow transition probabilities versus backscatter difference relative to a dry-snow reference. The blue and red curves indicate soft class probabilities for \texttt{WET} and \texttt{NO-WET}, crossing near the nominal threshold $\Delta\sigma^0=-3$~dB. The orange curve marks a low-confidence region around the threshold. The mask probability is shown separately as an auxiliary gating process rather than as a direct sigmoid of $\Delta\sigma^0$.}
+  \label{fig:wetsnow_sigmoid_concept}
+\end{figure}
+
+\noindent In the Copernicus HR-S\&I ATBD, the operational WDS and SWS processing is
+specified through hierarchical decision rules and QC layers propagated from the
+intermediate SAR wet-snow detection rather than through an explicit sigmoid
+probability model. In particular, the ATBD describes QCISWS as the quality
+layer of the intermediate SAR wet-snow map, and the final QCSSC and QCWSM
+layers inherit or mask this QC information through rule-based product
+generation. The probability curves in Figure~\ref{fig:wetsnow_sigmoid_concept}
+should therefore be read as a conceptual uncertainty representation of the
+threshold behaviour, while $P(\mathrm{MASK}\mid\cdot)$ is better interpreted as a
+separate auxiliary-data-driven gating probability.
+
+\paragraph{Categorical products and latent continuous counterparts}
+
+For categorical Level-2 products, uncertainty should generally not be expressed
+only by an overall accuracy or a single confusion matrix. A more informative
+representation is to report class-membership probabilities, entropy or margin-
+based confidence measures, together with class-wise omission/commission rates
+and, where relevant, their spatial variation \cite{ibrahim05,loosvelt12,comber12,roodposhti19}.
+
+\noindent Conceptually, many categorical products can be interpreted as a discretized
+view of an underlying continuous or mixed latent variable. In statistical terms,
+this corresponds to threshold or latent-variable formulations in which observed
+classes arise from a continuous propensity, or to mixture formulations in which
+categorical and continuous latent structure coexist \cite{liu17,lubke08}.
+
+\noindent For wet snow, the most natural continuous counterpart is not the class label
+itself but the underlying thermodynamic and dielectric state of the snowpack,
+of which liquid water content (LWC) is one important descriptor. Field studies
+show that LWC is spatially and temporally heterogeneous even within apparently
+similar wetness conditions \cite{techel11,bonnell21}. Radar studies likewise show
+that wet-snow detectability depends on volumetric liquid water content together
+with geometry and surface conditions \cite{magagi03}.
+
+\noindent It follows that a Surface Wet Snow class should be understood as an indirect
+decision on a latent state rather than as a one-to-one observation of LWC. In
+practice, the correspondence between a wet-snow class and LWC is many-to-one:
+different LWC values, vertical water distributions or melt-refreeze conditions
+may map to the same class, while similar LWC values may fall on different sides
+of the class boundary because of forest cover, roughness, incidence angle or
+reference-state mismatch. For uncertainty analysis, this means that class
+probability and latent-state uncertainty should ideally be distinguished. A
+product may therefore report (i) the probability of the class \texttt{WET}, and,
+where a retrieval model exists, (ii) an auxiliary estimate or interval for a
+continuous wetness descriptor such as LWC or a decision variable monotonically
+related to LWC.
 
 
-\subsection{Uncertainties by the retrieval algorithm}
+\paragraph{Step 2: Traceability diagram}
 
-\subsection{Representation uncertainties}
+The uncertainty tree for surface wet snow should separate the following main
+branches:
+\begin{enumerate}
+  \item \textbf{Observation branch:} radiometric calibration, thermal noise,
+  speckle, geolocation, terrain correction, incidence-angle normalization and
+  screening of border or artefact effects.
+  \item \textbf{Reference-state branch:} uncertainty in the dry-snow reference,
+  temporal representativeness of the reference image or climatology, and
+  seasonal drift in the backscatter baseline.
+  \item \textbf{Decision-logic branch:} threshold selection, model coefficients,
+  class-boundary sensitivity and hysteresis effects near the wet/no-wet
+  threshold.
+  \item \textbf{Ancillary-mask branch:} land mask, forest mask, glacier mask,
+  layover/shadow mask, water mask, snow mask and quality flags.
+  \item \textbf{Representativeness branch:} mismatch between pixel-scale radar
+  response and the target class definition, including sub-pixel mixtures,
+  vegetation cover, topographic heterogeneity and diurnal melt-refreeze
+  variability.
+\end{enumerate}
+
+\noindent For a categorical product, the traceability analysis should also identify
+which effects primarily cause confusion between \texttt{WET} and
+\texttt{NO-WET}, and which effects tend to move samples into \texttt{MASK}.
+This is especially important because topography, forest cover and rapid temporal
+changes in snow conditions can produce structured classification errors rather
+than independent pixel noise. Figure~\ref{fig:wetsnow_uncertainty_trace} shows a
+compact uncertainty tree diagram for the Level-2 Surface Wet Snow product. For
+Copernicus implementation, the most directly relevant operational references
+are the CLMS SAR Wet Snow (SWS) and Wet/Dry Snow (WDS) products, which provide
+the product-level context for the uncertainty components listed here
+\cite{clms_sws,clms_wds}.
+
+\begin{figure*}[t]
+  \centering
+  \begin{tikzpicture}[scale=0.88, transform shape, node distance=8mm and 7mm, every node/.style={font=\footnotesize}]
+    \node[draw,
+          text width = 4.8cm,
+          align = center,
+          trapezium,
+          trapezium left angle = 80,
+          trapezium right angle = 100,
+          trapezium stretches,
+          minimum height=9mm] (snow) {$S_{\rm ws} = C(\sigma^0_{\rm cal}, \Delta\sigma^0, \vartheta, x_{\rm aux}, t_{\rm ref}, q) + \Delta S_{\rm ws}$};
+
+    \node[draw, above left = 10mm and 10mm of snow, text width = 3.3cm, align = center, minimum height=9mm] (obs)
+      {$\sigma^0_{\rm cal} = O(\sigma^0_{\rm raw}, g, n) + \Delta\sigma^0_{\rm cal}$};
+    \node[draw, left = 7mm of snow, text width = 9mm, align = center, minimum height=9mm] (dcdobs)
+      {$\frac{\partial C}{\partial\sigma^0_{\rm cal}}$};
+    \node[draw, above = 7mm of obs, text width = 9mm, align = center, minimum height=9mm] (uobs) {$u(O)$};
+    \node[left = 7mm of uobs, text width = 2.8cm, align = center] (obsleaf) {Calibration\\Thermal noise\\Speckle\\Terrain correction};
+
+    \node[draw, above = 8mm of snow, text width = 9mm, align = center, minimum height=9mm] (dcdref)
+      {$\frac{\partial C}{\partial\Delta\sigma^0}$};
+    \node[draw, above = 8mm of dcdref, text width = 3.3cm, align = center, minimum height=9mm] (ref)
+      {$\Delta\sigma^0 = B(\sigma^0_{\rm cal}, t_{\rm ref}) + \Delta\Delta\sigma^0$};
+    \node[draw, above = 7mm of ref, text width = 9mm, align = center, minimum height=9mm] (uref) {$u(B)$};
+    \node[right = 7mm of uref, text width = 2.8cm, align = center] (refleaf) {Dry-snow reference\\Seasonal drift\\Temporal mismatch};
+
+    \node[draw, above right = 10mm and 10mm of snow, text width = 4.2cm, align = center, minimum height=9mm] (mask)
+      {$x_{\rm aux} = A(m_{\rm snow}, m_{\rm lay}, m_{\rm water}) + \Delta x_{\rm aux}$};
+    \node[draw, right = 7mm of snow, text width = 9mm, align = center, minimum height=9mm] (dcdmask)
+      {$\frac{\partial C}{\partial x_{\rm aux}}$};
+    \node[draw, above = 7mm of mask, text width = 9mm, align = center, minimum height=9mm] (umask) {$u(A)$};
+    \node[right = 7mm of umask, text width = 2.8cm, align = center] (maskleaf) {Forest mask\\Water mask\\Layover/shadow\\Snow mask};
+
+    \node[draw, below left = 10mm and 10mm of snow, text width = 3.2cm, align = center, minimum height=9mm] (decision)
+      {$q = Q(\tau, h, r) + \Delta q$};
+    \node[draw, below = 7mm of dcdobs, text width = 9mm, align = center, minimum height=9mm] (dcdq)
+      {$\frac{\partial C}{\partial q}$};
+    \node[draw, below = 7mm of decision, text width = 9mm, align = center, minimum height=9mm] (uq) {$u(Q)$};
+    \node[left = 7mm of uq, text width = 2.7cm, align = center] (qleaf) {Thresholds\\Hysteresis\\Class-boundary sensitivity};
+
+    \node[draw, below right = 10mm and 10mm of snow, text width = 3.8cm, align = center, minimum height=9mm] (repr)
+      {$R_{\rm ws} = H(f_{\rm sub}, v_{\rm forest}, t_{\rm diel}) + \Delta R_{\rm ws}$};
+    \node[draw, below = 7mm of dcdmask, text width = 9mm, align = center, minimum height=9mm] (dcdrepr)
+      {$\frac{\partial C}{\partial R_{\rm ws}}$};
+    \node[draw, below = 7mm of repr, text width = 9mm, align = center, minimum height=9mm] (urepr) {$u(H)$};
+    \node[right = 7mm of urepr, text width = 2.9cm, align = center] (reprleaf) {Sub-pixel mixture\\Forest cover\\Topography\\Melt-refreeze cycle};
+
+    \draw[-latex] (obsleaf) edge (uobs) (uobs) edge (obs) (obs) edge (dcdobs) (dcdobs) edge (snow)
+        (refleaf) edge (uref) (uref) edge (ref) (ref) edge (dcdref) (dcdref) edge (snow)
+        (maskleaf) edge (umask) (umask) edge (mask) (mask) edge (dcdmask) (dcdmask) edge (snow)
+        (qleaf) edge (uq) (uq) edge (decision) (decision) edge (dcdq) (dcdq) edge (snow)
+        (reprleaf) edge (urepr) (urepr) edge (repr) (repr) edge (dcdrepr) (dcdrepr) edge (snow);
+  \end{tikzpicture}
+  \caption{Uncertainty tree diagram for Level-2 Surface Wet Snow classification, $S_{\rm ws}$.}
+  \label{fig:wetsnow_uncertainty_trace}
+\end{figure*}
+
+\paragraph{Step 3: Evaluation of uncertainties}
+
+Table~\ref{tab:wetsnow_effects_table} gives a corresponding framework for the
+uncertainty analysis of a Level-2 Surface Wet Snow product. As for Table~\ref{tab:sm_effects_table}, the columns denote effect categories, while the maturity rows are placeholders to be filled with product-specific assessments rather than default zero scores.
+
+\begin{table}[ht]
+  \scriptsize
+  \centering
+
+  \caption{Framework uncertainty effects table for Level-2 Surface Wet Snow
+  classification, $S_{\rm ws}$.}
+
+  \begin{tabular}{|l|c|c|c|c|c|c|}
+    \hline
+    \textbf{Effect category} & Observation & Reference & Decision & Ancillary & Representa- & Total\\
+    & /calibration & state & logic & masks & tiveness & classification\\ \hline
+    \textbf{Effect} &  &  &  &  & & \\
+    \textbf{identifier} & 1 & 2 & 3 & 4 & 5 & 6 \\ \hline
+    \textbf{Affected term} &  &  &  &  & & \\
+    \textbf{term in} &  &  &  &  &  &\\
+    \textbf{measurement} &  &  &  &  &  &\\
+    \textbf{function} & $\sigma^0_{\rm cal}$ & $t_{\rm ref}, \Delta\sigma^0$ & $q$ & $x_{\rm aux}$ & $R_{\rm ws}$ & $S_{\rm ws}$ \\ \hline
+    \textbf{Maturity of} &  &  &  &  & & \\
+    \textbf{analysis} & TBD & TBD & TBD & TBD & TBD & TBD \\ \hline
+    Maturity of &  & &  &  & &  \\
+    uncertainty &  & &  &  & &  \\
+    estimate & TBD& TBD& TBD& TBD&TBD & TBD \\ \hline
+    Maturity of &  & &  &  & &  \\
+    correlation scale &  & &  &  & &  \\
+    estimate & TBD& TBD& TBD& TBD& TBD& TBD \\ \hline
+    For low maturity, &  & &  &  & &  \\
+    is effect negligible? &  No& No&  No&  No&  No& No\\ \hline
+    \textbf{Correlation type} &  & &  &  &  &\\
+    \textbf{and form} &  & &  &  &   &\\ \hline
+    Space & TBD & TBD & TBD & TBD & TBD & TBD \\ \hline
+    Over time & TBD & TBD & TBD & TBD & TBD & TBD \\ \hline
+    Between snow regimes & TBD & TBD & TBD & TBD & TBD & TBD \\ \hline
+    Between classes & TBD & TBD & TBD & TBD & TBD & TBD \\ \hline
+    \textbf{Classification quality} &  & & &  &  &  \\ \hline
+    False-wet rate & TBD & TBD & TBD & TBD & TBD & TBD\\ \hline
+    Missed-wet rate & TBD & TBD & TBD & TBD & TBD & TBD\\ \hline
+    False-mask rate & TBD & TBD & TBD & TBD & TBD & TBD \\ \hline
+    \textbf{Uncertainty} &  & &  &  &&  \\ \hline
+    Output form & score & score & score & score & score & probability/confidence \\ \hline
+    Units & -- & -- & -- & -- & -- & class or probability \\ \hline
+    Magnitude & TBD & TBD & TBD & TBD & TBD & TBD \\ \hline
+    \textbf{Sensitivity} & & & &  &  &  \\
+    \textbf{coefficient} & $\frac{\partial C}{\partial \sigma^0_{\rm cal}}$ & $\frac{\partial C}{\partial \Delta\sigma^0}$ & $\frac{\partial C}{\partial q}$ & $\frac{\partial C}{\partial x_{\rm aux}}$ & branch-wise / empirical & 1 \\ \hline
+  \end{tabular}
+
+  \label{tab:wetsnow_effects_table}
+\end{table}
+
+\noindent In a product-specific implementation, performance should be summarized
+by class-wise probability of detection, false-alarm rate, omission and
+commission errors, and the stability of the \texttt{MASK} assignment. The
+analysis should also clarify whether \texttt{MASK} denotes unavailable data,
+invalid retrieval conditions, or an explicit physical class, since these cases
+have different implications for uncertainty reporting and downstream use. For wet snow, branch maturity is likewise expected to differ across the chain: observation and some masking components may be fairly mature, while threshold stability, reference-state representativeness and class-transition probabilities are often less mature and should be assessed separately.
+
+\noindent For ESA/Copernicus delivery, the final analysis should also document:
+\begin{enumerate}
+  \item the exact class definitions and decision hierarchy;
+  \item the reference-state construction and update strategy;
+  \item the role of terrain, forest and viewing geometry in class confusion;
+  \item whether confidence is reported as class probability, score or flag; and
+  \item the validation strategy against in situ observations, optical snow maps
+  and expert-labelled reference data.
+\end{enumerate}
+
+\noindent The two frameworks above are intentionally focused on \ac{SAR}-based
+Level-2 products and can be specialized further for \mbox{C-band} missions such
+as Sentinel-1 or for \mbox{L-band} missions where deeper penetration and
+stronger vegetation interaction must be reflected explicitly in the error
+budget. For soil moisture, this refinement mainly affects the forward model and
+the covariance structure of the propagated uncertainty; for wet snow, it mainly
+affects the separability of classes and the stability of the decision variable
+and thresholds.
 
 

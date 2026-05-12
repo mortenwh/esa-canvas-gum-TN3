@@ -2,49 +2,339 @@
 
 \subsection{Law of propagation of uncertainties method}
 \subsection{MonteCarlo method}
+\subsection{Example: \ac{SAR} Significant Wave Height Retrieval}
+\label{sec: SWH}
+
+\subsubsection{Step 1: Definition of measurand, measurement model and retrieval model}
+\label{sec: SWH model}
+
+The retrieval algorithm discussed in this section is based on the linear
+relationship between the ``normalized'' azimuth wavelength cut-off ($\lambda_{C}^{20^{o}}$) and the
+square root of the significant wave height ($H_{s}$), as described in Equation
+\ref{eq: lc vs hs} \cite{GriecoIJRS2016}:
+
+\begin{equation}
+	\lambda_{C}^{20^{o}} = b_{0}+b_{1}\sqrt(H_{s})
+	\label{eq: lc vs hs}
+\end{equation}
+
+\begin{equation}
+   \lambda_{C}^{20^{o}} = \frac{R(\theta=20^{o})\sqrt{(F(\theta=20^{o},\phi_{0}=0^{o})}\lambda_{C})}{R(\theta)\sqrt{F(\theta,\phi_{o})}}
+    \label{eq: lc20}
+\end{equation}
+
+As shown in Equation \ref{eq: lc20}$, \lambda^{20^{o}}_{C}$ depends on the slant range $R$, mean wave direction $\phi_{0}$ and the incidence angle $\theta$. $F$ is a trigonometric polynomial function, which is not reported here for the sake of brevity. The interested reader can refer to \cite{GriecoIJRS2016} for more details. 
+$H_{s}$ can be obtained by simply inverting Equation \ref{eq: lc vs hs}, which
+leads to Equation \ref{eq: hs}.
+
+\begin{equation}
+	H_{s} = \left(\frac{\lambda^{20^{o}}_{C}-b_{0}}{b_{1}}\right)^{2}
+	\label{eq: hs}
+\end{equation}
+
+The retrieval accuracy obtained with this algorithm is around 0.5 m, when compared against buoy measurements \cite{GriecoIJRS2016}. 
+
+\subsubsection{Step 2: Traceability Diagram}
+\label{sec: UTD Hs}
+
+Figure \ref{fig: SWH diag} shows the UTD, stressing both the measurement model of $\lambda_{C}^{20^{o}}$ and the retrieval model used. 
+
+\begin{figure} [htbp]
+    \centering
+    \resizebox{\textwidth}{!}{
+	\begin{tikzpicture}[
+		% --- STILI ---
+		node distance=0.7cm and 0.6cm,
+		connection/.style={draw, thick},
+		% Blocchi Principali
+		root_block/.style={draw, rectangle, inner sep=10pt, font=\Large\bfseries, align=center},
+		model_block/.style={draw, rectangle, inner sep=8pt, font=\large\bfseries, align=center},
+		% Nodi Intermedi (Derivate)
+		deriv_node/.style={draw, rectangle, rounded corners=5pt, inner sep=5pt, font=\normalsize, align=center},
+		% Incertezze (Foglie)
+		leaf_node/.style={draw, rectangle, inner sep=5pt, font=\small, align=center, text width=1.3cm},
+		% Sorgenti (Effetti)
+		effect_node/.style={draw, dashed, font=\footnotesize\itshape, align=center, text width=2.3cm, inner sep=3pt}
+		]
+		
+		% --- ASSE CENTRALE ---
+		% Modifica: lambda_C in rosso, b0 e b1 in blu (blue!70!black)
+		\node [root_block] (CORE) {$H_s = \left( \frac{\textcolor{red}{\lambda_C^{20^\circ}} - \textcolor{blue!70!black}{b_0}}{\textcolor{blue!70!black}{b_1}} \right)^2 + 0$};
+		
+		\node [deriv_node, above=of CORE] (D_EQ9) {$\frac{\partial H_s}{\partial \lambda_C^{20^\circ}}$};
+		
+		\node [model_block, above=of D_EQ9] (EQ9) {$\lambda_C^{20^\circ} = \frac{\textcolor{purple}{R}(20^\circ)\sqrt{F(20^\circ, 0^\circ)}}{\textcolor{purple}{R}(\textcolor{cyan!80!black}{\theta})\sqrt{F(\textcolor{cyan!80!black}{\theta}, \textcolor{green!60!black}{\phi_0})}} \lambda_C(\textcolor{cyan!80!black}{\theta}, \textcolor{green!60!black}{\phi_0})$};
+		
+		\draw [connection, red] (CORE) -- (D_EQ9);
+		\draw [connection, red] (D_EQ9) -- (EQ9);
+		
+		% --- INPUT SUPERIORI ---
+
+		% 1. Distanza di Range (R)
+		\node [deriv_node, above left=2.2cm and 3.2cm of EQ9] (D_R) {$\frac{\partial \lambda_C^{20^\circ}}{\partial R}$};
+		\node [leaf_node, above=of D_R, draw=purple, text=purple] (U_R) {$u(R)$};
+		\draw [connection, purple] (EQ9) -- (D_R);
+		\draw [connection, purple] (D_R) -- (U_R);
+		
+		% 2. Angolo di Incidenza (Theta)
+		\node [deriv_node, above left=2.2cm and 1.0cm of EQ9] (D_THETA) {$\frac{\partial \lambda_C^{20^\circ}}{\partial \theta}$};
+		\node [leaf_node, above=of D_THETA, draw=cyan!80!black, text=cyan!80!black] (U_THETA) {$u(\theta)$};
+		\draw [connection, cyan!80!black] (EQ9) -- (D_THETA);
+		\draw [connection, cyan!80!black] (D_THETA) -- (U_THETA);
+
+		% EFFETTI COMUNI per R e THETA
+		\node [effect_node, above=0.5cm of $(U_R.north)!0.5!(U_THETA.north)$] (EFF_GEO) {Geolocation, \\ Orbital Fitting, \\ Antenna mis-pointing};
+		\draw [connection, purple, dashed] (EFF_GEO) -- (U_R);
+		\draw [connection, cyan!80!black, dashed] (EFF_GEO) -- (U_THETA);
+		
+		% 3. Misura Grezza (L_C)
+		\node [deriv_node, above right=2.2cm and -1.cm of EQ9] (D_L_C) {$\frac{\partial \lambda_C^{20^\circ}}{\partial \lambda_C}$};
+		\node [leaf_node, above=of D_L_C, draw=red, text=red] (U_L_C) {$u(\lambda_C)$};
+        \node [effect_node, red, above=0.5cm of $(U_L_C.north)$] (EFF_U_L_C) {Bright Target Removal, \\ FFT, \\ CCS, \\ Range-averaging CCS, \\ IFFT, \\ Gaussian fit};
+		\draw [connection, red, dashed] (EFF_U_L_C) -- (U_L_C);
+		\draw [connection, red] (EQ9) -- (D_L_C);
+		\draw [connection, red] (D_L_C) -- (U_L_C);
+		
+		% 4. Direzione del Vento (Phi_0)
+		\node [deriv_node, above right=2.2cm and 1.8cm of EQ9] (D_PHI) {$\frac{\partial \lambda_C^{20^\circ}}{\partial \phi_0}$};
+		\node [leaf_node, above=of D_PHI, draw=green!60!black, text=green!60!black] (U_PHI) {$u(\phi_0)$};
+		\draw [connection, green!60!black] (EQ9) -- (D_PHI);
+		\draw [connection, green!60!black] (D_PHI) -- (U_PHI);
+		
+		% EFFETTO per Phi_0
+		\node [effect_node, green!60!black, above=0.5cm of U_PHI] (EFF_PHI) {NWP modelling};
+		\draw [connection, green!60!black, dashed] (EFF_PHI) -- (U_PHI);
+		
+		% --- INPUT LATERALI (b0, b1 -> b) ---
+		
+		\node [deriv_node, right=0.8cm of CORE] (D_B) {$\frac{\partial H_s}{\partial \mathbf{b}}$};
+		\node [leaf_node, right=0.5cm of D_B, draw=blue!70!black, text=blue!70!black] (U_B) {$u(\mathbf{b})$};
+		\draw [connection, blue!70!black] (CORE) -- (D_B);
+		\draw [connection, blue!70!black] (D_B) -- (U_B);
+		
+		% EFFETTO per b
+		\node [effect_node, blue!70!black, above=0.3cm of U_B] (EFF_B) {Linear Fitting};
+		\draw [connection, blue!70!black, dashed] (EFF_B) -- (U_B);
+		
+	\end{tikzpicture}
+    }
+    \caption{Uncertainty Tree Diagram with for $H_{s}$ retrieval.}
+	\label{fig: SWH diag}
+\end{figure}
+
+
+\subsubsection{Step 3: Evaluation of sources of uncertainty}
+\label{sec: Hs effects}
+
+The error sources are described as follows:
+\begin{itemize}
+    \item $u(R)$: uncertainty in the slant range, which depends on the orbital fitting of the satellite platform;
+    \item $u(\theta)$: uncertainty in the incidence angle, which also depends on the orbital fitting;
+    \item $u(\phi_{0})$: uncertainty in the mean wave direction, which is input from Numerical Weather Prediction (\ac{NWP}) models;
+	\item $u(b_{i})$: uncertainty of the offset and slope estimates of Equation \ref{eq: lc vs hs};
+	\item $u(\lambda_{C})$: uncertainty of $\lambda_{C}$ estimate;
+\end{itemize}
+
+Note that $\lambda_{C}$ is estimated through several steps. Starting from
+$\sigma_{0}$, all the steps for a SAR multi-look image are listed below:
+\begin{itemize}
+	\item Bright target removal. This step aims to remove bright spots that are supposed to be target echoes;
+        \item \ac{FFT} of the \ac{SAR} sub-image of interest;
+        \item Computation of \ac{CCS};
+        \item Range-averaging of \ac{CCS};
+        \item Computation of the \ac{CCF} through inverse \ac{FFT} of range-averaged \ac{CCS};
+        \item Gaussian fit of \ac{CCF};
+\end{itemize}
+
+\noindent Each step is supposed to introduce additional errors, which finally affect $u(\lambda_{C})$. Figure \ref{fig: proc_diag_lambda20} shows the processing diagram for the steps mentioned above.
+
+\begin{figure}[htbp]
+	\centering
+	\resizebox{\textwidth}{!}{
+		\begin{tikzpicture}[
+			node distance=1.0cm and 1.8cm,
+			>=stealth,
+			% --- STILI DA TABELLA 3.1 (DOCUMENTO NPL) ---
+			dataset/.style={draw, trapezium, trapezium left angle=70, trapezium right angle=110, fill=white, font=\small\bfseries, align=center, minimum height=0.8cm},
+			process/.style={draw, rectangle, fill=white, font=\small, align=center, minimum width=4.2cm, minimum height=0.8cm, inner sep=6pt},
+			auxiliary/.style={draw, rounded rectangle, fill=gray!5, font=\small, align=center, minimum width=3.5cm},
+			% --- FRECCE ---
+			arrow/.style={->, thick, color=black!80}
+			]
+			
+			% --- CATENA DI ELABORAZIONE LAMBDA_C (Sezione 5.3) ---
+			\node [dataset] (IN_SAR) {SAR Multi-look Image \\ ($\sigma^0$)};
+			
+			\node [process, below=of IN_SAR] (STEP1) {1. Bright Target Removal};
+			\node [process, below=of STEP1] (STEP2) {2. 2D FFT};
+			\node [process, below=of STEP2] (STEP3) {3. Computation of CCS};
+			\node [process, below=of STEP3] (STEP4) {4. Range-averaging of CCS};
+			\node [process, below=of STEP4] (STEP5) {5. Inverse FFT (IFFT)};
+			\node [process, below=of STEP5] (STEP6) {6. Gaussian fit of CCF};
+			
+			% Risultato intermedio
+			\node [dataset, below=1.2cm of STEP6] (LAMBDA_C) {$\lambda_C$ Estimate};
+			
+			% --- NORMALIZZAZIONE (Equazione 5.2) ---
+			
+			% Dati ausiliari e di modello (Rettangolo arrotondato conforme a NPL)
+			\node [auxiliary, right=of STEP4] (AUX_GEO) {Geometric and \\ Model Data ($R, \theta, \phi_0$)};
+			
+			\node [process, below=2.8cm of AUX_GEO, line width=0.8pt] (NORM) {Normalization \\ (Equation 5.2)};
+			
+			% Prodotto Finale (Parallelogramma)
+			\node [dataset, below=1.2cm of NORM, fill=blue!2] (OUT_FINAL) {Normalized cut-off \\ $\lambda_{C}^{20^{\circ}}$};
+			
+			% --- COLLEGAMENTI ---
+			\draw [arrow] (IN_SAR) -- (STEP1);
+			\draw [arrow] (STEP1) -- (STEP2);
+			\draw [arrow] (STEP2) -- (STEP3);
+			\draw [arrow] (STEP3) -- (STEP4);
+			\draw [arrow] (STEP4) -- (STEP5);
+			\draw [arrow] (STEP5) -- (STEP6);
+			\draw [arrow] (STEP6) -- (LAMBDA_C);
+			
+			% Ingressi per la normalizzazione
+			\draw [arrow] (LAMBDA_C.east) -- ++(1,0) |- (NORM.west);
+			\draw [arrow] (AUX_GEO) -- (NORM);
+			\draw [arrow] (NORM) -- (OUT_FINAL);
+			
+			% Annotazioni laterali
+			\node [anchor=west, font=\footnotesize\itshape, gray] at ($(STEP1.north east)+(0.2,0)$) {Azimuth wavelength cut-off ($\lambda_{C}$) estimation};
+			\node [anchor=west, font=\footnotesize\itshape, gray] at ($(NORM.north east)+(0.2,0)$) {Normalization step};
+			
+		\end{tikzpicture}
+	}
+	\caption{Processing Diagram for the estimation of $\lambda_{C}^{20^{\circ}}$. The workflow combines SAR signal processing with auxiliary geometric and model-derived information ($R, \theta$ and $\phi_0$) to achieve the normalized output.}
+	\label{fig: proc_diag_lambda20}
+\end{figure}
+
+Table \ref{tab: effects Hs} summarizes the uncertainty effects that finally affect the retrieval of $H_{s}$. Note that $u(\lambda_{C})$ is evaluated on a single dataset \cite{GriecoIJRS2016}. Further studies are needed to assess this value with higher accuracy.
+
+\begin{table}[h]
+		\centering
+		\scriptsize % Font ridotto per far entrare i 15cm
+		\setlength{\tabcolsep}{2pt} % Riduce lo spazio tra le colonne
+		\caption{Effects Table for $H_s$ retrieval}
+		
+		\begin{tabularx}{\textwidth}{l | X | X | X | X}
+			\toprule
+			\textbf{Name of effect} & Bright Target Removal, FFT, CCS, Range-averaging CCS, IFFT, Gaussian fit & Geolocation, Orbital fitting, Antenna mis-pointing & NWP modelling & Linear fitting \\
+			\midrule
+			\textbf{Effect Identifier} & 1.a.1.a & 1.a.2.a & 1.a.3.a & 1.b \\
+			\midrule
+			\textbf{Affected Term} & $\lambda_C$ & $R$, $\theta$ & $\phi_{0}$ & $b_0, b_1$ \\
+			\midrule
+			\textbf{Maturity} &  &  &  &  \\
+			\quad -- Uncertainty & 1 & 3 & 3 & 1 \\
+			\quad -- Correlation & 0 & 0 & - & - \\
+			\quad -- Negligebility & No & Yes & No & Yes \\
+			\midrule
+			\textbf{Correlation type} &  &  &  &  \\
+			\quad -- Along-track & TBD & TBD & TBD & TBD \\
+			\quad -- Cross-track & TBD & TBD & TBD & TBD \\
+			\quad -- Time & TBD & TBD & TBD & TBD \\
+			\midrule
+			\textbf{Correlation scale} &  &  &  &  \\
+			\quad -- Along-track & TBD & TBD & TBD & TBD \\
+			\quad -- Cross-track & TBD & TBD & TBD & TBD \\
+			\quad -- Time & TBD & TBD & TBD & TBD \\
+			\midrule
+			\textbf{Uncertainty} & & & & \\
+			\quad -- PDF shape & Gaussian & Gaussian & Gaussian & Bivariate \newline Gaussian \\
+			\quad -- Units & m & m & deg & -- \\
+			\quad -- Magnitude & $\sim$43m & Negligeable & $\sim$10$^\circ$ & $\sigma_{b_i}, \rho$ \\
+			\midrule
+			\textbf{Sensitivity coefficient} & $\frac{\partial H_s}{\partial \lambda_C^{20^{o}}} \frac{\partial \lambda_C^{20^{o}}}{\partial \lambda_C}$ & $\frac{\partial H_s}{\partial \lambda_C^{20^{o}}} \frac{\partial \lambda_C^{20^{o}}}{\partial R}$, $\frac{\partial H_s}{\partial \lambda_C^{20^{o}}} \frac{\partial \lambda_C^{20^{o}}}{\partial \theta}$ & $\frac{\partial H_s}{\partial \lambda_C^{20^{o}}} \frac{\partial \lambda_C^{20^{o}}}{\partial \phi_0}$ & $\frac{\partial H_s}{\partial b_i}$ \\
+			\bottomrule
+		\end{tabularx}
+        \label{tab: effects Hs}
+	\end{table}
+
+
+\subsubsection{Step 4: Uncertainty Estimation}
+\label{sec: Hs uncertainty}
+
+In the following, the propagation of errors in the retrieval uncertainty is shown. We assume that the model errors in Equation \ref{eq: az cutoff} are Gaussian and independent of $H_{s}$. 
+The total uncertainty $u_{H_s}$ is derived by combining the contributions of the measured parameter and the correlated fitting coefficients. The variance of $H_s$ is given by:
+\begin{equation}
+\begin{aligned}
+    u_{H_s}^2 = & \left( \frac{\partial H_s}{\partial \lambda_C^{20^\circ}} \right)^2 u_{\lambda_C^{20^\circ}}^2 + \left( \frac{\partial H_s}{\partial b_0} \right)^2 u_{b_0}^2 + \left( \frac{\partial H_s}{\partial b_1} \right)^2 u_{b_1}^2 \\
+    & + 2 \left( \frac{\partial H_s}{\partial b_0} \right) \left( \frac{\partial H_s}{\partial b_1} \right) \operatorname{cov}(b_0, b_1) + u_0^2 \\[15pt]
+    u_{\lambda_C^{20^\circ}}^2 = & \left( \frac{\partial \lambda_C^{20^\circ}}{\partial \lambda_C} \right)^2 u_{\lambda_C}^2 + \left( \frac{\partial \lambda_C^{20^\circ}}{\partial R} \right)^2 u_R^2 + \left( \frac{\partial \lambda_C^{20^\circ}}{\partial \theta} \right)^2 u_\theta^2 + \left( \frac{\partial \lambda_C^{20^\circ}}{\partial \phi_0} \right)^2 u_{\phi_0}^2
+\end{aligned}
+\label{eq: errpro Hs}
+\end{equation}
+
+The sensitivity coefficients (partial derivatives) are:
+\begin{equation}
+\begin{aligned}
+    \frac{\partial H_s}{\partial \lambda_C^{20^\circ}} &= \frac{2(\lambda_C^{20^\circ} - b_0)}{b_1^2} = \frac{2\sqrt{H_s}}{b_1} \\
+    \frac{\partial H_s}{\partial b_0} &= -\frac{2\sqrt{H_s}}{b_1} \\
+    \frac{\partial H_s}{\partial b_1} &= -\frac{2H_s}{b_1} \\
+    \frac{\partial \lambda_C^{20^\circ}}{\partial \lambda_C} &= \frac{\lambda_C^{20^\circ}}{\lambda_C} \\ 
+    \frac{\partial \lambda_C^{20^\circ}}{\partial R} &= -\frac{\lambda_C^{20^\circ}}{R(\theta)} \\ 
+    \frac{\partial \lambda_C^{20^\circ}}{\partial \theta} &= -\frac{\lambda_C^{20^\circ}}{R(\theta)} \frac{\partial R}{\partial \theta} - \frac{\lambda_C^{20^\circ}}{2F} \frac{\partial F}{\partial \theta} \\
+    \frac{\partial \lambda_C^{20^\circ}}{\partial \phi_0} &= -\frac{\lambda_C^{20^\circ}}{2F(\theta, \phi_0)} \frac{\partial F(\theta, \phi_0)}{\partial \phi_0}
+\end{aligned}
+\label{eq: parths}
+\end{equation}
+
+In the retrieval exercise shown in \cite{GriecoIJRS2016}, $u_{\lambda^{20^{o}}_{C}}\approx43$ m, and $b_0$ and $b_1$ equal to -93.66 m and 188.53 m$^{\frac{1}{2}}$, with standard deviations equal to 7.33 m and 4.25 m$^{\frac{1}{2}}$, respectively. Finally, the mutual correlation coefficient is equal to -0.98. Substituting these numbers in Equations \ref{eq: errpro Hs} and \ref{eq: parths}, we obtain retrieval uncertainties around 0.91 m for $H_{s}=4$ m. Note that most of this uncertainty is due to $u_{\lambda^{20^{o}}_{C}}$. \\
+This is in line with the validation against ECMWF forecasts ($H_{s}^{for}$) shown in \cite{GriecoIJRS2016}. Figure \ref{fig: SWH pdf} shows the PDF of the $\hat{H}_{s}$ deviations from $H_{s}^{for}$ for the retrieval exercise shown in \cite{GriecoIJRS2016}. Some statistics are reported in the panel, namely bias, \ac{RMSD} and correlation coefficient ($\rho_{H_{s}}$). Note that the bias is very low and that the PDF is only slightly skewed; therefore, \ac{RMSD} is representative of the retrieval accuracy.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.8\linewidth]{figures/pdf_delta_Hs.pdf}
+    \caption{Probability distribution function of the retrieved $H_{s}$ values.}
+    \label{fig: SWH pdf}
+\end{figure}
+
 \subsection{Example: \ac{SAR} Wind Retrieval}
 \label{sec: OSWV}
 
+\subsubsection{Step 1: Definition of measurands, measurement models and retrieval model}
+\label{sec: OSWV model}
+
 The \gls{traceability} diagram for \ac{OSWV} retrieval is presented for an
 algorithm that uses a Bayesian approach.  The a-posteriori conditional
-\ac{PDF} of the retrieved \ac{OSWV} $\mathbf{u}$ can
+\ac{PDF} of the retrieved \ac{OSWV} $\mathbf{\hat{v}}$ can
 be modeled as reported in Equation \ref{eq: AP pdf}, which is a generalization
 of the approach proposed in \cite{PortabellaJGRO2002}.
 
 \begin{equation}
-	\mathrm{pdf}_{\mathbf{u}|\sigma_{0},f_{dc},\lambda_{C},\mathbf{u_{B}}} \propto \mathrm{pdf}_{\mathbf{u}|\mathbf{u_{B}}} \mathrm{pdf}_{\sigma_{0}|\mathbf{u}} \mathrm{pdf}_{\lambda_{C}|U} \mathrm{pdf}_{f_{w}|\mathbf{u},f_{dc}}
+	\mathrm{pdf}_{\mathbf{v}|\sigma_{0},f_{dc},\lambda_{C},\mathbf{v_{B}}} \propto \mathrm{pdf}_{\mathbf{v}|\mathbf{v_{B}}} \mathrm{pdf}_{\sigma_{0}|\mathbf{v}} \mathrm{pdf}_{\lambda_{C}|U} \mathrm{pdf}_{f_{w}|\mathbf{v},f_{dc}}
 	\label{eq: AP pdf}
 \end{equation}
 
 In Equation \ref{eq: Bayes}, $\sigma_{0}$ is the measured \ac{NRCS},
-$\mathrm{pdf}_{\mathbf{u}|\mathbf{u_{B}}}$ is the conditional \ac{PDF} of
-$\mathbf{u}$, known the a-priori (background) \ac{OSWV} $\mathbf{u_{B}}$,
-$\mathrm{pdf}_{\sigma_{0}|\mathbf{u}}$ is the conditional \ac{PDF} of the
+$\mathrm{pdf}_{\mathbf{v}|\mathbf{v_{B}}}$ is the conditional \ac{PDF} of
+$\mathbf{v}$, known the a-priori (background) \ac{OSWV} $\mathbf{v_{B}}$,
+$\mathrm{pdf}_{\sigma_{0}|\mathbf{v}}$ is the conditional \ac{PDF} of the
 \ac{NRCS} prediction model, $\mathrm{pdf}_{\lambda_{C}|U}$ is the conditional
 \ac{PDF} of the azimuth wavelength cut-off ($\lambda_{C}$) prediction model,
-known the wind speed ($U$), and $\mathrm{pdf}_{f_{w}|\mathbf{u}}$ is the
-conditional \ac{PDF} of the prediction model of the Doppler Centroid Anomaly
-(DCA) wind component ($f_{w}$), known DCA ($f_{dc}$). $\mathbf{u_{B}}$ is
-provided by  \ac{NWP}, such as those from the \ac{ECMWF}.
+known the wind speed ($U$), and $\mathrm{pdf}_{f_{w}|\mathbf{v}}$ is the
+conditional \ac{PDF} of the prediction model of the \ac{DCA} wind component ($f_{w}$), known \ac{DC} ($f_{dc}$). $\mathbf{v_{B}}$ is
+provided by  \ac{NWP}, such as those from \ac{ECMWF}.
 
-The optimal solution corresponds to the value of $\mathbf{u}$ that maximizes
+The optimal solution corresponds to the value $\mathbf{\hat{v}}$ that maximizes
 the a-posteriori conditional \ac{PDF}.
 
 Assuming that all \acp{PDF} are Gaussian, this is equivalent to minimize the
 cost function reported in Equation \ref{eq: Bayes}
 
 \begin{eqnarray}
-	J = \frac{\bar{\sigma}_{0}-\mathrm{GMF}_{\sigma_{0}}(\mathbf{u},\theta,\nu,pol)}{\Delta \bar{\sigma}_{0}}+\frac{\mathbf{u}-\mathbf{u_{B}}}{\Delta \mathbf{u_{B}}}+ \nonumber \\
-	\frac{\lambda_{C}-\mathrm{GMF}_{\lambda_{C}}(U,\theta,\nu,pol)}{\Delta \lambda_{C}}+\frac{f_{w}-\mathrm{GMF}_{f_{w}}(\mathbf{u},\theta,\nu,pol,f_{dc})}{\Delta f_{w}},
+	J = \frac{\sigma_{0}-\mathrm{GMF}_{\sigma_{0}}(\mathbf{v},\theta,\nu,pol)}{\Delta \sigma_{0}}+\frac{\mathbf{v}-\mathbf{v_{B}}}{\Delta \mathbf{v_{B}}}+ \nonumber \\
+	\frac{\lambda_{C}-\mathrm{GMF}_{\lambda_{C}}(U,\theta,\nu,pol)}{\Delta \lambda_{C}}+\frac{f_{w}-\mathrm{GMF}_{f_{w}}(\mathbf{v},\theta,\nu,pol,f_{dc})}{\Delta f_{w}},
 	\label{eq: Bayes}
 \end{eqnarray}
 
 \noindent where $\theta$ is the incidence angle, $\nu$ is the signal carrier
-frequency, $pol$ is the polarization of the signal, and $\mathrm{GMF}$ stands
+frequency, $pol$ is the polarization of the signal, and $\ac{GMF}$ stands
 for Geophysical Model Function, which is the prediction model. As the name
 suggests, a \ac{GMF} is an empirical forward model relating the geophysical
 parameter domain to the observable domain. In this notation, the symbol
-$\bar{\sigma}_{0}$ states that \ac{NRCS} is averaged over a given area, typically of
+$\sigma_{0}$ states that \ac{NRCS} is averaged over a given area, typically of
 1-2 km per side. This is required to mitigate wave modulation and reduce the
 speckle \cite{MigliaccioJOE2007}. 
 
@@ -52,33 +342,194 @@ For a C-band \ac{SAR} such as Sentinel-1, CMOD7 \cite{StoffelenJSTARS2017} is us
 as the \ac{NRCS} prediction model. The explicit formulation of CMOD7 is reported in
 Equation \ref{eq: CMOD7} for the sake of completeness,
 
-\begin{eqnarray}
-	z = A_{0}(U,\theta) \left[ A_{1}(U, \theta) \cos(\phi)+A_{2}(U, \theta) \cos(2\phi) \right] \\
-	z = \sigma_{0}^{0.625} \nonumber
-	\label{eq: CMOD7}
-\end{eqnarray}
+\begin{equation}
+	\sigma_{0} = A_{0}(U,\theta) \left[1 + A_{1}(U, \theta) \cos(\phi)+A_{2}(U, \theta) \cos(2\phi) \right]^{1.6}
+\label{eq: CMOD7}
+\end{equation}
 
-\noindent with $z$ the transformed backscattering coefficient, $U$ the wind speed, $\phi$
+\noindent with $U$ the wind speed, $\phi$
 the relative wind direction with respect to the antenna looking angle, and
 $A_{i}, \ \forall i \in \left\{ 0,1,2 \right\}$, the fitting coefficients
-derived empirically.
+derived empirically. The dependency of the coefficients $A_{i}$ on $\nu$ and $pol$ is implicit in this notation.
 
-In the first term of Equation \ref{eq: Bayes}, $\Delta \bar{\sigma}_{0}$ is the
-uncertainty of $\bar{\sigma}_{0}$, which we may model as the sum of the
-contributions from measurement uncertainty ($\Delta \bar{\sigma}_{0}^{M}$) and
-prediction model ($\Delta \bar{\sigma}_{0}^{S}$).  The same contribution model
+
+
+\subsubsection{Step 2: Traceability Diagram}
+\label{sec: OSWV UTD}
+Figure \ref{fig: OSWV diag} shows the \ac{UTD}
+for the \ac{OSWV} algorithm discussed in this section.
+
+\begin{figure}
+    \centering
+	\resizebox{\textwidth}{!}{
+	\begin{tikzpicture}[
+		% --- DEFINIZIONE STILI GLOBALI (derivati dai tuoi blocchi) ---
+		level distance=2cm,
+		edge from parent/.style={draw, -, thick},
+		root_main/.style={draw, rectangle, fill=gray!10, inner sep=10pt, font=\Large\bfseries, align=center},
+		root_sub/.style={draw, rectangle, inner sep=8pt, font=\large\bfseries, align=center},
+		node_black/.style={draw=black, rectangle, rounded corners, inner sep=5pt, font=\bfseries, text=black, align=center},
+		node_model_red/.style={draw=red, rectangle, inner sep=5pt, font=\bfseries, text=black, align=center},
+		node_model_blue/.style={draw=blue, rectangle, inner sep=5pt, font=\bfseries, text=black, align=center},
+		node_model_green/.style={draw=green!50!black, rectangle, inner sep=5pt, font=\bfseries, text=black, align=center},
+		leaf/.style={draw, rectangle, inner sep=4pt, font=\small, align=center, text width=1.2cm},
+		effect/.style={draw, dashed, font=\tiny\itshape, align=center, text width=1.2cm, inner sep=2pt},
+		connection/.style={draw, thick}
+		]
+		
+		% --- NODO CENTRALE ---
+		\node [root_main] (CORE) {$\mathbf{\hat{v}} = \arg\min_{\mathbf{v}} \sum_{i} J_i$};
+		
+		% --- BLOCCO 1: J_sigma0 (Posizionato in alto a sinistra) ---
+		\node [root_sub, above left=6cm and 1cm of CORE] (J_SIGMA) {$J_{\sigma_{0}} = \left( \frac{\sigma_{0}^{M} - \sigma_{0}^{S}}{\Delta \sigma_{0}} \right)^2 + 0$}
+		[sibling distance=2.5cm, level distance=1.4cm]
+		child { node [node_black] (PAR_S0M) {$\frac{\partial J_{\sigma_{0}}}{\partial \sigma_{0}^{M}}$}
+        edge from parent [draw=red]
+			child { node [leaf, draw=red] (U_S0M) {$u(\sigma_0^{M})$} 
+				node [effect, below=0.3cm of U_S0M] (EFF_S0M) {Radiometric cal., \\ SNR, \\ Speckle} } }
+		child { node [node_black] {$\frac{\partial J_{\sigma_{0}}}{\partial \sigma_{0}^{S}}$}
+			[sibling distance=2.cm, level distance=4.cm]
+			child { node [node_model_red] {$\sigma_{0}^{S} = A_{0}\left[1+A_{1}cos(\phi)+A_{2}cos(2\phi)\right]^{p}$ + 0}
+				[sibling distance=1.6cm, level distance=1.cm]
+				child { node [node_black, font=\tiny] {$\frac{\partial \sigma_{0}^{S}}{\partial A_{i}}$} child { node [leaf, draw=red] (U_AI) {$u(A_i)$} 
+						node [effect, below=0.3cm of U_AI] (EFF_UAI) {GMF fitting}
+					} }
+				child { node [node_black, font=\tiny] {$\frac{\partial \sigma_{0}^{S}}{\partial \theta}$} child { node [leaf, draw=red] (U_TH) {$u(\theta)$}   
+						node [effect, below=0.3cm of U_TH] (EFF_TH) {Geolocation \\ Orbital Fitting \\ Antenna mis-pointing}
+				} }
+				child { node [node_black, font=\tiny] {$\frac{\partial \sigma_{0}^{S}}{\partial pol}$} child { node [leaf, draw=red] (U_POL) {$u(pol)$}  
+						node [effect, below=0.3cm of U_POL] (EFF_POL) {Channel Cross-talk}
+				} }
+			}
+			edge from parent [draw=red]
+		}
+		child { node [node_black] {$\frac{\partial J}{\partial \Delta \sigma_0}$}
+			child { node [leaf, draw=red] {$u(\Delta \sigma_0)$} }
+			edge from parent [draw=red]
+		};
+		\draw [connection, red, dashed] (EFF_POL) -- (U_POL);
+		\draw [connection, red, dashed] (EFF_S0M) -- (U_S0M);
+		\draw [connection, red, dashed] (EFF_UAI) -- (U_AI);
+		\draw [connection, red, dashed] (EFF_TH) -- (U_TH);
+		
+		% --- BLOCCO 2: J_lambdaC (Posizionato in alto a destra) ---
+		\node [root_sub, above right=6cm and -4cm of CORE] (J_LAMBDA) {$J_{\lambda_{C}} = \left( \frac{\lambda_{C}^{M} - \lambda_{C}^{S}}{\Delta \lambda_{C}} \right)^2 + 0$}
+		[sibling distance=2.5cm, level distance=1.5cm]
+		child { node [node_black] {$\frac{\partial J}{\partial \lambda_{C}^{M}}$}
+			child { node [leaf, draw=blue] (U_LCM) {$u(\lambda_{C}^{M})$} 
+				node [effect, below=0.3cm of U_LCM] (EFF_ULCM) {Bright Target Removal, \\ FFT, \\ CCS, \\ Range-averaging CCS, \\ IFFT, \\ Gaussian fit}
+			}
+			edge from parent [draw=blue]
+		}
+		child { node [node_black] {$\frac{\partial J}{\partial \lambda_{C}^{S}}$}
+			child { node [node_model_blue] {$\lambda_{C}^{S} = \sum\limits_{i=0}^{1} a_{i}U_{i} + 0$}
+				[sibling distance=1.6cm, level distance=1.5cm]
+				child { node [node_black] {$\frac{\partial \lambda_{C}^{S}}{\partial \mathbf{a}}$} child { node [leaf, draw=blue] (U_a) {$u(\mathbf{a})$} 
+						node [effect, right=0.3cm of U_a] (EFF_Ua) {linear fitting}
+				} }
+				edge from parent [draw=blue]
+			}
+			edge from parent [draw=blue]
+		}
+		child { node [node_black] {$\frac{\partial J}{\partial \Delta \lambda_{C}}$}
+			child { node [leaf, draw=blue] {$u(\Delta \lambda_{C})$} }
+			edge from parent [draw=blue]
+		};
+		\draw [connection, blue, dashed] (EFF_Ua) -- (U_a);
+		\draw [connection, blue, dashed] (EFF_ULCM) -- (U_LCM);
+		
+		% --- BLOCCO 3: J_B (Posizionato in basso a sinistra) ---
+		\node [root_sub, below left=2cm and 2cm of CORE] (J_BACK) {$J_{B} = \left( \frac{\mathbf{v} - \mathbf{v}_{B}}{\Delta \mathbf{v}_{B}} \right)^2 + 0$}
+		[sibling distance=4cm, level distance=1.5cm]
+		child { node [node_black] {$\frac{\partial J}{\partial \mathbf{v}_{B}}$}
+			child { node [leaf, draw=orange!80!black] (U_VB) {$u(\mathbf{v}_{B})$} 
+				node [effect, below=0.3cm of U_VB] (EFF_UVB) {NWP Modelling}
+			}
+			edge from parent [draw=orange!80!black]
+		}
+		child { node [node_black] {$\frac{\partial J}{\partial \Delta \mathbf{v}_{B}}$}
+			child { node [leaf, draw=orange!80!black] {$u(\Delta \mathbf{v}_{B})$} }
+			edge from parent [draw=orange!80!black]
+		};
+		\draw [connection, orange!80!black, dashed] (EFF_UVB) -- (U_VB);
+		
+		% --- BLOCCO 4: J_fw (Posizionato in basso a destra) ---
+		\node [root_sub, below right=3cm and -6cm of CORE] (J_DOPP) {$J_{f_{w}} = \left( \frac{f_{w}^{M} - f_{w}^{S}}{\Delta f_{w}} \right)^2 + 0$}
+		[sibling distance=5cm, level distance=1.5cm]
+		child { node [node_black] {$\frac{\partial J_{f_{w}}}{\partial f_{w}^{M}}$}
+			child { node [node_model_green, font=\tiny] {$f_{w}^{M} = f_{dc} - f_{elec} - f_{sca} - f_{att} - f_{ss} - f_{osc}+ 0$}
+				[sibling distance=1.6cm, level distance=2.5cm]
+				child { node [node_black, font=\tiny] {$\frac{\partial f_w^M}{\partial f_{elec}}$} 
+					[level distance=1.5cm]
+					child { node [leaf, draw=green!50!black] (U_ELE) {$u(f_{elec})$} } }
+				child { node [node_black, font=\tiny] {$\frac{\partial f_w^M}{\partial f_{att}}$} 
+					[level distance=1.5cm]
+					child { node [leaf, draw=green!50!black] (U_ATT) {$u(f_{att})$} 
+						node [effect, below left =0.3cm and -0.65cm of U_ATT] (EFF_UATT) {Orbital Fitting, \\ Antenna mis-pointing}
+					} }
+				child { node [node_black, font=\tiny] {$\frac{\partial f_w^M}{\partial f_{ss}}$}
+					[level distance=1.5cm] 
+					child { node [leaf, draw=green!50!black] (U_SS) {$u(f_{ss})$} } }
+					child { node [node_black, font=\tiny] {$\frac{\partial f_w^M}{\partial f_{osc}}$}
+					[level distance=1.5cm] 
+					child { node [leaf, draw=green!50!black] (U_OSC) {$u(f_{osc})$} 
+						node [effect, below left =0.3cm and -0.65cm of U_OSC] (EFF_UOSC) {Sea state and \\ current modelling}
+					} }
+				child { node [node_black, font=\tiny] (PAR_FDCM) {$\frac{\partial f_w^M}{\partial f_{dc}}$} 
+					[level distance=1.5cm] }
+				edge from parent [draw=green!50!black]
+			}
+			edge from parent [draw=green!50!black]
+		}
+		child { node [node_black] {$\frac{\partial J_{f_{w}}}{\partial f_{w}^{S}}$}
+			[sibling distance=5cm, level distance=2.5cm]
+			child { node [node_model_green] {$f_{w}^{S} = GMF_{f_{w}}(\theta,f_{dc},pol,\nu) + 0$}
+				[sibling distance=1.6cm, level distance=1.5cm]
+				child { node [node_black] {$\frac{\partial f_{w}^{S}}{\partial f_{dc}}$} child { node [leaf, draw=green!50!black] (U_FDC) {$u(f_{dc})$}
+						node [effect, below=0.3cm of U_FDC] (EFF_FDC) {Scene variability, \\ Scene size, \\ Speckle, \\ Scalloping, \\ SNR} 
+				} }
+				child { node [node_black] {$\frac{\partial f_{w}^{S}}{\partial \theta}$} child { node [leaf, draw=green!50!black] (U_TH2) {$u(\theta)$} 
+						node [effect, below=0.3cm of U_TH2] (EFF_TH2) {Geolocation, \\ Orbital Fitting, \\ Antenna mis-pointing}
+				} }
+				edge from parent [draw=green!50!black]
+			}
+			edge from parent [draw=green!50!black]
+		};
+		\draw [connection, green!50!black, dashed] (EFF_FDC) -- (U_FDC);
+		\draw [connection, green!50!black, dashed] (EFF_TH2) -- (U_TH2);
+		\draw [connection, green!50!black, dashed] (EFF_UATT) -- (U_ATT);
+		\draw [connection, green!50!black, dashed] (EFF_UATT) -- (U_ELE);
+		\draw [connection, green!50!black, dashed] (EFF_UOSC) -- (U_OSC);
+		\draw [connection, green!50!black, dashed] (EFF_UOSC) -- (U_SS);
+		\draw [connection, green!50!black] (PAR_FDCM) -- (U_FDC);
+		% --- CONNESSIONI AL CORE CENTRALE ---
+		\draw [line width=2pt, red, -] (J_SIGMA.0) -| (CORE.163);
+		\draw [line width=2pt, blue, -] (J_LAMBDA.0) -- ++(1,0) |- (CORE.0);
+		\draw [line width=2pt, orange!80!black, -] (J_BACK.0) -| (CORE.240);
+		\draw [line width=2pt, green!50!black, -] (J_DOPP.0) -| (CORE.340);
+		
+	\end{tikzpicture}
+    }
+\caption{Uncertainty Tree Diagram for the ocean surface wind vector retrieval algorithm presented.}
+\label{fig: OSWV diag}
+\end{figure}
+
+\subsubsection{Step 3: Evaluation of sources of uncertainty}
+\label{ref: OSWV effects}
+
+In the first term of Equation \ref{eq: Bayes}, $\Delta \sigma_{0}$ is the
+uncertainty of $\sigma_{0}$, which we may model as the sum of the
+contributions from measurement uncertainty ($\Delta \sigma_{0}^{M}$) and
+prediction model ($\Delta \sigma_{0}^{S}$).  The same contribution model
 can be hypothesized for $\Delta \lambda_{C}=\Delta \lambda_{C}^{M}+\Delta
 \lambda_{C}^{S}$ and $\Delta f_{w}=\Delta f_{w}^{M}+\Delta f_{w}^{S}$, which
 represent the uncertainties of $\lambda_{C}$ and $f_{w}$, respectively.
-Finally, $\Delta \mathbf{u_{B}}$ is the uncertainty of $\mathbf{u_{B}}$.
+Finally, $\Delta \mathbf{v_{B}}$ is the uncertainty of $\mathbf{v_{B}}$.
 
-In the following treatment, the symbols $\epsilon$ and $\Delta$ have the same
-meaning. We will use $\epsilon$ to indicate the error source and $\Delta$ for
-the terms explicitly stated in Equation \ref{eq: Bayes}. Therefore, the
-notation $\epsilon(\Delta \bar{\sigma}_{0})$ stands for the error source in the
-estimate of the uncertainty of $\bar{\sigma}_{0}$.
+In the following treatment, the symbols $u$ and $\Delta$ have the same
+meaning. We will use $\Delta$ for the terms explicitly stated in Equation \ref{eq: Bayes}. Therefore, the notation $u(\Delta \sigma_{0})$ stands for the uncertainty in the estimate of the uncertainty of $\sigma_{0}$.
 
-The analytical propagation of errors in $\mathbf{u}$ is quite complex and not
+The analytical propagation of errors in $\mathbf{v}$ is quite complex and not
 easily quantifiable using an analytical approach; therefore, the error sources
 will be discussed separately for each term of Equation \ref{eq: Bayes}, and a
 graphical explanation will be preferred instead of an analytical treatment of
@@ -87,142 +538,208 @@ the problem.
 Focusing on the first term of Equation \ref{eq: Bayes}, the following error
 sources will contribute to the uncertainty of $J$:
 \begin{itemize}
-	\item $\epsilon(\bar{\sigma}_{0})$: uncertainty of measured and simulated $\bar{\sigma}_{0}$ values, namely $\epsilon(\bar{\sigma}_{0}^{M})$ and $\epsilon(\bar{\sigma}_{0}^{S})$, respectively. The first term depends on the instrument radiometric error, while the second depends on the accuracy of the prediction model (see next point);
-	\item uncertainty of $\mathrm{CMOD7}$. The model is considered error-free. From a formal point of view, its deviation from reality is accounted for in the uncertainty of the coefficients $A_{i}$ ($\epsilon(A_{i})$);
-	\item $\epsilon(\theta)$: uncertainty of the incidence angle. This can be due to errors in the model used to compute $\theta$ and to antenna pointing errors. This error source is estimated to be very small;
-	\item $\epsilon(\Delta \bar{\sigma}_{0})$: uncertainty of $\Delta \bar{\sigma}_{0}$ estimate. As said before, this quantity has two contributions, namely $\epsilon(\Delta \bar{\sigma}_{0}^{M})$ and $\epsilon(\Delta \bar{\sigma}_{0}^{S})$;
-	\item $\epsilon(pol)$: uncertainty introduced by eventual signal leaking due to channel cross-talk. In C-band, this error source is supposed to be small. This may not be the case of other spectral bands, such as L-band, due to signal interactions with the ionosphere; 
-\end{itemize}
+	\item $u(\sigma_{0})$: uncertainty of measured and simulated $\sigma_{0}$ values, namely $u(\sigma_{0}^{M})$ and $u(\sigma_{0}^{S})$, respectively. The first term depends on the instrument radiometric error, while the second depends on the accuracy of the prediction model (see next point);
+	\item uncertainty of $\mathrm{CMOD7}$. The model is considered error-free. From a formal point of view, its deviation from reality is accounted for in the uncertainty of the coefficients $A_{i}$ ($u(A_{i})$);
+	\item $u(\theta)$: uncertainty of the incidence angle. This can be due to errors in the model used to compute $\theta$, to antenna pointing errors, orbital fitting and geolocation. This error source is estimated to be very small;
+	\item $u(\Delta \sigma_{0})$: uncertainty of $\Delta \sigma_{0}$ estimate. As said before, this quantity has two contributions, namely $u(\Delta \sigma_{0}^{M})$ and $u(\Delta \sigma_{0}^{S})$;
+	\item $u(pol)$: uncertainty introduced by eventual signal leaking due to channel cross-talk. In the C-band, this error source is supposed to be small. This may not be the case of other spectral bands, such as L-band, due to signal interactions with the ionosphere; 
+\end{itemize} 
+
+\begin{table}[h]
+	\centering
+	\scriptsize % Font ridotto per far entrare i 15cm
+	\setlength{\tabcolsep}{2pt} % Riduce lo spazio tra le colonne
+	\caption{Effects Table for $J_{\sigma_{0}}$}
+	
+	\begin{tabularx}{\textwidth}{l | X | X | X | X}
+		\toprule
+		\textbf{Name of effect} & Radiometric Calibration, SNR, Speckle & GMF fitting & Geolocation, Orbital fitting, Antenna mis-pointing & Channel Cross-talk \\
+		\midrule
+		\textbf{Effect Identifier} & 1.a.1 & 1.b.1 & 1.b.2 & 1.b.3 \\
+		\midrule
+		\textbf{Affected Term} & $\sigma_{0}^{M}$ & $A_{i}$ & $\theta$ & $\sigma_{0}^{M}$ \\
+		\midrule
+		\textbf{Maturity} &  &  & & \\
+		\quad -- Uncertainty & 3 & 3 & 3 & 3 \\
+		\quad -- Correlation & 3 & - & 3 & TBD \\
+		\quad -- Negligebility & No & No & No & No \\
+		\midrule
+		\textbf{Correlation type} &  &  & & \\
+		\quad -- Along-track & TBD & TBD & TBD & TBD \\
+		\quad -- Cross-track & TBD & TBD & TBD & TBD \\
+		\quad -- Time & TBD & TBD & TBD & TBD \\
+		\midrule
+		\textbf{Correlation scale} &  &  & & \\
+		\quad -- Along-track & TBD & TBD & TBD & TBD \\
+		\quad -- Cross-track & TBD & TBD & TBD & TBD \\
+		\quad -- Time & TBD & TBD & TBD & TBD \\
+		\midrule
+		\textbf{Uncertainty} & & & & \\
+		\quad -- PDF shape & Negative Exponential & Gaussian & Gaussian & TBD \\
+		\quad -- Units & - & - & deg & - \\
+		\quad -- Magnitude & 0.2 dB & Negligeable & TBD & TBD \\
+		\midrule
+		\textbf{Sensitivity Coefficient} & $\frac{\partial J_{\sigma_{0}}}{\partial \sigma_{0}^{M}}$ & $\frac{\partial J_{\sigma_{0}}}{\partial \sigma_{0}^{S}} \frac{\partial \sigma_{0}^{S}}{\partial A_{i}}$ & $\frac{\partial J_{\sigma_{0}}}{\partial \sigma_{0}^{S}} \frac{\partial \sigma_{0}^{S}}{\partial \theta}$ & $\frac{\partial J_{\sigma_{0}}}{\partial \sigma_{0}^{M}} \frac{\partial \sigma_{0}^{M}}{\partial pol}$ \\
+		\bottomrule
+	\end{tabularx}
+	\label{tab: effects Js0}
+\end{table}
 
 In the second term of Equation \ref{eq: Bayes}, there are two sources of uncertainty:
 \begin{itemize}
-	\item $\epsilon(\mathbf{u_{B}})$: uncertainty of the background term;
-	\item $\epsilon(\Delta \mathbf{u_{B}})$: uncertainty of the error source indicated in the previous point;
+	\item $u(\mathbf{v_{B}})$: uncertainty of the background term;
+	\item $u(\Delta \mathbf{v_{B}})$: uncertainty of the error source indicated in the previous point;
 \end{itemize}
-In the third term, the additional error sources that were not discussed before are listed below:
+
+Table \ref{tab: effects JvB} reports the effects affecting $\mathbf{v_{B}}$. They are all summarized in ``\ac{NWP} modelling''. Making them more explicit is out of the scope of this document.
+
+\begin{table}[h]
+	\centering
+	\scriptsize % Font ridotto per far entrare i 15cm
+	\setlength{\tabcolsep}{2pt} % Riduce lo spazio tra le colonne
+	\caption{Effects Table for $J_{\mathbf{v_{B}}}$}
+	
+	\begin{tabularx}{\textwidth}{l | X}
+		\toprule
+		\textbf{Name of effect} & NWP modelling \\
+		\midrule
+		\textbf{Effect Identifier} & 3.a \\
+		\midrule
+		\textbf{Affected Term} & $\mathbf{v_{B}}$ \\
+		\midrule
+		\textbf{Maturity} & \\
+		\quad -- Uncertainty & 3 \\
+		\quad -- Correlation & 3 \\
+		\quad -- Negligebility & No \\
+		\midrule
+		\textbf{Correlation type} & \\
+		\quad -- Along-track & - \\
+		\quad -- Cross-track & - \\
+		\quad -- Time & - \\
+		\midrule
+		\textbf{Correlation scale} & \\
+		\quad -- Along-track & - \\
+		\quad -- Cross-track & - \\
+		\quad -- Time & - \\
+		\midrule
+		\textbf{Uncertainty} & - \\
+		\quad -- PDF shape & Gaussian ($u,v$ components) \\
+		\quad -- Units & ms$^{-1}$ \\
+		\quad -- Magnitude & 1 ms$^{-1}$, $\approx$20$^{o}$ \\
+		\midrule
+		\textbf{Sensitivity Coefficient} & $\frac{\partial J_{\mathbf{v_{B}}}}{\partial \mathbf{v_{B}}}$ \\
+		\bottomrule
+	\end{tabularx}
+	\label{tab: effects JvB}
+\end{table}
+
+In the third term, the additional error sources that have not been discussed before are listed below:
 \begin{itemize}
-	\item $\epsilon(\lambda_{C})$: uncertainty of the azimuth wavelength cut-off estimate;
-	\item $\epsilon(\Delta \lambda_{C})$: uncertainty of the previous error source;
+	\item $u(\lambda_{C})$: uncertainty of the azimuth wavelength cut-off estimate. Here, $\lambda_{C}$ is considered ``normalized'', as written in Equation \ref{eq: lc20};
+	\item $u(\Delta \lambda_{C})$: uncertainty of the previous error source;
 	\item uncertainty of the prediction model ($\mathrm{GMF}_{\lambda_{C}}$). As shown in \cite{CorcioneTGRS2019,GriecoIJRS2016}, the dependency of $\lambda_{C}$ on $U$ is supposed to be linear in fully developed sea states, as written in Equation \ref{eq: az cutoff}:
 	\begin{equation}
-		\lambda_{C}=a_{0}+a_{1}U
+		\lambda_{C}=a+bU
 		\label{eq: az cutoff}
 	\end{equation}
-	The deviation of the model from reality is accounted for in the uncertainty of the coefficients $a_{i}$ ($\epsilon(a_{i})$);
+	The deviation of the model from reality is accounted for in the uncertainty of the coefficients $a$ and $b$ ($u(a)$ and $u(b)$);
 \end{itemize}
+
+Table \ref{tab: effects JlC} summarizes the effects that affect $J_{\lambda_{C}}$, which is quite similar to table \ref{tab: effects Hs} introduced in Section \ref{sec: SWH} but for the name of the fitting coefficients.
+\begin{table}[h]
+		\centering
+		\scriptsize % Font ridotto per far entrare i 15cm
+		\setlength{\tabcolsep}{2pt} % Riduce lo spazio tra le colonne
+		\caption{Effects Table for $J_{\lambda_{C}}$}
+		
+		\begin{tabularx}{\textwidth}{l | X | X | X | X}
+			\toprule
+			\textbf{Name of effect} & Bright Target Removal, FFT, CCS, Range-averaging CCS, IFFT, Gaussian fit & Geolocation, Orbital fitting, Antenna mis-pointing & NWP modelling & Linear fitting \\
+			\midrule
+			\textbf{Effect Identifier} & 2.a.1 & 2.a.2 & 2.a.3 & 2.b.1 \\
+			\midrule
+			\textbf{Affected Term} & $\lambda_C$ & $R$, $\theta$ & $\phi_{0}$ & $a, b$ \\
+			\midrule
+			\textbf{Maturity} &  &  &  &  \\
+			\quad -- Uncertainty & 1 & 3 & 3 & 1 \\
+			\quad -- Correlation & 0 & 0 & - & - \\
+			\quad -- Negligebility & No & Yes & No & Yes \\
+			\midrule
+			\textbf{Correlation type} &  &  &  &  \\
+			\quad -- Along-track & TBD & TBD & TBD & TBD \\
+			\quad -- Cross-track & TBD & TBD & TBD & TBD \\
+			\quad -- Time & TBD & TBD & TBD & TBD \\
+			\midrule
+			\textbf{Correlation scale} &  &  &  &  \\
+			\quad -- Along-track & TBD & TBD & TBD & TBD \\
+			\quad -- Cross-track & TBD & TBD & TBD & TBD \\
+			\quad -- Time & TBD & TBD & TBD & TBD \\
+			\midrule
+			\textbf{Uncertainty} & & & & \\
+			\quad -- PDF shape & Gaussian & Gaussian & Gaussian & Bivariate Gaussian \\
+			\quad -- Units & m & m & deg & -- \\
+			\quad -- Magnitude & $\sim$43m & Negligeable & $\sim$10$^\circ$ & $\sigma_{b_i}, \rho$ \\
+			\midrule
+			\textbf{Sensitivity coefficient} & $\frac{\partial J_{\lambda_{C}}}{\partial \lambda_C^{20^{o}}} \frac{\partial \lambda_C^{20^{o}}}{\partial \lambda_C}$ & $\frac{\partial J_{\lambda_{C}}}{\partial \lambda_C^{20^{o}}} \frac{\partial \lambda_C^{20^{o}}}{\partial R}$, $\frac{\partial J_{\lambda_{C}}}{\partial \lambda_C^{20^{o}}} \frac{\partial \lambda_C^{20}}{\partial \theta}$ & $\frac{\partial J_{\lambda_{C}}}{\partial \lambda_C^{20^{o}}} \frac{\partial \lambda_C^{20^{o}}}{\partial \phi_0}$ & $\frac{\partial J_{\lambda_{C}}}{\partial a}$, $\frac{\partial J_{\lambda_{C}}}{\partial b}$ \\
+			\bottomrule
+		\end{tabularx}
+        \label{tab: effects JlC}
+	\end{table}
+
+
 In the last term, the additional error sources are:
 \begin{itemize}
-	\item $\epsilon(f_{dc})$: uncertainty of DCA;
-	\item $\epsilon(f_{elec})$: uncertainty due to antenna electronic mis-pointing;
-	\item $\epsilon(f_{sca})$: uncertainty due to scalloping;
-	\item $\epsilon(f_{att})$: uncertainty due to satellite attitude variations;
-	\item $\epsilon(f_{osc})$: uncertainty of the estimate of the DCA ocean surface current component;
-	\item $\epsilon(f_{ss})$: uncertainty of the estimate of the DCA sea state component;
+	\item $u(f_{dc})$: uncertainty of \ac{DC};
+	\item $u(f_{elec})$: uncertainty due to antenna electronic mis-pointing;
+	\item $u(f_{sca})$: uncertainty due to scalloping;
+	\item $u(f_{att})$: uncertainty due to satellite attitude variations;
+	\item $u(f_{osc})$: uncertainty of the estimate of the DCA ocean surface current component;
+	\item $u(f_{ss})$: uncertainty of the estimate of the DCA sea state component;
 \end{itemize}
-Figure \ref{fig: OSWV diag} shows the uncertainty \gls{traceability} diagram
-for the \ac{OSWV} algorithm discussed in this section.
 
-\begin{figure}[h]
-	\centering
-	\newcommand\ys{1.cm}
-	\newcommand\xs{2.cm}
-%\fontsize{8}{9}\selectfont
-\begin{tikzpicture}[myarrow/.style={single arrow,single arrow head extend=.1cm,anchor=west,minimum height=.8cm,minimum width=.1cm},
-	myrectangle/.style={rectangle,draw=black,text=black,inner sep=.1cm, outer sep=.25cm, minimum width=1.5cm, minimum height=.8cm}],
-% ------------------------------------------------------------------------------------
-% ------------------ Cost function block ---------------------------------------------
-% ------------------------------------------------------------------------------------
-	\node(J)[myrectangle,line width=.5mm,align=center,anchor=east] at (0.cm, 0.cm) {$J$};
-% ------------------------------------------------------------------------------------
-% ------------------ Measured sigma0 block -------------------------------------------
-% ------------------------------------------------------------------------------------
-	\node(dJds0)[myrectangle,align=center,anchor=south] at ([xshift=-1.5*\xs,yshift=\ys]J.north) {$\frac{\partial J}{\partial \bar{\sigma}_{0}^{M}}$};
-	\node(uDs0M)[myrectangle,align=center,anchor=east] at ([xshift=-\xs]dJds0) {$\epsilon(\Delta \bar{\sigma}_{0}^{M})$};
-	\node(uas0)[myrectangle,align=center,anchor=south] at ([yshift=\ys]dJds0.north) {$\bar{\sigma}_{0}^{M}=<\sigma_{0}^{M}>$};
-	\node(us0)[myrectangle,align=center,anchor=south] at ([yshift=\ys]uDs0M.north) {$\epsilon(\sigma_{0}^{M})$};
-	\path [black, thick, ->] (uDs0M.0) edge node {} (dJds0.180);
-	\path [black, thick, ->] (uas0.270) edge node {} (dJds0.90);
-	\path [black, thick, ->] (dJds0.330) edge node {} (J.130);
-	\path [black, thick, ->] (us0.0) edge node {} (uas0.180);
-	\path [black, thick, ->] (us0.270) edge node {} (uDs0M.90);
-% ------------------------------------------------------------------------------------
-% ------------------ Simulated sigma0 block ------------------------------------------
-% ------------------------------------------------------------------------------------
-	\node(dJdGMF)[myrectangle,align=center,anchor=south] at ([xshift=\xs,yshift=\ys]J.north) {$\frac{\partial J}{\partial \bar{\sigma}_{0}^{S}}$};
-	\node(uDs0S)[myrectangle,align=center,anchor=west] at ([xshift=\xs]dJdGMF) {$\epsilon(\Delta \bar{\sigma}_{0}^{S})$};
-	\node(GMF)[myrectangle,align=center,anchor=south] at ([yshift=\ys]dJdGMF.north) {$\bar{\sigma}_{0}^{S}=\mathrm{GMF}(\mathbf{u})$};
-	\node(utheta)[myrectangle,align=center,anchor=south] at ([yshift=\ys]GMF.north) {$\epsilon(\theta)$};
-	\node(uA)[myrectangle,align=center,anchor=west] at ([xshift=.5*\xs]utheta.east) {$\epsilon(A_{i})$};
-	\node(upol)[myrectangle,align=center,anchor=east] at ([xshift=-.5*\xs]utheta.west) {$\epsilon(pol)$};
-	\path [black, thick, ->] (upol.315) edge node {} (GMF.135);
-	\path [black, thick, ->] (GMF.270) edge node {} (dJdGMF.90);
-	\path [black, thick, ->] (utheta.270) edge node {} (GMF.90);
-	\path [black, thick, ->] (uA.225) edge node {} (GMF.45);
-	\path [black, thick, ->] (uDs0S.180) edge node {} (dJdGMF.0);
-	\path [black, thick, ->] (dJdGMF.220) edge node {} (J.60);
-% ------------------------------------------------------------------------------------
-% ------------------ Background block ------------------------------------------------
-% ------------------------------------------------------------------------------------
-	\node(dJduB)[myrectangle,align=center,anchor=west] at ([xshift=.5*\xs]J.east) {$\frac{\partial J}{\partial \mathbf{u_{B}}}$};
-	\node(uuB)[myrectangle,align=center,anchor=west] at ([xshift=0.5*\xs]dJduB.east) {$\epsilon(\mathbf{u_{B}})$};
-	\node(uDuB)[myrectangle,align=center,anchor=north] at ([yshift=-0.5*\ys]dJduB.south) {$\epsilon(\Delta \mathbf{u_{B}})$};
-	\path [black, thick, ->] (dJduB.180) edge node {} (J.0);
-	\path [black, thick, ->] (uDuB.90) edge node {} (dJduB.270);
-	\path [black, thick, ->] (uuB.180) edge node {} (dJduB.0);
-% ------------------------------------------------------------------------------------
-% ------------------ Simulated azcutoff block ----------------------------------------
-% ------------------------------------------------------------------------------------
-	\node(dJdlS)[myrectangle,align=center,anchor=east] at ([xshift=-.5*\xs, yshift=-2*\ys]J.west) {$\frac{\partial J}{\partial \lambda_{C}^{S}}$};
-	\node(uDlS)[myrectangle,align=center,anchor=east] at ([xshift=-.5*\xs]dJdlS.west) {$\epsilon(\Delta \lambda_{C}^{S})$};
-	\node(lGMF)[myrectangle,align=center,anchor=west] at ([xshift=-.5*\xs,yshift=-\ys]uDlS.south) {$\lambda_{C}^{S}=(a_{0}+a_{1}U))$};
-	\node(ua)[myrectangle,align=center,anchor=north] at ([xshift=-0*\xs,yshift=-.5*\ys]lGMF.south) {$\epsilon(a_{i}(\theta))$};
-	\path [black, thick, ->] (uDlS.0) edge node {} (dJdlS.180);
-	\path [black, thick, ->] (ua.90) edge node {} (lGMF.270);
-	\path [black, thick, ->] (lGMF.90) edge node {} (dJdlS.200);
-	\path [black, thick, ->] (dJdlS.0) edge node {} (J.220);
-% ------------------------------------------------------------------------------------
-% ------------------ Estimated azcutoff block ----------------------------------------
-% ------------------------------------------------------------------------------------
-	\node(dJdlM)[myrectangle,align=center,anchor=east] at ([xshift=-.5*\xs,yshift=-0*\ys]J.west) {$\frac{\partial J}{\partial \lambda_{C}^{M}}$};
-	\node(ulM)[myrectangle,align=center,anchor=east] at ([xshift=-.5*\xs,yshift=.75*\ys]dJdlM.west) {$\epsilon(\lambda_{C}^{M})$};
-	\node(uDlM)[myrectangle,align=center,anchor=east] at ([xshift=-.5*\xs,yshift=-.75*\ys]dJdlM.west) {$\epsilon(\Delta \lambda_{C}^{M})$};
-	\path [black, thick, ->] (ulM.0) edge node {} (dJdlM.170);
-	\path [black, thick, ->] (uDlM.0) edge node {} (dJdlM.190);
-	\path [black, thick, ->] (dJdlM.0) edge node {} (J.180);
-% ------------------------------------------------------------------------------------
-% ------------------ Simulated Doppler shift block -----------------------------------
-% ------------------------------------------------------------------------------------
-	\node(dJdfS)[myrectangle,align=center,anchor=north] at ([xshift=-1.25*\xs,yshift=-4*\ys]J.south) {$\frac{\partial J}{\partial f_{w}^{S}}$};
-	\node(fGMF)[myrectangle,align=center,anchor=north] at ([yshift=-.5*\ys]dJdfS.south) {$f_{w}^{S}=\mathrm{CDOP}(\mathbf{u},\theta,pol)$};
-	\node(upolf)[myrectangle,align=center,anchor=north] at ([xshift=-.5*\xs, yshift=-.5*\ys]fGMF.south) {$\epsilon(pol)$};
-	\node(uthetaf)[myrectangle,align=center,anchor=north] at ([xshift=.5*\xs, yshift=-.5*\ys]fGMF.south) {$\epsilon(\theta)$};
-	\path [black, thick, ->] (uthetaf.90) edge node {} (fGMF.300);
-	\path [black, thick, ->] (upolf.90) edge node {} (fGMF.240);
-	\path [black, thick, ->] (fGMF.90) edge node {} (dJdfS.270);
-	\path [black, thick, ->] (dJdfS.90) edge node {} (J.270);	
-% ------------------------------------------------------------------------------------
-% ------------------ Estimated Doppler shift block -----------------------------------
-% ------------------------------------------------------------------------------------
-	\node(dJdfM)[myrectangle,align=center,anchor=north] at ([xshift=1.25*\xs,yshift=-3*\ys]J.south) {$\frac{\partial J}{\partial f_{w}^{M}}$};
-	\node(ffM)[myrectangle,align=center,anchor=north] at ([xshift=0*\xs,yshift=-.5*\ys]dJdfM.south) {$f_{w}^{M}=f_{dc}-f_{osc}-$\\$f_{ss}-f_{att}-$\\$f_{elec}-f_{sca}$};
-	\node(ufdc)[myrectangle,align=center,anchor=north] at ([xshift=-.75*\xs,yshift=-.5*\ys]ffM.south) {$\epsilon(f_{dc})$};
-	\node(ufosc)[myrectangle,align=center,anchor=west] at (ufdc.east) {$\epsilon(f_{osc})$};
-	\node(ufss)[myrectangle,align=center,anchor=west] at (ufosc.east) {$\epsilon(f_{ss})$};
-	\node(ufatt)[myrectangle,align=center,anchor=west] at ([xshift=.25*\xs,yshift=-.75*\ys]ffM.east) {$\epsilon(f_{att})$};
-	\node(ufelec)[myrectangle,align=center,anchor=west] at ([xshift=.25*\xs,yshift=1.75*\ys]ffM.east) {$\epsilon(f_{elec})$};
-	\node(ufsca)[myrectangle,align=center,anchor=west] at ([xshift=.25*\xs,yshift=.5*\ys]ffM.east) {$\epsilon(f_{sca})$}; 
-	\path [black, thick, ->] (ffM.90) edge node {} (dJdfM.270);
-	\path [black, thick, ->] (ufatt.180) edge node {} (ffM.350);
-	\path [black, thick, ->] (ufelec.180) edge node {} (ffM.20);
-	\path [black, thick, ->] (ufsca.180) edge node {} (ffM.0);
-	\path [black, thick, ->] (ufdc.90) edge node {} (ffM.230);
-	\path [black, thick, ->] (ufosc.90) edge node {} (ffM.290);
-	\path [black, thick, ->] (ufss.120) edge node {} (ffM.320);
-	\path [black, thick, ->] (dJdfM.120) edge node {} (J.290);
-\end{tikzpicture}
-\caption{Uncertainty Traceability Diagram for the ocean surface wind vector retrieval algorithm presented.}
-\label{fig: OSWV diag}
-\end{figure}
+\begin{table}[h]
+		\centering
+		\scriptsize % Font ridotto per far entrare i 15cm
+		\setlength{\tabcolsep}{2pt} % Riduce lo spazio tra le colonne
+		\caption{Effects Table for $J_{f_{w}}$}
+		
+		\begin{tabularx}{\textwidth}{l | X | X | X | X}
+			\toprule
+			\textbf{Name of effect} & Scene variability, Scene size, Speckle, Scalloping, SNR & Orbital fitting, Antenna mis-pointing & Sea State/Current modelling & GMF fitting \\
+			\midrule
+			\textbf{Effect Identifier} & 4.a & 4.b & 4.c & 4.b.1 \\
+			\midrule
+			\textbf{Affected Term} & $f_{dc}$ & $f_{p} \ (f_{att}$,$f_{elec})$ & $f_{ss}$,$f_{osc}$ & $f_{w}^{S}$ \\
+			\midrule
+			\textbf{Maturity} &  &  &  &  \\
+			\quad -- Uncertainty & TBD & TBD & TBD & TBD \\
+			\quad -- Correlation & TBD & TBD & TBD & TBD \\
+			\quad -- Negligebility & No & No & No & No \\
+			\midrule
+			\textbf{Correlation type} &  &  &  &  \\
+			\quad -- Along-track & TBD & TBD & TBD & TBD \\
+			\quad -- Cross-track & TBD & TBD & TBD & TBD \\
+			\quad -- Time & TBD & TBD & TBD & TBD \\
+			\midrule
+			\textbf{Correlation scale} &  &  &  &  \\
+			\quad -- Along-track & TBD & TBD & TBD & TBD \\
+			\quad -- Cross-track & TBD & TBD & TBD & TBD \\
+			\quad -- Time & TBD & TBD & TBD & TBD \\
+			\midrule
+			\textbf{Uncertainty} & & & & \\
+			\quad -- PDF shape & Gaussian & Gaussian & Gaussian & Gaussian \\
+			\quad -- Units & Hz & Hz & Hz & Hz \\
+			\quad -- Magnitude & & & & \\
+			\midrule
+			\textbf{Sensitivity coefficient} & $\frac{\partial J_{f_{w}}}{\partial f_{w}^{M}} \frac{\partial f_{w}^{M}}{\partial f_{dc}}$ & $\frac{\partial J_{f_{w}}}{\partial f_{w}^{M}} \frac{\partial f_{w}^{M}}{\partial f_{elec,att}}$ & $\frac{\partial J_{f_{w}}}{\partial f_{w}^{M}} \frac{\partial f_{w}^{M}}{\partial f_{ss,osc}}$ & $\frac{\partial J_{f_{w}}}{\partial f_{w}^{S}}$ \\
+			\bottomrule
+		\end{tabularx}
+        \label{tab: effects Jfw}
+	\end{table}
+
+
+\subsubsection{Step 4: Uncertainty Estimation}
+\label{ref: OSWV uncertainty}
 
 \begin{figure}[h]
 	\centering
@@ -269,12 +786,12 @@ with respect to the north-south direction (v-axes). The inclination is due to
 the satellite platform's flying direction, which is ascending in this specific
 case. The along-track cross-track asymmetry is due to the bi-harmonic trend of
 CMOD7, as depicted in Equation \ref{eq: CMOD7}. Given the measured
-$\bar{\sigma}_{0}$, the \ac{NRCS} term provides infinite solutions. This happens
+$\sigma_{0}$, the \ac{NRCS} term provides infinite solutions. This happens
 because a conventional \ac{SAR} is a one-look instrument and has no azimuthal
 look diversity, useful to reduce the number of ambiguities, such as in
 scatterometers.
 
-The background term has a sink shape, with the minimum in $\mathbf{u_{B}}$.
+The background term has a sink shape, with the minimum in $\mathbf{v_{B}}$.
 Note that the ``true'' and background winds are not very close. This may happen
 in several situations, especially in rapidly changing weather patterns, such as
 fronts and extreme events, but also due to the ``phase shift'' of \ac{NWP} models.
@@ -285,7 +802,9 @@ high-biased solutions, as thoroughly discussed in \cite{PortabellaJGRO2002}.
 
 The Doppler term (Figure \ref{fig: J}c) appears quite complementary to the
 \ac{NRCS} term, and helps to reduce ambiguities, as shown in Figure \ref{fig:
-J}d. When combined with the background term (Figure \ref{fig: J}i), the
+J}d. \\
+Note that in this study, the Doppler components due to sea state and ocean surface current are neglected. This is equivalent to say that they are negligeable compared to the wind component. This assumption can be violated in areas with strong surface currents and/or swell. \\
+When combined with the background term (Figure \ref{fig: J}i), the
 a-posteriori \ac{PDF} has a well-defined peak \cite{MoucheTGRS2012}. However,
 for the same reasons discussed before, this solution can be severely biased.
 
@@ -302,77 +821,7 @@ specific case study, this solution is even better than what is obtained when
 all terms are combined. Once more, this emphasizes the eventual biases of
 \ac{NWP}. However, this is a fortunate case, which does not always happen. 
 
-\subsection{Example: \ac{SAR} Significant Wave Height Retrieval}
-\label{sec: SWH}
 
-The retrieval algorithm discussed in this section is based on the linear
-relationship between the azimuth wavelength cut-off ($\lambda_{C}$) and the
-square root of the significant wave height ($H_{s}$), as described in Equation
-\ref{eq: lc vs hs} \cite{GriecoIJRS2016}:
-
-\begin{equation}
-	\lambda_{C} = b_{0}+b_{1}\sqrt(H_{s})
-	\label{eq: lc vs hs}
-\end{equation}
-
-$H_{s}$ can be obtained by simply inverting Equation \ref{eq: lc vs hs}, which
-leads to Equation \ref{eq: hs}.
-
-\begin{equation}
-	H_{s} = \left(\frac{\lambda_{C}-b_{0}}{b_{1}}\right)^{2}
-	\label{eq: hs}
-\end{equation}
-
-The retrieval accuracy obtained with this algorithm is around 0.5 m
-\cite{GriecoIJRS2016}. The error sources are described as follows:
-\begin{itemize}
-	\item $\epsilon(b_{i})$: uncertainty of the offset and slope estimates of Equation \ref{eq: lc vs hs};
-	\item $\epsilon(\lambda_{C})$: uncertainty of $\lambda_{C}$ estimate;
-\end{itemize}
-
-Note that $\lambda_{C}$ is estimated through several steps. Starting from
-$\sigma_{0}$, all the steps are below:
-\begin{itemize}
-	\item Bright target removal. This step aims to remove bright spots that are supposed to be target echoes;
-        \item \ac{FFT} of the \ac{SAR} sub-image of interest;
-        \item Computation of \ac{CCS};
-        \item Range-averaging of \ac{CCS};
-        \item Computation of the \ac{CCF} through inverse \ac{FFT} of range-averaged \ac{CCS};
-        \item Gaussian fit of \ac{CCF};
-\end{itemize}
-
-\noindent Each step is supposed to introduce additional error, which finally accumulate
-in $\epsilon(\lambda_{C})$.
-
-Figure \ref{fig: SWH diag} shows the uncertainty \gls{traceability} diagram.
-
-\begin{figure}[h]
-	\centering
-	\newcommand\ys{1.cm}
-	\newcommand\xs{2.cm}
-	%\fontsize{8}{9}\selectfont
-	\begin{tikzpicture}[myarrow/.style={single arrow,single arrow head extend=.1cm,anchor=west,minimum height=.8cm,minimum width=.1cm},
-		myrectangle/.style={rectangle,draw=black,text=black,inner sep=.1cm, outer sep=.25cm, minimum width=1.5cm, minimum height=.8cm}],
-		\node(eH)[myrectangle,line width=.5mm,align=center,anchor=east] at (0.cm, 0.cm) 
-		{$\epsilon(H_{s})=\frac{\partial H_{s}}{\partial \lambda_{C}}\epsilon(\lambda_{C})+\frac{\partial H_{s}}{\partial b_{0}}\epsilon(b_{0})+\frac{\partial H_{s}}{\partial b_{1}}\epsilon(b_{1})$};
-		\node(dHdl)[myrectangle,align=center,anchor=south] at ([xshift=-1.5*\xs,yshift=\ys]eH.north) {$\frac{\partial H_{s}}{\partial \lambda_{C}}$};
-		\node(el)[myrectangle,align=center,anchor=south] at ([yshift=\ys]dHdl.north) {$\epsilon(\lambda_{C})$};
-		\node(dHda)[myrectangle,align=center,anchor=south] at ([yshift=\ys]eH.north) {$\frac{\partial H_{s}}{\partial b_{0}}$};
-		\node(ea)[myrectangle,align=center,anchor=south] at ([yshift=\ys]dHda.north) {$\epsilon(b_{0})$};
-		\node(dHdb)[myrectangle,align=center,anchor=south] at ([xshift=1.5*\xs,yshift=\ys]eH.north) {$\frac{\partial H_{s}}{\partial b_{1}}$};
-		\node(eb)[myrectangle,align=center,anchor=south] at ([yshift=\ys]dHdb.north) {$\epsilon(b_{1})$};
-		\path [black, thick, ->] (dHdl.270) edge node {} (eH.120);
-		\path [black, thick, ->] (dHda.270) edge node {} (eH.90);
-		\path [black, thick, ->] (dHdb.270) edge node {} (eH.60);
-		\path [black, thick, ->] (el.270) edge node {} (dHdl.90);
-		\path [black, thick, ->] (ea.270) edge node {} (dHda.90);
-		\path [black, thick, ->] (eb.270) edge node {} (dHdb.90);
-	\end{tikzpicture}
-        \caption{Uncertainty Traceability Diagram for the significant wave height retrieval algorithm presented.}
-	\label{fig: SWH diag}
-\end{figure}
-
-Demonstrate identification, modeling and propagation of uncertainties.
 
 %\subsection{Example: Wet Snow Retrieval}
 %
