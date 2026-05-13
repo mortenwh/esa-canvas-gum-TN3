@@ -303,7 +303,7 @@ be modeled as reported in Equation \ref{eq: AP pdf}, which is a generalization
 of the approach proposed in \cite{PortabellaJGRO2002}.
 
 \begin{equation}
-	\mathrm{pdf}_{\mathbf{v}|\sigma_{0},f_{dc},\lambda_{C},\mathbf{v_{B}}} \propto \mathrm{pdf}_{\mathbf{v}|\mathbf{v_{B}}} \mathrm{pdf}_{\sigma_{0}|\mathbf{v}} \mathrm{pdf}_{\lambda_{C}|U} \mathrm{pdf}_{f_{w}|\mathbf{v},f_{dc}}
+	\mathrm{pdf}_{\mathbf{v}|\sigma_{0},\varpi_{\rm dc},\lambda_{C},\mathbf{v_{B}}} \propto \mathrm{pdf}_{\mathbf{v}|\mathbf{v_{B}}} \mathrm{pdf}_{\sigma_{0}|\mathbf{v}} \mathrm{pdf}_{\lambda_{C}|U} \mathrm{pdf}_{\varpi_{\rm w}|\mathbf{v},\varpi_{\rm dc}}
 	\label{eq: AP pdf}
 \end{equation}
 
@@ -313,8 +313,9 @@ $\mathbf{v}$, known the a-priori (background) \ac{OSWV} $\mathbf{v_{B}}$,
 $\mathrm{pdf}_{\sigma_{0}|\mathbf{v}}$ is the conditional \ac{PDF} of the
 \ac{NRCS} prediction model, $\mathrm{pdf}_{\lambda_{C}|U}$ is the conditional
 \ac{PDF} of the azimuth wavelength cut-off ($\lambda_{C}$) prediction model,
-known the wind speed ($U$), and $\mathrm{pdf}_{f_{w}|\mathbf{v}}$ is the
-conditional \ac{PDF} of the prediction model of the \ac{DCA} wind component ($f_{w}$), known \ac{DC} ($f_{dc}$). $\mathbf{v_{B}}$ is
+known the wind speed ($U$), and $\mathrm{pdf}_{\varpi_{\rm w}|\mathbf{v}}$ is
+the conditional \ac{PDF} of the prediction model of the \ac{DCA} wind component
+($\varpi_{\rm w}$), known \ac{DC} ($\varpi_{\rm dc}$). $\mathbf{v_{B}}$ is
 provided by  \ac{NWP}, such as those from \ac{ECMWF}.
 
 The optimal solution corresponds to the value $\mathbf{\hat{v}}$ that maximizes
@@ -325,7 +326,7 @@ cost function reported in Equation \ref{eq: Bayes}
 
 \begin{eqnarray}
 	J = \frac{\sigma_{0}-\mathrm{GMF}_{\sigma_{0}}(\mathbf{v},\theta,\nu,pol)}{\Delta \sigma_{0}}+\frac{\mathbf{v}-\mathbf{v_{B}}}{\Delta \mathbf{v_{B}}}+ \nonumber \\
-	\frac{\lambda_{C}-\mathrm{GMF}_{\lambda_{C}}(U,\theta,\nu,pol)}{\Delta \lambda_{C}}+\frac{f_{w}-\mathrm{GMF}_{f_{w}}(\mathbf{v},\theta,\nu,pol,f_{dc})}{\Delta f_{w}},
+	\frac{\lambda_{C}-\mathrm{GMF}_{\lambda_{C}}(U,\theta,\nu,pol)}{\Delta \lambda_{C}}+\frac{\varpi_{\rm w}-\mathrm{GMF}_{\varpi_{\rm w}}(\mathbf{v},\theta,\nu,pol,\varpi_{\rm dc})}{\Delta \varpi_{\rm w}},
 	\label{eq: Bayes}
 \end{eqnarray}
 
@@ -347,15 +348,14 @@ Equation \ref{eq: CMOD7} for the sake of completeness,
 \label{eq: CMOD7}
 \end{equation}
 
-\noindent with $U$ the wind speed, $\phi$
-the relative wind direction with respect to the antenna looking angle, and
-$A_{i}, \ \forall i \in \left\{ 0,1,2 \right\}$, the fitting coefficients
-derived empirically. The dependency of the coefficients $A_{i}$ on $\nu$ and $pol$ is implicit in this notation.
+\noindent with $U$ the wind speed, $\phi$ the relative wind direction with
+respect to the antenna looking angle, and $A_{i}, \ \forall i \in \left\{ 0,1,2
+\right\}$, the fitting coefficients derived empirically. The dependency of the
+coefficients $A_{i}$ on $\nu$ and $pol$ is implicit in this notation.
 
 
+\subsubsection{Step 2: Traceability Diagram} \label{sec: OSWV UTD}
 
-\subsubsection{Step 2: Traceability Diagram}
-\label{sec: OSWV UTD}
 Figure \ref{fig: OSWV diag} shows the \ac{UTD}
 for the \ac{OSWV} algorithm discussed in this section.
 
@@ -454,41 +454,41 @@ for the \ac{OSWV} algorithm discussed in this section.
 		\draw [connection, orange!80!black, dashed] (EFF_UVB) -- (U_VB);
 		
 		% --- BLOCCO 4: J_fw (Posizionato in basso a destra) ---
-		\node [root_sub, below right=3cm and -6cm of CORE] (J_DOPP) {$J_{f_{w}} = \left( \frac{f_{w}^{M} - f_{w}^{S}}{\Delta f_{w}} \right)^2 + 0$}
+		\node [root_sub, below right=3cm and -6cm of CORE] (J_DOPP) {$J_{\varpi_{\rm w}} = \left( \frac{\varpi_{\rm w}^{M} - \varpi_{\rm w}^{S}}{\Delta \varpi_{\rm w}} \right)^2 + 0$}
 		[sibling distance=5cm, level distance=1.5cm]
-		child { node [node_black] {$\frac{\partial J_{f_{w}}}{\partial f_{w}^{M}}$}
-			child { node [node_model_green, font=\tiny] {$f_{w}^{M} = f_{dc} - f_{elec} - f_{sca} - f_{att} - f_{ss} - f_{osc}+ 0$}
+		child { node [node_black] {$\frac{\partial J_{\varpi_{\rm w}}}{\partial \varpi_{\rm w}^{M}}$}
+			child { node [node_model_green, font=\tiny] {$\varpi_{\rm w}^{M} = \varpi_{\rm dc} - \varpi_{\rm elec} - \varpi_{\rm sca} - \varpi_{\rm att} - \varpi_{\rm ss} - \varpi_{\rm osc}+ 0$}
 				[sibling distance=1.6cm, level distance=2.5cm]
-				child { node [node_black, font=\tiny] {$\frac{\partial f_w^M}{\partial f_{elec}}$} 
+                                child { node [node_black, font=\tiny] {$\frac{\partial \varpi_{\rm w}^M}{\partial \varpi_{\rm elec}}$} 
 					[level distance=1.5cm]
-					child { node [leaf, draw=green!50!black] (U_ELE) {$u(f_{elec})$} } }
-				child { node [node_black, font=\tiny] {$\frac{\partial f_w^M}{\partial f_{att}}$} 
+					child { node [leaf, draw=green!50!black] (U_ELE) {$u(\varpi_{\rm elec})$} } }
+                                        child { node [node_black, font=\tiny] {$\frac{\partial \varpi_{\rm w}^M}{\partial \varpi_{\rm att}}$} 
 					[level distance=1.5cm]
-					child { node [leaf, draw=green!50!black] (U_ATT) {$u(f_{att})$} 
+					child { node [leaf, draw=green!50!black] (U_ATT) {$u(\varpi_{\rm att})$} 
 						node [effect, below left =0.3cm and -0.65cm of U_ATT] (EFF_UATT) {Orbital Fitting, \\ Antenna mis-pointing}
 					} }
-				child { node [node_black, font=\tiny] {$\frac{\partial f_w^M}{\partial f_{ss}}$}
+                                        child { node [node_black, font=\tiny] {$\frac{\partial \varpi_{\rm w}^M}{\partial \varpi_{\rm ss}}$}
 					[level distance=1.5cm] 
-					child { node [leaf, draw=green!50!black] (U_SS) {$u(f_{ss})$} } }
-					child { node [node_black, font=\tiny] {$\frac{\partial f_w^M}{\partial f_{osc}}$}
+					child { node [leaf, draw=green!50!black] (U_SS) {$u(\varpi_{\rm ss})$} } }
+                                        child { node [node_black, font=\tiny] {$\frac{\partial \varpi_{\rm w}^M}{\partial \varpi_{\rm osc}}$}
 					[level distance=1.5cm] 
-					child { node [leaf, draw=green!50!black] (U_OSC) {$u(f_{osc})$} 
+					child { node [leaf, draw=green!50!black] (U_OSC) {$u(\varpi_{\rm osc})$} 
 						node [effect, below left =0.3cm and -0.65cm of U_OSC] (EFF_UOSC) {Sea state and \\ current modelling}
 					} }
-				child { node [node_black, font=\tiny] (PAR_FDCM) {$\frac{\partial f_w^M}{\partial f_{dc}}$} 
+                                        child { node [node_black, font=\tiny] (PAR_FDCM) {$\frac{\partial \varpi_{\rm w}^M}{\partial \varpi_{\rm dc}}$} 
 					[level distance=1.5cm] }
 				edge from parent [draw=green!50!black]
 			}
 			edge from parent [draw=green!50!black]
 		}
-		child { node [node_black] {$\frac{\partial J_{f_{w}}}{\partial f_{w}^{S}}$}
+		child { node [node_black] {$\frac{\partial J_{\varpi_{\rm w}}}{\partial \varpi_{\rm w}^{S}}$}
 			[sibling distance=5cm, level distance=2.5cm]
-			child { node [node_model_green] {$f_{w}^{S} = GMF_{f_{w}}(\theta,f_{dc},pol,\nu) + 0$}
+			child { node [node_model_green] {$\varpi_{\rm w}^{S} = GMF_{\varpi_{\rm w}}(\theta,\varpi_{\rm dc},pol,\nu) + 0$}
 				[sibling distance=1.6cm, level distance=1.5cm]
-				child { node [node_black] {$\frac{\partial f_{w}^{S}}{\partial f_{dc}}$} child { node [leaf, draw=green!50!black] (U_FDC) {$u(f_{dc})$}
+				child { node [node_black] {$\frac{\partial \varpi_{\rm w}^{S}}{\partial \varpi_{\rm dc}}$} child { node [leaf, draw=green!50!black] (U_FDC) {$u(\varpi_{\rm dc})$}
 						node [effect, below=0.3cm of U_FDC] (EFF_FDC) {Scene variability, \\ Scene size, \\ Speckle, \\ Scalloping, \\ SNR} 
 				} }
-				child { node [node_black] {$\frac{\partial f_{w}^{S}}{\partial \theta}$} child { node [leaf, draw=green!50!black] (U_TH2) {$u(\theta)$} 
+				child { node [node_black] {$\frac{\partial \varpi_{\rm w}^{S}}{\partial \theta}$} child { node [leaf, draw=green!50!black] (U_TH2) {$u(\theta)$} 
 						node [effect, below=0.3cm of U_TH2] (EFF_TH2) {Geolocation, \\ Orbital Fitting, \\ Antenna mis-pointing}
 				} }
 				edge from parent [draw=green!50!black]
@@ -522,8 +522,8 @@ uncertainty of $\sigma_{0}$, which we may model as the sum of the
 contributions from measurement uncertainty ($\Delta \sigma_{0}^{M}$) and
 prediction model ($\Delta \sigma_{0}^{S}$).  The same contribution model
 can be hypothesized for $\Delta \lambda_{C}=\Delta \lambda_{C}^{M}+\Delta
-\lambda_{C}^{S}$ and $\Delta f_{w}=\Delta f_{w}^{M}+\Delta f_{w}^{S}$, which
-represent the uncertainties of $\lambda_{C}$ and $f_{w}$, respectively.
+\lambda_{C}^{S}$ and $\Delta \varpi_{\rm w}=\Delta \varpi_{\rm w}^{M}+\Delta \varpi_{\rm w}^{S}$, which
+represent the uncertainties of $\lambda_{C}$ and $\varpi_{\rm w}$, respectively.
 Finally, $\Delta \mathbf{v_{B}}$ is the uncertainty of $\mathbf{v_{B}}$.
 
 In the following treatment, the symbols $u$ and $\Delta$ have the same
@@ -689,19 +689,19 @@ Table \ref{tab: effects JlC} summarizes the effects that affect $J_{\lambda_{C}}
 
 In the last term, the additional error sources are:
 \begin{itemize}
-	\item $u(f_{dc})$: uncertainty of \ac{DC};
-	\item $u(f_{elec})$: uncertainty due to antenna electronic mis-pointing;
-	\item $u(f_{sca})$: uncertainty due to scalloping;
-	\item $u(f_{att})$: uncertainty due to satellite attitude variations;
-	\item $u(f_{osc})$: uncertainty of the estimate of the DCA ocean surface current component;
-	\item $u(f_{ss})$: uncertainty of the estimate of the DCA sea state component;
+	\item $u(\varpi_{\rm dc})$: uncertainty of \ac{DC};
+	\item $u(\varpi_{\rm elec})$: uncertainty due to antenna electronic mis-pointing;
+	\item $u(\varpi_{\rm sca})$: uncertainty due to scalloping;
+	\item $u(\varpi_{\rm att})$: uncertainty due to satellite attitude variations;
+	\item $u(\varpi_{\rm osc})$: uncertainty of the estimate of the DCA ocean surface current component;
+	\item $u(\varpi_{\rm ss})$: uncertainty of the estimate of the DCA sea state component;
 \end{itemize}
 
 \begin{table}[h]
 		\centering
 		\scriptsize % Font ridotto per far entrare i 15cm
 		\setlength{\tabcolsep}{2pt} % Riduce lo spazio tra le colonne
-		\caption{Effects Table for $J_{f_{w}}$}
+		\caption{Effects Table for $J_{\varpi_{\rm w}}$}
 		
 		\begin{tabularx}{\textwidth}{l | X | X | X | X}
 			\toprule
@@ -709,7 +709,7 @@ In the last term, the additional error sources are:
 			\midrule
 			\textbf{Effect Identifier} & 4.a & 4.b & 4.c & 4.b.1 \\
 			\midrule
-			\textbf{Affected Term} & $f_{dc}$ & $f_{p} \ (f_{att}$,$f_{elec})$ & $f_{ss}$,$f_{osc}$ & $f_{w}^{S}$ \\
+			\textbf{Affected Term} & $\varpi_{\rm dc}$ & $\varpi_{\rm p} \ (\varpi_{\rm att}$,$\varpi_{\rm elec})$ & $\varpi_{\rm ss}$,$\varpi_{\rm osc}$ & $\varpi_{\rm w}^{S}$ \\
 			\midrule
 			\textbf{Maturity} &  &  &  &  \\
 			\quad -- Uncertainty & TBD & TBD & TBD & TBD \\
@@ -731,7 +731,7 @@ In the last term, the additional error sources are:
 			\quad -- Units & Hz & Hz & Hz & Hz \\
 			\quad -- Magnitude & & & & \\
 			\midrule
-			\textbf{Sensitivity coefficient} & $\frac{\partial J_{f_{w}}}{\partial f_{w}^{M}} \frac{\partial f_{w}^{M}}{\partial f_{dc}}$ & $\frac{\partial J_{f_{w}}}{\partial f_{w}^{M}} \frac{\partial f_{w}^{M}}{\partial f_{elec,att}}$ & $\frac{\partial J_{f_{w}}}{\partial f_{w}^{M}} \frac{\partial f_{w}^{M}}{\partial f_{ss,osc}}$ & $\frac{\partial J_{f_{w}}}{\partial f_{w}^{S}}$ \\
+			\textbf{Sensitivity coefficient} & $\frac{\partial J_{\varpi_{\rm w}}}{\partial \varpi_{\rm w}^{M}} \frac{\partial \varpi_{\rm w}^{M}}{\partial \varpi_{\rm dc}}$ & $\frac{\partial J_{\varpi_{\rm w}}}{\partial \varpi_{\rm w}^{M}} \frac{\partial \varpi_{\rm w}^{M}}{\partial \varpi_{\rm elec,att}}$ & $\frac{\partial J_{\varpi_{\rm w}}}{\partial \varpi_{\rm w}^{M}} \frac{\partial \varpi_{\rm w}^{M}}{\partial \varpi_{\rm ss,osc}}$ & $\frac{\partial J_{\varpi_{\rm w}}}{\partial \varpi_{\rm w}^{S}}$ \\
 			\bottomrule
 		\end{tabularx}
         \label{tab: effects Jfw}
