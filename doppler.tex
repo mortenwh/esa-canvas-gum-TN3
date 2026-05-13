@@ -11,25 +11,25 @@ shift, i.e., the measurand, is given by
 
 \noindent where $\varpi_{\rm dc}$ is the Doppler centroid frequency shift,
 $\varpi_p$ is the Doppler shift predicted from an estimate of the antenna
-pointing, and $\Delta\varpi_g$ is the residual uncertainty. The
-mathematical model for the predicted Doppler shift is $\varpi_p = \varpi_{\rm
-geo} + \varpi_{\rm e} + \Delta\varpi_p$, where $\varpi_{\rm geo}$ is a
-geometric term related to the antenna pointing via the satellite's orbit and
-attitude, $\varpi_{\rm e}$ is an electronic term resulting from antenna
-mis-pointing, and $\Delta\varpi_p$ is the prediction uncertainty. The estimate
-of each term comes with uncertainty as described in the following sub-sections.
+pointing, and $\Delta\varpi_g$ is the residual uncertainty. The mathematical
+model for the predicted Doppler shift is $\varpi_p = \varpi_{\rm geo} +
+\varpi_{\rm e} + \Delta\varpi_p$, where $\varpi_{\rm geo}$ is a geometric term
+related to the antenna pointing via the satellite's orbit and attitude,
+$\varpi_{\rm e}$ is an electronic term resulting from antenna mis-pointing, and
+$\Delta\varpi_p$ is the uncertainty of the pointing calibration. The estimate of each term comes with uncertainty as
+described in the following sub-sections.
 
 \subsubsection{Step 2: Traceability Diagram}
 
 Figure~\ref{fig:scene_calibration} is an \ac{UTD} for the calculation of a
 geophysical Doppler shift following the \ac{DCA} approach. The geophysical
 Doppler shift, $f_{\rm g}$, is calculated from the difference between the
-estimated and the predicted \ac{DC} shifts. The upper part of the tree shows
-the uncertainty trace for the predicted Doppler shift, $\varpi_{\rm p}$, using
-function notations. The uncertainties are caused by missing attitude data,
-uncertainties of restituted attitude estimates, uncertainties in the satellite
-position given by \ac{DORIS} measurements, interpolation/fitting uncertainties
-and random noise.
+estimated and the predicted \ac{DC} shifts after pointing calibration. The
+upper part of the tree shows the uncertainty trace for the calibration of the
+predicted Doppler shift, $\varpi_{\rm p}$, using function notations. The
+uncertainties are caused by missing attitude data, uncertainties of restituted
+attitude estimates, uncertainties in the satellite position given by \ac{DORIS}
+measurements, interpolation/fitting uncertainties and random noise.
 
 \begin{figure*}
   \centering
@@ -204,7 +204,7 @@ and random noise.
           text width = 5cm,
           align = center,
           minimum width=2cm,
-          minimum height=1cm] (dc) {$\varpi_{\rm dc}=g(I, D, \varpi, t) + \Delta\varpi_{\rm dc}$};
+          minimum height=1cm] (dc) {$\varpi_{\rm dc}=g(P, \varpi, \mathbf{t}) + \Delta\varpi_{\rm dc}$};
 
     \draw[-latex] (dgdc) edge (fg)
         (dc) edge (dgdc)
@@ -235,7 +235,14 @@ and random noise.
         (elec) edge (dpreddelec);
 
   \end{tikzpicture}
-  \caption{Uncertainty tree diagram for the geophysical Doppler frequency shift, $\varpi_{\rm g}$.}
+
+  \caption{Uncertainty tree diagram for the geophysical Doppler frequency
+  shift, $\varpi_{\rm g}$, (1). This figure contains the uncertainty trace for
+  the calibration of the antenna beam pointing. Scene variability caused by
+  (geo)physical processes and speckle are meant to contribute to ``random
+  noise''. The randomness is confirmed by the distribution plots in
+  Figure~\ref{fig:PDFs}.}
+
   \label{fig:scene_calibration}
 \end{figure*}
 
@@ -245,13 +252,67 @@ other level-1 sections. Wait for their completion by NORCE.}
 
 \begin{figure*}
   \centering
-  \begin{tikzpicture}
+  %\begin{tikzpicture}
+  \begin{tikzpicture}[node distance=1.15cm and 1.15cm, every node/.style={font=\scriptsize}]
 
+    % scene variations
+    % ..
      \node[draw,
           text width = 5cm,
           align = center,
           minimum width=2cm,
-          minimum height=1cm] (dc) {$\varpi_{\rm dc}=g(I, D, \varpi, t) + \Delta\varpi_{\rm dc}$};
+          minimum height=1cm] (dc) {$\varpi_{\rm dc}=g(P, \varpi, \mathbf{t}) + \Delta\varpi_{\rm dc}$};
+    \node[draw,
+          below = of dc,
+          text width = 0.7cm,
+          align = center,
+          minimum width=0.8cm,
+          minimum height=1cm] (dcdP) {$\frac{\partial\varpi_{\rm dc}}{\partial P}$};
+    \node[draw,
+          right = of dcdP,
+          text width = 0.7cm,
+          align = center,
+          minimum width=0.8cm,
+          minimum height=1cm] (uP) {$u(P)$};
+    \node[right = of uP, text width = 3cm] (uPleaves) {Speckle\\Scene backscatter variability};
+
+    \node[draw,
+          above = of dc,
+          text width = 0.7cm,
+          align = center,
+          minimum width=0.8cm,
+          minimum height=1cm] (dcdvarpi) {$\frac{\partial\varpi_{\rm dc}}{\partial\varpi}$};
+    \node[draw,
+          right = of dcdvarpi,
+          text width = 0.7cm,
+          align = center,
+          minimum width=0.8cm,
+          minimum height=1cm] (uvarpi) {$u(\varpi)$};
+    \node[right = of uvarpi, text width = 3cm] (uvarpileaves) {Surface motion};
+
+    \node[draw,
+          right = of dc,
+          text width = 0.7cm,
+          align = center,
+          minimum width=0.8cm,
+          minimum height=1cm] (dcdt) {$\frac{\partial\varpi_{\rm dc}}{\partial\mathbf{t}}$};
+    \node[draw,
+          right = of dcdt,
+          text width = 0.7cm,
+          align = center,
+          minimum width=0.8cm,
+          minimum height=1cm] (ut) {$u(\mathbf{t})$};
+    \node[right = of ut, text width = 3cm] (utleaves) {Timing};
+
+    \draw[-latex] (dc) edge (dcdP)
+    (dcdP) edge (uP)
+    (uP) edge (uPleaves)
+    (dc) edge (dcdvarpi)
+    (dcdvarpi) edge (uvarpi)
+    (uvarpi) edge (uvarpileaves)
+    (dc) edge (dcdt)
+    (dcdt) edge (ut)
+    (ut) edge (utleaves);
 
   \end{tikzpicture}
   \caption{Uncertainty tree diagram for the Doppler Centroid frequency shift, $\varpi_{\rm g}$.}
