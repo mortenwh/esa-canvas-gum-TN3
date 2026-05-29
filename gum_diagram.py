@@ -20,14 +20,17 @@ Usage
     python gum_diagram.py                      # interactive session
     python gum_diagram.py --example            # built-in H_s example
     python gum_diagram.py --example -o fig.tex # write output to file
+    python gum_diagram.py --no-preview         # skip PNG preview
 
 Dependencies:  sympy  (pip install sympy)
+               pdf2image + Pillow  (pip install pdf2image pillow)  – for preview
 """
 
 import argparse
 import re
 import sys
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Dict, List, Optional
 
 import sympy as sp
@@ -502,6 +505,106 @@ def _label_to_filename(label: str) -> str:
     return safe.lower() + ".tex"
 
 
+# ── PNG rendering ─────────────────────────────────────────────────────────────
+
+# Minimal LaTeX wrapper that compiles a bare \begin{figure}…\end{figure} snippet.
+_LATEX_WRAPPER = r"""
+\documentclass[border=6pt]{{standalone}}
+\usepackage{{tikz}}
+\usetikzlibrary{{positioning, calc}}
+\usepackage{{amsmath, amssymb}}
+\usepackage{{xcolor}}
+\usepackage{{float}}
+\begin{{document}}
+{body}
+\end{{document}}
+""".lstrip()
+
+
+def render_png(tex_path: str, png_path: str, dpi: int = 150) -> bool:
+    """Compile *tex_path* with pdflatex and convert to *png_path*.
+
+    The .tex file is expected to contain a bare ``\\begin{figure}…\\end{figure}``
+    block (as produced by :func:`build_tikz`).  It is wrapped in a minimal
+    standalone document, compiled with ``pdflatex``, and converted to PNG via
+    Ghostscript.
+
+    Returns ``True`` on success, ``False`` if any step fails (with a warning
+    printed to stderr).
+    """
+    import subprocess
+    import tempfile
+    import os
+
+    # Read the figure snippet
+    try:
+        body = Path(tex_path).read_text()
+    except OSError as exc:
+        print(f"  ✗  Cannot read {tex_path}: {exc}", file=sys.stderr)
+        return False
+
+    # Strip \begin{figure}/\end{figure} and caption/label lines — standalone
+    # doesn't want those, just the tikzpicture content.
+    body_inner = re.sub(
+        r"\\begin\{figure\}[^\n]*\n?", "", body
+    )
+    body_inner = re.sub(r"\\end\{figure\}", "", body_inner)
+    body_inner = re.sub(r"\s*\\caption\{[^}]*\}\n?", "", body_inner)
+    body_inner = re.sub(r"\s*\\label\{[^}]*\}\n?", "", body_inner)
+    body_inner = re.sub(r"\\centering\n?", "", body_inner)
+
+    wrapper = _LATEX_WRAPPER.format(body=body_inner.strip())
+
+    with tempfile.TemporaryDirectory() as td:
+        src = os.path.join(td, "fig.tex")
+        pdf = os.path.join(td, "fig.pdf")
+        Path(src).write_text(wrapper)
+
+        result = subprocess.run(
+            ["pdflatex", "-interaction=nonstopmode", "-output-directory", td, src],
+            capture_output=True, text=True,
+        )
+        if result.returncode != 0 or not os.path.exists(pdf):
+            print("  ✗  pdflatex failed:", file=sys.stderr)
+            for line in result.stdout.splitlines()[-20:]:
+                print("     " + line, file=sys.stderr)
+            return False
+
+        # Convert PDF → PNG using Ghostscript
+        gs_result = subprocess.run(
+            [
+                "gs", "-dBATCH", "-dNOPAUSE", "-dQUIET",
+                "-sDEVICE=png16m", f"-r{dpi}",
+                f"-sOutputFile={png_path}", pdf,
+            ],
+            capture_output=True, text=True,
+        )
+        if gs_result.returncode != 0 or not os.path.exists(png_path):
+            print(f"  ✗  Ghostscript failed: {gs_result.stderr.strip()}",
+                  file=sys.stderr)
+            return False
+
+    return True
+
+
+def _open_image(png_path: str) -> None:
+    """Open *png_path* with the system default viewer (best-effort)."""
+    import subprocess
+    import shutil
+
+    viewers = ["eog", "feh", "display", "xdg-open", "open"]
+    for viewer in viewers:
+        if shutil.which(viewer):
+            subprocess.Popen(
+                [viewer, png_path],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            return
+    print(f"  ℹ  No image viewer found; open {png_path} manually.",
+          file=sys.stderr)
+
+
 # ── Entry point ───────────────────────────────────────────────────────────────
 
 def main() -> None:
@@ -520,6 +623,14 @@ def main() -> None:
             "Output .tex file.  Defaults to <label>.tex in the current "
             "directory, where <label> is derived from the figure label."
         ),
+    )
+    ap.add_argument(
+        "--no-preview", action="store_true",
+        help="Skip PNG rendering and display (just write the .tex file)",
+    )
+    ap.add_argument(
+        "--dpi", type=int, default=150, metavar="N",
+        help="Resolution for the PNG preview (default: 150)",
     )
     args = ap.parse_args()
 
@@ -553,6 +664,16 @@ def main() -> None:
     print(f"\n✓  TikZ code written to  {out_path}")
     print(f"   Include in LaTeX with:  \\input{{{out_path}}}")
     print(f"   Reference with:         \\ref{{fig:{label}}}")
+
+    if not args.no_preview:
+        png_path = out_path.replace(".tex", ".png")
+        print(f"\n   Rendering PNG preview … ", end="", flush=True)
+        ok = render_png(out_path, png_path, dpi=args.dpi)
+        if ok:
+            print(f"saved to  {png_path}")
+            _open_image(png_path)
+        else:
+            print("failed (use --no-preview to skip)")
 
 
 if __name__ == "__main__":
