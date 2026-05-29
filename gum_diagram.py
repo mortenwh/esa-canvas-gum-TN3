@@ -127,6 +127,8 @@ def _latex_to_sym_name(latex: str) -> str:
     # Map common Greek letter commands to short names
     greek = {
         "lambda": "lam", "Lambda": "Lam",
+        "varphi": "varph", "vartheta": "vartheta", "varpi": "varpi",
+        "varrho": "varrho", "varsigma": "varsi", "varepsilon": "vareps",
         "theta": "theta", "Theta": "Theta",
         "phi": "phi", "Phi": "Phi",
         "sigma": "sig", "Sigma": "Sig",
@@ -208,13 +210,15 @@ def _expand_command2(s: str, cmd: str, fmt: str) -> str:
 # Greek letter substitutions (longer names first to avoid prefix clashes)
 _GREEK: List[Tuple[str, str]] = sorted([
     ("lambda", "lam"), ("Lambda", "Lam"),
-    ("varphi", "phi"), ("phi", "phi"), ("Phi", "Phi"),
+    ("varphi", "varph"), ("vartheta", "vartheta"), ("varpi", "varpi"),
+    ("varrho", "varrho"), ("varsigma", "varsi"), ("varepsilon", "vareps"),
+    ("phi", "phi"), ("Phi", "Phi"),
     ("theta", "theta"), ("Theta", "Theta"),
     ("sigma", "sig"), ("Sigma", "Sig"),
     ("delta", "del_"), ("Delta", "Del"),
     ("alpha", "alpha"), ("beta", "beta"),
     ("gamma", "gamma"), ("Gamma", "Gam"),
-    ("varepsilon", "eps"), ("epsilon", "eps"),
+    ("epsilon", "eps"),
     ("omega", "omega"), ("Omega", "Omega"),
     ("kappa", "kap"), ("eta", "eta"),
     ("mu", "mu"), ("nu", "nu"), ("xi", "xi"), ("Xi", "Xi"),
@@ -254,9 +258,14 @@ def _latex_to_sympy_str(latex: str) -> str:
     s = s.replace(r"\cdot", "*").replace(r"\times", "*")
     s = re.sub(r"\\[,;!: ]", " ", s)   # spacing commands → space
 
-    # Greek letters
-    for cmd, rep in _GREEK:
-        s = re.sub(r"\\" + cmd + r"(?![A-Za-z])", rep, s)
+    # Greek letters — single regex pass so adjacent commands don't interfere
+    # (serial substitution turns \Delta\varpi → \Deltavarpi, breaking \Delta)
+    _gd = {cmd: rep for cmd, rep in _GREEK}
+
+    def _greek_sub(m: re.Match) -> str:
+        return _gd.get(m.group(1), m.group(0))
+
+    s = re.sub(r"\\([A-Za-z]+)(?![A-Za-z])", _greek_sub, s)
 
     # Font wrappers: \mathbf{x}, \mathrm{x}, \boldsymbol{x}, \text{x} → x
     for font_cmd in (r"\mathbf", r"\mathrm", r"\mathit",
@@ -265,7 +274,10 @@ def _latex_to_sympy_str(latex: str) -> str:
 
     # Subscripts: _{abc} → _abc  (keep as part of identifier)
     def _clean_sub(m: re.Match) -> str:
-        content = re.sub(r"[^A-Za-z0-9]", "", m.group(1))
+        content = m.group(1)
+        # Strip any LaTeX commands inside the subscript (e.g. \rm, \mathrm)
+        content = re.sub(r"\\[A-Za-z]+\s*", "", content)
+        content = re.sub(r"[^A-Za-z0-9]", "", content)
         return ("_" + content) if content else ""
     s = re.sub(r"_\{([^}]+)\}", _clean_sub, s)
 
@@ -287,6 +299,13 @@ def _latex_to_sympy_str(latex: str) -> str:
     # Remove remaining unknown LaTeX commands and structural characters
     s = re.sub(r"\\[A-Za-z]+", "", s)
     s = re.sub(r"[{}\\]", "", s)
+
+    # Clean up empty/duplicate arguments left by removed commands
+    # e.g. g(P,,t) → g(P,t)  or  g(,t) → g(t)
+    s = re.sub(r",\s*,", ",", s)           # double commas
+    s = re.sub(r"\(\s*,", "(", s)          # leading comma after (
+    s = re.sub(r",\s*\)", ")", s)           # trailing comma before )
+    s = re.sub(r",\s*,", ",", s)           # second pass after above fixes
 
     # Implicit multiplication: digit→letter/( and )→letter/(
     s = re.sub(r"(\d)([A-Za-z(])", r"\1*\2", s)
