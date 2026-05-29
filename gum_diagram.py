@@ -824,11 +824,18 @@ def render_png(tex_path: str, png_path: str, dpi: int = 150) -> bool:
             ["pdflatex", "-interaction=nonstopmode", "-output-directory", td, src],
             capture_output=True, text=True,
         )
-        if result.returncode != 0 or not os.path.exists(pdf):
-            print("  ✗  pdflatex failed:", file=sys.stderr)
+        if not os.path.exists(pdf):
+            print("  ✗  pdflatex failed (no PDF produced):", file=sys.stderr)
             for line in result.stdout.splitlines()[-20:]:
                 print("     " + line, file=sys.stderr)
             return False
+        if result.returncode != 0:
+            # PDF was produced but with warnings/errors — show them and continue
+            errors = [l for l in result.stdout.splitlines() if l.startswith("!")]
+            if errors:
+                print("  ⚠  pdflatex warnings:", file=sys.stderr)
+                for line in errors[:5]:
+                    print("     " + line, file=sys.stderr)
 
         # Convert PDF → PNG using Ghostscript
         gs_result = subprocess.run(
