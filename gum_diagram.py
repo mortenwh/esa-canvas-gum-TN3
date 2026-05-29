@@ -39,28 +39,42 @@ from sympy import latex as sp_latex
 
 
 def _get_parse_latex():
-    """Return a working parse_latex function, trying lark backend first."""
-    # sympy >= 1.12 ships a lark-based backend that requires no antlr4
+    """Return a working parse_latex function, trying lark backend first.
+
+    Priority:
+      1. sympy.parsing.latex.lark  — needs ``lark`` package, no antlr4
+      2. sympy.parsing.latex       — needs ``antlr4-python3-runtime==4.11``
+    """
+    errors: list = []
+
+    # ── Option 1: lark backend (sympy >= 1.12, pip install lark) ──────────
     try:
+        import lark  # noqa: F401 – ensure lark is present before importing
         from sympy.parsing.latex.lark import parse_latex as _pl
-        # Quick smoke-test
-        _pl(r"a + b")
+        _pl(r"a + b")   # smoke-test
         return _pl
-    except Exception:
-        pass
-    # Fall back to legacy antlr4 backend (requires antlr4-python3-runtime==4.11)
+    except Exception as e:
+        errors.append(f"lark backend: {e}")
+
+    # ── Option 2: antlr4 backend (antlr4-python3-runtime==4.11 only) ──────
     try:
-        from sympy.parsing.latex import parse_latex as _pl
-        _pl(r"a + b")
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            from sympy.parsing.latex import parse_latex as _pl
+        _pl(r"a + b")   # smoke-test
         return _pl
-    except ImportError as exc:
-        raise SystemExit(
-            "LaTeX parsing is unavailable.\n"
-            "Install one of:\n"
-            "  pip install antlr4-python3-runtime==4.11\n"
-            "  conda/mamba install antlr-python-runtime==4.11\n"
-            f"(Original error: {exc})"
-        ) from exc
+    except Exception as e:
+        errors.append(f"antlr4 backend: {e}")
+
+    raise SystemExit(
+        "LaTeX parsing is unavailable. Install the lark package:\n"
+        "  mamba install python-lark        # recommended\n"
+        "  pip install lark\n"
+        "\n"
+        "Tried and failed:\n" +
+        "\n".join(f"  • {e}" for e in errors)
+    )
 
 
 parse_latex = _get_parse_latex()
