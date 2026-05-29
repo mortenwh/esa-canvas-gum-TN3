@@ -23,7 +23,7 @@ Usage
     python gum_diagram.py --example -o fig.tex # write output to file
     python gum_diagram.py --no-preview         # skip PNG preview
 
-Dependencies:  sympy antlr4-python3-runtime==4.11  (for LaTeX parsing)
+Dependencies:  sympy  (LaTeX parsing via lark backend, or antlr4==4.11)
                pdflatex + gs  (for PNG preview)
 """
 
@@ -36,7 +36,34 @@ from typing import Dict, List, Optional, Tuple
 
 import sympy as sp
 from sympy import latex as sp_latex
-from sympy.parsing.latex import parse_latex
+
+
+def _get_parse_latex():
+    """Return a working parse_latex function, trying lark backend first."""
+    # sympy >= 1.12 ships a lark-based backend that requires no antlr4
+    try:
+        from sympy.parsing.latex.lark import parse_latex as _pl
+        # Quick smoke-test
+        _pl(r"a + b")
+        return _pl
+    except Exception:
+        pass
+    # Fall back to legacy antlr4 backend (requires antlr4-python3-runtime==4.11)
+    try:
+        from sympy.parsing.latex import parse_latex as _pl
+        _pl(r"a + b")
+        return _pl
+    except ImportError as exc:
+        raise SystemExit(
+            "LaTeX parsing is unavailable.\n"
+            "Install one of:\n"
+            "  pip install antlr4-python3-runtime==4.11\n"
+            "  conda/mamba install antlr-python-runtime==4.11\n"
+            f"(Original error: {exc})"
+        ) from exc
+
+
+parse_latex = _get_parse_latex()
 
 # ── Colour palette (mirrors the document colour choices) ────────────────────
 COLORS: List[str] = [
