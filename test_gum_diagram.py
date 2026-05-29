@@ -187,7 +187,7 @@ class TestRenderDeriv(unittest.TestCase):
         """Sympy symbol names should be replaced with user LaTeX names."""
         expr, st = gd._parse_latex_expr(r"\frac{\lambda}{b}", {})
         syms = {str(s): s for s in expr.free_symbols}
-        lam_iv = gd.InputVar(r"\lambda", syms["lambda"], "red")
+        lam_iv = gd.InputVar(r"\lambda", syms["lam"], "red")
         b_iv = gd.InputVar(r"b_0", syms["b"], "blue!70!black")
         model = gd.MeasurementModel(
             latex_name=r"y", latex_expr=r"\frac{\lambda}{b}",
@@ -195,7 +195,7 @@ class TestRenderDeriv(unittest.TestCase):
         )
         out = gd._render_deriv(model, lam_iv)
         # The result should contain user-supplied LaTeX, not raw sympy name
-        self.assertNotIn("lambda", out)  # sympy's internal name gone
+        self.assertNotIn("lam", out)  # sympy's internal name gone
 
     def test_constant_wrt_absent_sym(self):
         model = _simple_model()

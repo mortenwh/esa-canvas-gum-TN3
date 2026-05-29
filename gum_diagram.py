@@ -23,8 +23,21 @@ Usage
     python gum_diagram.py --example -o fig.tex # write output to file
     python gum_diagram.py --no-preview         # skip PNG preview
 
-Dependencies:  sympy  (LaTeX parsing via lark backend, or antlr4==4.11)
+Dependencies:  sympy  (only standard dependency; no antlr4 / lark needed)
                pdflatex + gs  (for PNG preview)
+
+LaTeX expression syntax
+-----------------------
+The converter handles a practical subset of LaTeX math:
+  \\frac{a}{b}          →  division
+  a^{n}  or  a^n        →  power (when exponent is purely numeric)
+  a^{tag}               →  appended to variable name (non-numeric superscript)
+  \\sqrt{x}             →  square root
+  \\cdot  \\times       →  multiplication
+  \\left( \\right)      →  parentheses
+  Greek letters         →  safe identifier names (\\lambda → lam, etc.)
+  \\mathbf{x} etc.      →  stripped to plain identifier
+  a_{sub}               →  subscript becomes part of identifier name
 """
 
 import argparse
@@ -36,48 +49,6 @@ from typing import Dict, List, Optional, Tuple
 
 import sympy as sp
 from sympy import latex as sp_latex
-
-
-def _get_parse_latex():
-    """Return a working parse_latex function, trying lark backend first.
-
-    Priority:
-      1. sympy.parsing.latex.lark  — needs ``lark`` package, no antlr4
-      2. sympy.parsing.latex       — needs ``antlr4-python3-runtime==4.11``
-    """
-    errors: list = []
-
-    # ── Option 1: lark backend (sympy >= 1.12, pip install lark) ──────────
-    try:
-        import lark  # noqa: F401 – ensure lark is present before importing
-        from sympy.parsing.latex.lark import parse_latex as _pl
-        _pl(r"a + b")   # smoke-test
-        return _pl
-    except Exception as e:
-        errors.append(f"lark backend: {e}")
-
-    # ── Option 2: antlr4 backend (antlr4-python3-runtime==4.11 only) ──────
-    try:
-        import warnings
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            from sympy.parsing.latex import parse_latex as _pl
-        _pl(r"a + b")   # smoke-test
-        return _pl
-    except Exception as e:
-        errors.append(f"antlr4 backend: {e}")
-
-    raise SystemExit(
-        "LaTeX parsing is unavailable. Install the lark package:\n"
-        "  mamba install python-lark        # recommended\n"
-        "  pip install lark\n"
-        "\n"
-        "Tried and failed:\n" +
-        "\n".join(f"  • {e}" for e in errors)
-    )
-
-
-parse_latex = _get_parse_latex()
 
 # ── Colour palette (mirrors the document colour choices) ────────────────────
 COLORS: List[str] = [
@@ -178,27 +149,182 @@ def _latex_to_sym_name(latex: str) -> str:
     return s or "x"
 
 
+def _find_brace_end(s: str, start: int) -> int:
+    """Return index of the ``}`` matching the ``{`` at *s[start]*."""
+    depth = 0
+    for i in range(start, len(s)):
+        if s[i] == "{":
+            depth += 1
+        elif s[i] == "}":
+            depth -= 1
+            if depth == 0:
+                return i
+    return len(s) - 1
+
+
+def _expand_command1(s: str, cmd: str, fmt: str) -> str:
+    r"""Replace ``\cmd{arg}`` with ``fmt.format(arg)`` (handles nested braces)."""
+    result = []
+    i = 0
+    while i < len(s):
+        if s[i:].startswith(cmd + "{"):
+            j = i + len(cmd)
+            end = _find_brace_end(s, j)
+            arg = s[j + 1:end]
+            result.append(fmt.format(arg))
+            i = end + 1
+        else:
+            result.append(s[i])
+            i += 1
+    return "".join(result)
+
+
+def _expand_command2(s: str, cmd: str, fmt: str) -> str:
+    r"""Replace ``\cmd{arg1}{arg2}`` with ``fmt.format(arg1, arg2)``."""
+    result = []
+    i = 0
+    while i < len(s):
+        if s[i:].startswith(cmd + "{"):
+            j = i + len(cmd)
+            end1 = _find_brace_end(s, j)
+            arg1 = s[j + 1:end1]
+            k = end1 + 1
+            while k < len(s) and s[k] == " ":
+                k += 1
+            if k < len(s) and s[k] == "{":
+                end2 = _find_brace_end(s, k)
+                arg2 = s[k + 1:end2]
+                result.append(fmt.format(arg1, arg2))
+                i = end2 + 1
+            else:
+                result.append(s[i])
+                i += 1
+        else:
+            result.append(s[i])
+            i += 1
+    return "".join(result)
+
+
+# Greek letter substitutions (longer names first to avoid prefix clashes)
+_GREEK: List[Tuple[str, str]] = sorted([
+    ("lambda", "lam"), ("Lambda", "Lam"),
+    ("varphi", "phi"), ("phi", "phi"), ("Phi", "Phi"),
+    ("theta", "theta"), ("Theta", "Theta"),
+    ("sigma", "sig"), ("Sigma", "Sig"),
+    ("delta", "del_"), ("Delta", "Del"),
+    ("alpha", "alpha"), ("beta", "beta"),
+    ("gamma", "gamma"), ("Gamma", "Gam"),
+    ("varepsilon", "eps"), ("epsilon", "eps"),
+    ("omega", "omega"), ("Omega", "Omega"),
+    ("kappa", "kap"), ("eta", "eta"),
+    ("mu", "mu"), ("nu", "nu"), ("xi", "xi"), ("Xi", "Xi"),
+    ("pi", "pi_"), ("rho", "rho"), ("tau", "tau"),
+    ("zeta", "zeta"), ("chi", "chi"),
+    ("psi", "psi"), ("Psi", "Psi"),
+    ("upsilon", "ups"),
+], key=lambda t: -len(t[0]))
+
+
+def _latex_to_sympy_str(latex: str) -> str:
+    r"""Convert a LaTeX math expression to a Python string suitable for sympify.
+
+    Handles: ``\frac``, ``\sqrt``, ``\left``/``\right``, ``\cdot``/``\times``,
+    Greek letters, font commands (``\mathbf`` etc.), subscripts, and superscripts.
+
+    Superscript rule:
+      * Purely numeric/arithmetic content (digits, ``+-./``) → exponentiation.
+      * All other content (letters, ``\circ``, etc.)        → appended to identifier.
+    """
+    s = latex.strip()
+
+    # Expand \frac{num}{den} → ((num)/(den))
+    s = _expand_command2(s, r"\frac", "(({0})/({1}))")
+
+    # Expand \sqrt{arg} → sqrt(arg)
+    s = _expand_command1(s, r"\sqrt", "sqrt({0})")
+
+    # \left( → (  \right) → )  etc.
+    s = re.sub(r"\\left\s*\(", "(", s)
+    s = re.sub(r"\\right\s*\)", ")", s)
+    s = re.sub(r"\\left\s*\[", "(", s)
+    s = re.sub(r"\\right\s*\]", ")", s)
+    s = re.sub(r"\\left\s*\.?|\\right\s*\.?", "", s)
+
+    # Operators
+    s = s.replace(r"\cdot", "*").replace(r"\times", "*")
+    s = re.sub(r"\\[,;!: ]", " ", s)   # spacing commands → space
+
+    # Greek letters
+    for cmd, rep in _GREEK:
+        s = re.sub(r"\\" + cmd + r"(?![A-Za-z])", rep, s)
+
+    # Font wrappers: \mathbf{x}, \mathrm{x}, \boldsymbol{x}, \text{x} → x
+    for font_cmd in (r"\mathbf", r"\mathrm", r"\mathit",
+                     r"\boldsymbol", r"\text", r"\operatorname"):
+        s = _expand_command1(s, font_cmd, "{0}")
+
+    # Subscripts: _{abc} → _abc  (keep as part of identifier)
+    def _clean_sub(m: re.Match) -> str:
+        content = re.sub(r"[^A-Za-z0-9]", "", m.group(1))
+        return ("_" + content) if content else ""
+    s = re.sub(r"_\{([^}]+)\}", _clean_sub, s)
+
+    # Superscripts: ^{...} or ^x
+    def _handle_super(m: re.Match) -> str:
+        content = m.group(1)
+        # Strip inner LaTeX commands and braces to test if purely numeric
+        c = re.sub(r"\\[A-Za-z]+", "", content)
+        c = re.sub(r"[{}]", "", c).strip()
+        if re.match(r"^[0-9+\-./\s]+$", c):
+            return f"**({c})"
+        # Non-numeric superscript → append to identifier name
+        clean = re.sub(r"[^A-Za-z0-9]", "", c)
+        return clean if clean else ""
+
+    s = re.sub(r"\^\{([^}]*)\}", _handle_super, s)
+    s = re.sub(r"\^([A-Za-z0-9])", r"**\1", s)
+
+    # Remove remaining unknown LaTeX commands and structural characters
+    s = re.sub(r"\\[A-Za-z]+", "", s)
+    s = re.sub(r"[{}\\]", "", s)
+
+    # Implicit multiplication: digit→letter/( and )→letter/(
+    s = re.sub(r"(\d)([A-Za-z(])", r"\1*\2", s)
+    s = re.sub(r"\)([A-Za-z(])", r")*\1", s)
+
+    s = re.sub(r"\s+", "", s)
+    return s
+
+
 def _parse_latex_expr(
     latex_rhs: str,
     symtable: Dict[str, sp.Symbol],
 ) -> Tuple[sp.Expr, Dict[str, sp.Symbol]]:
     """Parse a LaTeX RHS expression and return (sympy_expr, updated_symtable).
 
-    New symbols that appear in *latex_rhs* are added to *symtable*.
+    Converts LaTeX to a sympy-compatible string via :func:`_latex_to_sympy_str`,
+    then calls ``sympify``.  New symbols are registered in *symtable*; symbols
+    already in *symtable* are reused so that the same variable across nested
+    models refers to the same sympy Symbol.
     """
-    # parse_latex may return an Eq if the user included "lhs = rhs"; strip it.
-    parsed = parse_latex(latex_rhs)
-    if isinstance(parsed, sp.Eq):
-        parsed = parsed.rhs
+    sym_str = _latex_to_sympy_str(latex_rhs)
+    try:
+        parsed = sp.sympify(sym_str)
+    except Exception as exc:
+        raise ValueError(
+            f"Could not parse LaTeX expression.\n"
+            f"  Input:     {latex_rhs!r}\n"
+            f"  Converted: {sym_str!r}\n"
+            f"  Error:     {exc}"
+        ) from exc
 
-    # Rename sympy auto-generated symbols to match symtable keys where possible
-    # (parse_latex creates its own symbol objects; we unify via name matching)
+    # Unify symbols with the shared symtable
     subs: Dict[sp.Symbol, sp.Symbol] = {}
     for sym in parsed.free_symbols:
         name = str(sym)
         if name not in symtable:
             symtable[name] = sym
-        else:
+        elif symtable[name] is not sym:
             subs[sym] = symtable[name]
     if subs:
         parsed = parsed.subs(subs)
@@ -570,51 +696,39 @@ def build_tikz(root: MeasurementModel, label: str = "") -> str:
 
 def _builtin_example() -> MeasurementModel:
     """Reconstruct the H_s uncertainty tree diagram from the document."""
-    # Sub-model: lambda_C^20 = lambda_C * R / (theta * phi_0)
-    lam_C20_latex_rhs = r"\frac{\lambda_{C} \cdot R}{\theta \cdot \phi_{0}}"
-    lam_C20_expr, st = _parse_latex_expr(lam_C20_latex_rhs, {})
+    R, theta, phi0, lam_C = sp.symbols("R theta phi0 lam_C")
 
-    syms = {str(s): s for s in lam_C20_expr.free_symbols}
-    R_iv = InputVar(r"R", syms["R"], "purple",
+    R_iv = InputVar(r"R", R, "purple",
                     effects=["Geolocation", "Orbital Fitting",
                              "Antenna mis-pointing"])
-    theta_iv = InputVar(r"\theta", syms["theta"], "cyan!80!black",
+    theta_iv = InputVar(r"\theta", theta, "cyan!80!black",
                         effects=["Geolocation", "Orbital Fitting",
                                  "Antenna mis-pointing"])
-    lam_C_iv = InputVar(r"\lambda_C", syms["lambda_{C}"], "red",
+    lam_C_iv = InputVar(r"\lambda_C", lam_C, "red",
                         effects=["Bright Target Removal", "FFT", "CCS",
                                  "Range-avg CCS", "IFFT", "Gaussian fit"])
-    phi0_iv = InputVar(r"\phi_0", syms["phi_{0}"], "green!60!black",
+    phi0_iv = InputVar(r"\phi_0", phi0, "green!60!black",
                        effects=["NWP modelling"])
 
+    lam_C20_expr = lam_C * R / (theta * phi0)
     lam_C20_model = MeasurementModel(
         latex_name=r"\lambda_C^{20^\circ}",
-        latex_expr=lam_C20_latex_rhs,
+        latex_expr=r"\frac{\lambda_C \cdot R}{\theta \cdot \phi_0}",
         expr=lam_C20_expr,
         inputs=[R_iv, theta_iv, lam_C_iv, phi0_iv],
     )
 
-    # Root model: H_s = ((lambda_C20 - b) / b)^2
-    hs_latex_rhs = (r"\left(\frac{\lambda_C^{20^\circ} - \mathbf{b}}"
-                    r"{\mathbf{b}}\right)^{2}")
-    hs_expr, _ = _parse_latex_expr(hs_latex_rhs, {})
-    hs_syms = {str(s): s for s in hs_expr.free_symbols}
+    lam_C20, b = sp.symbols("lam_C20 b")
+    hs_expr = ((lam_C20 - b) / b) ** 2
 
-    # Identify which sympy symbol corresponds to each variable
-    # parse_latex renders \lambda_C^{20^\circ} and \mathbf{b}
-    lam_C20_sym = next(s for s in hs_expr.free_symbols if "lam" in str(s).lower()
-                       or "lambda" in str(s).lower()
-                       or "C" in str(s))
-    b_sym = next(s for s in hs_expr.free_symbols if s != lam_C20_sym)
-
-    lam_C20_iv = InputVar(r"\lambda_C^{20^\circ}", lam_C20_sym, "red",
+    lam_C20_iv = InputVar(r"\lambda_C^{20^\circ}", lam_C20, "red",
                           submodel=lam_C20_model)
-    b_iv = InputVar(r"\mathbf{b}", b_sym, "blue!70!black",
+    b_iv = InputVar(r"\mathbf{b}", b, "blue!70!black",
                     effects=["Linear Fitting"])
 
     return MeasurementModel(
         latex_name=r"H_s",
-        latex_expr=hs_latex_rhs,
+        latex_expr=r"\left(\frac{\lambda_C^{20^\circ} - \mathbf{b}}{\mathbf{b}}\right)^{2}",
         expr=hs_expr,
         inputs=[lam_C20_iv, b_iv],
     )
