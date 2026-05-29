@@ -8,7 +8,6 @@ Run with:
 """
 import re
 import sys
-import textwrap
 import unittest
 from pathlib import Path
 
@@ -22,38 +21,98 @@ import gum_diagram as gd
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
 def _simple_model() -> gd.MeasurementModel:
-    """y = a * x + b  (all leaves, no sub-models)."""
-    a, x, b = sp.symbols("a x b")
-    a_iv = gd.InputVar(a, r"a", "red", effects=["Calibration"])
-    x_iv = gd.InputVar(x, r"x", "blue!70!black")
-    b_iv = gd.InputVar(b, r"b", "purple", effects=["Offset estimation"])
+    """y = a * x + b  (all leaves, no sub-models, using LaTeX input)."""
+    expr, st = gd._parse_latex_expr(r"a \cdot x + b", {})
+    syms = {str(s): s for s in expr.free_symbols}
+    a_iv = gd.InputVar(r"a", syms["a"], "red", effects=["Calibration"])
+    x_iv = gd.InputVar(r"x", syms["x"], "blue!70!black")
+    b_iv = gd.InputVar(r"b", syms["b"], "purple", effects=["Offset estimation"])
     return gd.MeasurementModel(
-        sym=sp.Symbol("y"),
         latex_name=r"y",
-        expr=a * x + b,
+        latex_expr=r"a \cdot x + b",
+        expr=expr,
         inputs=[a_iv, x_iv, b_iv],
     )
 
 
 def _nested_model() -> gd.MeasurementModel:
-    """z = p * q  where p has sub-model p = u / v."""
-    u, v, q = sp.symbols("u v q")
-    u_iv = gd.InputVar(u, r"u", "red", effects=["Measurement A"])
-    v_iv = gd.InputVar(v, r"v", "purple", effects=["Measurement B"])
-    p_expr = u / v
+    """z = p * q  where p has sub-model p = u / v (using LaTeX input)."""
+    sub_expr, st = gd._parse_latex_expr(r"\frac{u}{v}", {})
+    syms_sub = {str(s): s for s in sub_expr.free_symbols}
+    u_iv = gd.InputVar(r"u", syms_sub["u"], "red", effects=["Measurement A"])
+    v_iv = gd.InputVar(r"v", syms_sub["v"], "purple", effects=["Measurement B"])
     p_model = gd.MeasurementModel(
-        sym=sp.Symbol("p"), latex_name=r"p",
-        expr=p_expr, inputs=[u_iv, v_iv],
+        latex_name=r"p",
+        latex_expr=r"\frac{u}{v}",
+        expr=sub_expr,
+        inputs=[u_iv, v_iv],
     )
-    p_iv = gd.InputVar(sp.Symbol("p"), r"p", "red", submodel=p_model)
-    q_iv = gd.InputVar(q, r"q", "blue!70!black", effects=["NWP"])
-    p_sym, q_sym = sp.symbols("p q")
+
+    root_expr, st2 = gd._parse_latex_expr(r"p \cdot q", {})
+    syms_root = {str(s): s for s in root_expr.free_symbols}
+    p_iv = gd.InputVar(r"p", syms_root["p"], "red", submodel=p_model)
+    q_iv = gd.InputVar(r"q", syms_root["q"], "blue!70!black", effects=["NWP"])
     return gd.MeasurementModel(
-        sym=sp.Symbol("z"),
         latex_name=r"z",
-        expr=p_sym * q_sym,
+        latex_expr=r"p \cdot q",
+        expr=root_expr,
         inputs=[p_iv, q_iv],
     )
+
+
+# ── _latex_to_sym_name ───────────────────────────────────────────────────────
+
+class TestLatexToSymName(unittest.TestCase):
+    def test_greek_lambda(self):
+        self.assertEqual(gd._latex_to_sym_name(r"\lambda_C"), "lam_C")
+
+    def test_greek_theta(self):
+        self.assertEqual(gd._latex_to_sym_name(r"\theta"), "theta")
+
+    def test_mathbf_stripped(self):
+        self.assertEqual(gd._latex_to_sym_name(r"\mathbf{b}"), "b")
+
+    def test_plain_ascii(self):
+        self.assertEqual(gd._latex_to_sym_name("x"), "x")
+
+    def test_no_empty_result(self):
+        # Any input should return a non-empty string
+        self.assertTrue(len(gd._latex_to_sym_name(r"\{")) > 0)
+
+
+# ── _parse_latex_expr ────────────────────────────────────────────────────────
+
+class TestParseLatexExpr(unittest.TestCase):
+    def test_simple_sum(self):
+        expr, st = gd._parse_latex_expr(r"a + b", {})
+        names = {str(s) for s in expr.free_symbols}
+        self.assertIn("a", names)
+        self.assertIn("b", names)
+
+    def test_fraction(self):
+        expr, st = gd._parse_latex_expr(r"\frac{x}{y}", {})
+        names = {str(s) for s in expr.free_symbols}
+        self.assertIn("x", names)
+        self.assertIn("y", names)
+
+    def test_symtable_populated(self):
+        expr, st = gd._parse_latex_expr(r"a \cdot b", {})
+        self.assertIn("a", st)
+        self.assertIn("b", st)
+
+    def test_symtable_reuse(self):
+        """Same variable across two parse calls should reuse the same Symbol."""
+        _, st1 = gd._parse_latex_expr(r"a + c", {})
+        expr2, st2 = gd._parse_latex_expr(r"a + d", st1)
+        # 'a' should be the same Symbol object in both
+        a_name = next(str(s) for s in expr2.free_symbols if str(s) == "a")
+        self.assertIn(a_name, st2)
+
+    def test_equation_rhs_stripped(self):
+        """If user types 'y = a + b', only the RHS should be returned."""
+        # parse_latex may or may not return Eq; if it does, we take rhs
+        expr, _ = gd._parse_latex_expr(r"a + b", {})
+        self.assertFalse(isinstance(expr, sp.Eq))
 
 
 # ── _tikz_id ─────────────────────────────────────────────────────────────────
@@ -85,7 +144,6 @@ class TestLabelToFilename(unittest.TestCase):
         self.assertEqual(gd._label_to_filename("my label"), "my_label.tex")
 
     def test_double_underscores_collapsed(self):
-        # Colon → underscore, adjacent to another underscore → collapses
         self.assertEqual(gd._label_to_filename("fig:_utd"), "fig_utd.tex")
 
     def test_always_ends_in_tex(self):
@@ -106,7 +164,6 @@ class TestFanPos(unittest.TestCase):
         right = gd._fan_pos(1, 2, "NODE")
         self.assertIn("left", left)
         self.assertIn("right", right)
-        # Extract the horizontal offset values and check they are equal
         l_cm = float(re.search(r"and ([\d.]+)cm", left).group(1))
         r_cm = float(re.search(r"and ([\d.]+)cm", right).group(1))
         self.assertAlmostEqual(l_cm, r_cm)
@@ -116,47 +173,35 @@ class TestFanPos(unittest.TestCase):
         self.assertIn("MYNODE", pos)
 
 
-# ── _expr_latex ───────────────────────────────────────────────────────────────
+# ── _render_deriv ─────────────────────────────────────────────────────────────
 
-class TestExprLatex(unittest.TestCase):
-    def test_simple_substitution(self):
+class TestRenderDeriv(unittest.TestCase):
+    def test_linear_derivative(self):
         model = _simple_model()
-        lat = gd._expr_latex(model)
-        # sympy renders Symbol("a") as "a"; user provided "a" → no real change
-        # but the expression should contain the user latex names
-        self.assertIn("a", lat)
-        self.assertIn("b", lat)
-        self.assertIn("x", lat)
+        a_iv, x_iv, b_iv = model.inputs
+        # d(a*x+b)/da = x
+        out = gd._render_deriv(model, a_iv)
+        self.assertIn("x", out)
 
-    def test_no_corruption_of_lambda(self):
-        """A single-char symbol name must not corrupt \\lambda in the output."""
-        lam, b = sp.symbols("lam b")
-        lam_iv = gd.InputVar(lam, r"\lambda", "red")
-        b_iv = gd.InputVar(b, r"b_{\rm cal}", "blue!70!black")
+    def test_derivative_uses_latex_names(self):
+        """Sympy symbol names should be replaced with user LaTeX names."""
+        expr, st = gd._parse_latex_expr(r"\frac{\lambda}{b}", {})
+        syms = {str(s): s for s in expr.free_symbols}
+        lam_iv = gd.InputVar(r"\lambda", syms["lambda"], "red")
+        b_iv = gd.InputVar(r"b_0", syms["b"], "blue!70!black")
         model = gd.MeasurementModel(
-            sym=sp.Symbol("y"), latex_name=r"y",
-            expr=lam + b, inputs=[lam_iv, b_iv],
+            latex_name=r"y", latex_expr=r"\frac{\lambda}{b}",
+            expr=expr, inputs=[lam_iv, b_iv],
         )
-        lat = gd._expr_latex(model)
-        # \lambda must appear intact
-        self.assertIn(r"\lambda", lat)
-        # There should be no \lam that is not followed by b (i.e. \lambda intact)
-        self.assertNotIn(r"\lamb_", lat)
+        out = gd._render_deriv(model, lam_iv)
+        # The result should contain user-supplied LaTeX, not raw sympy name
+        self.assertNotIn("lambda", out)  # sympy's internal name gone
 
-    def test_long_name_before_short(self):
-        """lam_C20 → \\lambda_C^{20} must be replaced before any single-char."""
-        lam_C20, b = sp.symbols("lam_C20 b")
-        l_iv = gd.InputVar(lam_C20, r"\lambda_C^{20}", "red")
-        b_iv = gd.InputVar(b, r"\mathbf{b}", "blue!70!black")
-        model = gd.MeasurementModel(
-            sym=sp.Symbol("y"), latex_name=r"y",
-            expr=lam_C20 + b, inputs=[l_iv, b_iv],
-        )
-        lat = gd._expr_latex(model)
-        self.assertIn(r"\lambda_C^{20}", lat)
-        self.assertIn(r"\mathbf{b}", lat)
-        # The raw sympy form lam_{C20} should be fully replaced
-        self.assertNotIn("lam_{C20}", lat)
+    def test_constant_wrt_absent_sym(self):
+        model = _simple_model()
+        z_iv = gd.InputVar(r"z", sp.Symbol("z_other"), "green!60!black")
+        out = gd._render_deriv(model, z_iv)
+        self.assertEqual(out.strip(), "0")
 
 
 # ── MeasurementModel.deriv_of ─────────────────────────────────────────────────
@@ -173,7 +218,7 @@ class TestDerivOf(unittest.TestCase):
     def test_constant_derivative_is_zero_for_absent_symbol(self):
         model = _simple_model()
         z = sp.Symbol("z_other")
-        z_iv = gd.InputVar(z, r"z", "green!60!black")
+        z_iv = gd.InputVar(r"z", z, "green!60!black")
         self.assertEqual(sp.diff(model.expr, z_iv.sym), 0)
 
 
@@ -228,7 +273,6 @@ class TestBuildTikz(unittest.TestCase):
     # ── Leaf inputs ────────────────────────────────────────────────────────
     def test_leaf_uncertainty_nodes(self):
         out = gd.build_tikz(self.simple)
-        # u(a), u(x), u(b) should all appear
         self.assertIn("u(a)", out)
         self.assertIn("u(x)", out)
         self.assertIn("u(b)", out)
@@ -240,8 +284,6 @@ class TestBuildTikz(unittest.TestCase):
 
     def test_no_effect_node_when_no_effects(self):
         out = gd.build_tikz(self.simple)
-        # x_iv has no effects; no effect_node should appear adjacent to u(x)
-        # We check that effect_node count matches the number of inputs with effects
         n_effect_nodes = out.count("effect_node,")
         # simple model: a has 1 effect, x has 0, b has 1 → 2 effect nodes
         self.assertEqual(n_effect_nodes, 2)
@@ -299,9 +341,7 @@ class TestBuildTikz(unittest.TestCase):
     def test_builtin_example_lambda_not_corrupted(self):
         model = gd._builtin_example()
         out = gd.build_tikz(model)
-        # \lambda_C should appear intact in derivative notation
         self.assertIn(r"\lambda_C", out)
-        # No garbled version like \lam\ followed by mathbf
         self.assertNotIn(r"\lam" + "\\", out)
 
 

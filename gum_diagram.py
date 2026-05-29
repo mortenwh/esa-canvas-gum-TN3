@@ -2,9 +2,10 @@
 """
 gum_diagram.py – GUM Uncertainty Tree Diagram Generator
 
-Interactively collects a measurand definition and measurement model,
-computes partial derivatives symbolically, and generates TikZ code for
-an Uncertainty Tree Diagram (UTD) consistent with the esa-canvas-gum style.
+Interactively collects a measurand definition and measurement model
+as LaTeX expressions, parses them with sympy, computes partial
+derivatives symbolically, and generates TikZ code for an Uncertainty
+Tree Diagram (UTD) consistent with the esa-canvas-gum style.
 
 Layout rules (matching the document conventions):
   • The root measurement model is placed at the centre.
@@ -22,8 +23,8 @@ Usage
     python gum_diagram.py --example -o fig.tex # write output to file
     python gum_diagram.py --no-preview         # skip PNG preview
 
-Dependencies:  sympy  (pip install sympy)
-               pdf2image + Pillow  (pip install pdf2image pillow)  – for preview
+Dependencies:  sympy antlr4-python3-runtime==4.11  (for LaTeX parsing)
+               pdflatex + gs  (for PNG preview)
 """
 
 import argparse
@@ -31,10 +32,11 @@ import re
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 import sympy as sp
 from sympy import latex as sp_latex
+from sympy.parsing.latex import parse_latex
 
 # ── Colour palette (mirrors the document colour choices) ────────────────────
 COLORS: List[str] = [
@@ -54,9 +56,23 @@ COLORS: List[str] = [
 
 @dataclass
 class InputVar:
-    """One input quantity to a measurement model."""
-    sym: sp.Symbol
+    """One input quantity to a measurement model.
+
+    Attributes
+    ----------
+    latex_name:
+        The LaTeX name as the user typed it, e.g. ``\\lambda_C^{20^\\circ}``.
+    sym:
+        The corresponding sympy Symbol (derived automatically from latex_name).
+    color:
+        TikZ colour string assigned from the palette.
+    submodel:
+        Optional nested MeasurementModel for this input.
+    effects:
+        List of uncertainty-source strings shown in the dashed effect box.
+    """
     latex_name: str
+    sym: sp.Symbol
     color: str
     submodel: Optional["MeasurementModel"] = None
     effects: List[str] = field(default_factory=list)
@@ -64,9 +80,22 @@ class InputVar:
 
 @dataclass
 class MeasurementModel:
-    """Represents  measurand = f(inputs)."""
-    sym: sp.Symbol
+    """One level of the measurement model tree.
+
+    Attributes
+    ----------
+    latex_name:
+        LaTeX name of the measurand, e.g. ``H_s``.
+    latex_expr:
+        The *right-hand side* of the model equation in LaTeX,
+        e.g. ``\\left(\\frac{\\lambda_C - b}{b}\\right)^2``.
+    expr:
+        The sympy expression parsed from *latex_expr*.
+    inputs:
+        Ordered list of input variables.
+    """
     latex_name: str
+    latex_expr: str
     expr: sp.Expr
     inputs: List[InputVar]
 
@@ -74,48 +103,90 @@ class MeasurementModel:
         return sp.diff(self.expr, ivar.sym)
 
 
-# ── LaTeX helpers ────────────────────────────────────────────────────────────
+# ── LaTeX ↔ sympy helpers ─────────────────────────────────────────────────────
 
-def _expr_latex(model: MeasurementModel) -> str:
+def _latex_to_sym_name(latex: str) -> str:
+    """Derive a safe sympy Symbol name from a LaTeX string.
+
+    ``\\lambda_C^{20^\\circ}`` → ``lam_C20``
+    Strips backslashes, braces, carets, and common LaTeX commands.
     """
-    Render model.expr as LaTeX, replacing sympy-generated names with the
-    user-supplied LaTeX names for each input variable.
+    s = latex
+    # Map common Greek letter commands to short names
+    greek = {
+        "lambda": "lam", "Lambda": "Lam",
+        "theta": "theta", "Theta": "Theta",
+        "phi": "phi", "Phi": "Phi",
+        "sigma": "sig", "Sigma": "Sig",
+        "delta": "del", "Delta": "Del",
+        "alpha": "alpha", "beta": "beta", "gamma": "gamma",
+        "mu": "mu", "nu": "nu", "xi": "xi", "pi": "pi",
+        "rho": "rho", "tau": "tau", "omega": "omega", "Omega": "Omega",
+        "eta": "eta", "kappa": "kap", "epsilon": "eps",
+    }
+    for cmd, rep in greek.items():
+        s = re.sub(r"\\" + cmd + r"(?![A-Za-z])", rep, s)
+    # Remove remaining LaTeX commands and structural characters
+    s = re.sub(r"\\mathbf\{([^}]+)\}", r"\1", s)
+    s = re.sub(r"\\mathrm\{([^}]+)\}", r"\1", s)
+    s = re.sub(r"\\text\{([^}]+)\}", r"\1", s)
+    s = re.sub(r"\\[A-Za-z]+", "", s)  # remaining commands
+    s = re.sub(r"[{}^\s]", "", s)       # braces, carets, spaces
+    s = re.sub(r"[^A-Za-z0-9_]", "_", s)
+    s = re.sub(r"_+", "_", s).strip("_")
+    return s or "x"
 
-    Uses regex matching with a negative lookbehind/lookahead so that short
-    symbol names (e.g. ``b``) do not corrupt longer tokens such as
-    ``\\lambda``.
+
+def _parse_latex_expr(
+    latex_rhs: str,
+    symtable: Dict[str, sp.Symbol],
+) -> Tuple[sp.Expr, Dict[str, sp.Symbol]]:
+    """Parse a LaTeX RHS expression and return (sympy_expr, updated_symtable).
+
+    New symbols that appear in *latex_rhs* are added to *symtable*.
     """
-    raw = sp_latex(model.expr)
-    # Sort by descending length so longer tokens are replaced before shorter
-    # ones that might be substrings of them.
-    pairs = sorted(
-        [(sp_latex(iv.sym), iv.latex_name) for iv in model.inputs],
-        key=lambda p: len(p[0]),
-        reverse=True,
-    )
-    for old, new in pairs:
-        # Match `old` only when NOT preceded or followed by a letter,
-        # digit, or backslash — prevents corrupting e.g. \lambda.
-        pattern = r"(?<![A-Za-z0-9\\])" + re.escape(old) + r"(?![A-Za-z0-9])"
-        raw = re.sub(pattern, new.replace("\\", "\\\\"), raw)
-    return raw
+    # parse_latex may return an Eq if the user included "lhs = rhs"; strip it.
+    parsed = parse_latex(latex_rhs)
+    if isinstance(parsed, sp.Eq):
+        parsed = parsed.rhs
+
+    # Rename sympy auto-generated symbols to match symtable keys where possible
+    # (parse_latex creates its own symbol objects; we unify via name matching)
+    subs: Dict[sp.Symbol, sp.Symbol] = {}
+    for sym in parsed.free_symbols:
+        name = str(sym)
+        if name not in symtable:
+            symtable[name] = sym
+        else:
+            subs[sym] = symtable[name]
+    if subs:
+        parsed = parsed.subs(subs)
+
+    return parsed, symtable
 
 
-def _deriv_latex(of_lat: str, wrt_lat: str) -> str:
+def _deriv_label(of_lat: str, wrt_lat: str) -> str:
+    """Return ``\\frac{\\partial of}{\\partial wrt}`` LaTeX string."""
     return rf"\frac{{\partial {of_lat}}}{{\partial {wrt_lat}}}"
 
 
-def _deriv_expr_latex(model: MeasurementModel, ivar: InputVar) -> str:
-    """Return the LaTeX for the symbolic partial derivative ∂model/∂ivar."""
+def _render_deriv(model: MeasurementModel, ivar: InputVar) -> str:
+    """Compute ∂model/∂ivar symbolically and render to LaTeX.
+
+    The rendered LaTeX uses the user-supplied LaTeX names for all
+    input variables, not sympy's auto-generated identifier names.
+    """
     d = model.deriv_of(ivar)
     raw = sp_latex(d)
+    # Replace sympy symbol names with user LaTeX names (longest first)
     pairs = sorted(
         [(sp_latex(iv.sym), iv.latex_name) for iv in model.inputs],
         key=lambda p: len(p[0]),
         reverse=True,
     )
     for old, new in pairs:
-        pattern = r"(?<![A-Za-z0-9\\])" + re.escape(old) + r"(?![A-Za-z0-9])"
+        pattern = (r"(?<![A-Za-z0-9\\{])" + re.escape(old)
+                   + r"(?![A-Za-z0-9_])")
         raw = re.sub(pattern, new.replace("\\", "\\\\"), raw)
     return raw
 
@@ -141,43 +212,51 @@ def _ask_yn(prompt: str, default: bool = False) -> bool:
 
 
 def collect_model(
-    sym_name: str,
     latex_name: str,
-    symtable: Dict[str, sp.Basic],
+    symtable: Dict[str, sp.Symbol],
     color_pool: List[str],
     depth: int = 0,
 ) -> MeasurementModel:
-    """Recursively collect a measurement model via interactive prompts."""
+    """Recursively collect a measurement model via interactive prompts.
+
+    The user types the model equation as a LaTeX RHS.  The expression is
+    parsed with sympy; partial derivatives are computed automatically.
+    For each detected input variable the user may optionally supply a
+    sub-model or list uncertainty sources.
+    """
     ind = "  " * depth
     print(f"\n{ind}── Model for  {latex_name}  ──")
-    print(f"{ind}   Enter the expression using sympy syntax.")
-    print(f"{ind}   Variable names must be valid Python identifiers.")
-    print(f"{ind}   Example:  ((lam_C20 - b0) / b1)**2")
+    print(f"{ind}   Enter only the right-hand side in LaTeX.")
+    print(rf"{ind}   Example:  \left(\frac{{\lambda_C - b}}{{b}}\right)^2")
 
     while True:
-        expr_str = _ask(f"{ind}  Expression")
+        latex_rhs = _ask(f"{ind}  LaTeX RHS")
         try:
-            expr = sp.sympify(expr_str, locals=symtable)
+            expr, symtable = _parse_latex_expr(latex_rhs, symtable)
             break
         except Exception as exc:
             print(f"{ind}  ✗ Parse error: {exc}. Please try again.")
 
-    free = sorted(expr.free_symbols, key=str)
-    print(f"{ind}  Detected free symbols: {', '.join(str(s) for s in free)}")
+    free_syms = sorted(expr.free_symbols, key=str)
+    if free_syms:
+        print(f"{ind}  Detected symbols: "
+              f"{', '.join(str(s) for s in free_syms)}")
+    else:
+        print(f"{ind}  (No free symbols detected)")
 
     inputs: List[InputVar] = []
-    for sym in free:
-        name = str(sym)
-        print(f"\n{ind}  ─ Input  '{name}' ─")
-        latex = _ask(f"{ind}    LaTeX name", name)
+    for sym in free_syms:
+        sym_str = str(sym)
+        print(f"\n{ind}  ─ Input  '{sym_str}'  ─")
+        latex = _ask(f"{ind}    LaTeX name", sym_str)
         color = color_pool.pop(0) if color_pool else "black"
         print(f"{ind}    Assigned colour: {color}")
-        symtable[name] = sym
-        ivar = InputVar(sym=sym, latex_name=latex, color=color)
 
-        if _ask_yn(f"{ind}    Does '{name}' have a sub-model?"):
+        ivar = InputVar(latex_name=latex, sym=sym, color=color)
+
+        if _ask_yn(f"{ind}    Does '{sym_str}' have a sub-model?"):
             ivar.submodel = collect_model(
-                name, latex, dict(symtable), list(color_pool), depth + 1
+                latex, dict(symtable), list(color_pool), depth + 1
             )
         else:
             raw = _ask(
@@ -188,10 +267,11 @@ def collect_model(
 
         inputs.append(ivar)
 
-    measurand_sym = sp.Symbol(sym_name)
-    symtable[sym_name] = measurand_sym
     return MeasurementModel(
-        sym=measurand_sym, latex_name=latex_name, expr=expr, inputs=inputs
+        latex_name=latex_name,
+        latex_expr=latex_rhs,
+        expr=expr,
+        inputs=inputs,
     )
 
 
@@ -274,7 +354,7 @@ class _Emitter:
     def _model_node(self, model: MeasurementModel, node_id: str,
                     is_root: bool, pos: str) -> None:
         style = "root_block" if is_root else "model_block"
-        content = rf"{model.latex_name} = {_expr_latex(model)}"
+        content = rf"{model.latex_name} = {model.latex_expr}"
         label = "ROOT" if is_root else "sub-model"
         self.t.comment(f"{label}: {model.latex_name}")
         self.t.math_node(node_id, style, content, pos=pos)
@@ -291,16 +371,16 @@ class _Emitter:
         # Upward branches: one or more inputs with sub-models
         n_up = len(up_vars)
         for i, ivar in enumerate(up_vars):
-            d_id = self._uid(f"D{_tikz_id(str(ivar.sym))}")
-            m_id = self._uid(f"M{_tikz_id(str(ivar.sym))}")
+            d_id = self._uid(f"D{_tikz_id(ivar.latex_name)}")
+            m_id = self._uid(f"M{_tikz_id(ivar.latex_name)}")
             d_pos = _fan_pos(i, n_up, root_id, v_cm=2.0, h_step=3.5)
             self._up_branch(model, root_id, ivar, d_id, m_id, d_pos)
 
         # Side branches: leaf inputs at the root level
         prev_d = root_id
         for i, ivar in enumerate(side_vars):
-            d_id = self._uid(f"D{_tikz_id(str(ivar.sym))}S")
-            leaf_id = self._uid(f"U{_tikz_id(str(ivar.sym))}")
+            d_id = self._uid(f"D{_tikz_id(ivar.latex_name)}S")
+            leaf_id = self._uid(f"U{_tikz_id(ivar.latex_name)}")
             if i == 0:
                 d_pos = f"right=1.0cm of {root_id}"
             else:
@@ -312,8 +392,8 @@ class _Emitter:
                    ivar: InputVar, d_id: str, m_id: str, d_pos: str) -> None:
         """Emit  parent → deriv_node → sub-model block → sub-model inputs."""
         color = ivar.color
-        deriv_lat = _deriv_latex(parent.latex_name, ivar.latex_name)
-        self.t.comment(f"up-branch: ∂{parent.sym}/∂{ivar.sym}")
+        deriv_lat = _deriv_label(parent.latex_name, ivar.latex_name)
+        self.t.comment(f"up-branch: ∂{parent.latex_name}/∂{ivar.latex_name}")
         self.t.math_node(d_id, "deriv_node", deriv_lat, pos=d_pos)
         self.t.edge(parent_id, d_id, f"connection, {color}")
         self.t.blank()
@@ -338,10 +418,10 @@ class _Emitter:
     def _fan_submodel(self, parent: MeasurementModel, parent_id: str,
                       ivar: InputVar, pos: str) -> None:
         color = ivar.color
-        d_id = self._uid(f"D{_tikz_id(str(ivar.sym))}")
-        m_id = self._uid(f"M{_tikz_id(str(ivar.sym))}")
-        deriv_lat = _deriv_latex(parent.latex_name, ivar.latex_name)
-        self.t.comment(f"nested sub-model for {ivar.sym}")
+        d_id = self._uid(f"D{_tikz_id(ivar.latex_name)}")
+        m_id = self._uid(f"M{_tikz_id(ivar.latex_name)}")
+        deriv_lat = _deriv_label(parent.latex_name, ivar.latex_name)
+        self.t.comment(f"nested sub-model for {ivar.latex_name}")
         self.t.math_node(d_id, "deriv_node", deriv_lat, pos=pos)
         self.t.edge(parent_id, d_id, f"connection, {color}")
         self.t.blank()
@@ -353,10 +433,10 @@ class _Emitter:
     def _fan_leaf(self, parent: MeasurementModel, parent_id: str,
                   ivar: InputVar, pos: str) -> None:
         color = ivar.color
-        d_id = self._uid(f"D{_tikz_id(str(ivar.sym))}")
-        leaf_id = self._uid(f"U{_tikz_id(str(ivar.sym))}")
-        deriv_lat = _deriv_latex(parent.latex_name, ivar.latex_name)
-        self.t.comment(f"leaf: u({ivar.sym})")
+        d_id = self._uid(f"D{_tikz_id(ivar.latex_name)}")
+        leaf_id = self._uid(f"U{_tikz_id(ivar.latex_name)}")
+        deriv_lat = _deriv_label(parent.latex_name, ivar.latex_name)
+        self.t.comment(f"leaf: u({ivar.latex_name})")
         self.t.math_node(d_id, "deriv_node", deriv_lat, pos=pos)
         self.t.math_node(
             leaf_id, "leaf_node", rf"u({ivar.latex_name})",
@@ -373,8 +453,8 @@ class _Emitter:
     def _side_leaf(self, parent: MeasurementModel, parent_id: str,
                    ivar: InputVar, d_id: str, leaf_id: str, d_pos: str) -> None:
         color = ivar.color
-        deriv_lat = _deriv_latex(parent.latex_name, ivar.latex_name)
-        self.t.comment(f"side leaf: u({ivar.sym})")
+        deriv_lat = _deriv_label(parent.latex_name, ivar.latex_name)
+        self.t.comment(f"side leaf: u({ivar.latex_name})")
         self.t.math_node(d_id, "deriv_node", deriv_lat, pos=d_pos)
         self.t.math_node(
             leaf_id, "leaf_node", rf"u({ivar.latex_name})",
@@ -391,7 +471,7 @@ class _Emitter:
     def _effect_node(self, ivar: InputVar, leaf_id: str) -> None:
         if not ivar.effects:
             return
-        eff_id = self._uid(f"EFF{_tikz_id(str(ivar.sym))}")
+        eff_id = self._uid(f"EFF{_tikz_id(ivar.latex_name)}")
         eff_text = r" \\ ".join(ivar.effects)
         self.t.text_node(
             eff_id, "effect_node", eff_text,
@@ -413,7 +493,7 @@ def build_tikz(root: MeasurementModel, label: str = "") -> str:
         ``fig:`` prefix).  Defaults to ``utd_<ROOTSYM>``.
     """
     if not label:
-        label = f"utd_{_tikz_id(str(root.sym)).lower()}"
+        label = f"utd_{_tikz_id(root.latex_name).lower()}"
     t = _TikZ()
     t.raw(r"\begin{figure}[H]")
     t.raw(r"  \centering")
@@ -433,7 +513,7 @@ def build_tikz(root: MeasurementModel, label: str = "") -> str:
           r" align=center, text width=2.3cm, inner sep=3pt}")
     t.raw(r"    ]")
 
-    root_id = _tikz_id(str(root.sym)) + "ROOT"
+    root_id = _tikz_id(root.latex_name) + "ROOT"
     emitter = _Emitter(t)
     emitter.emit_root(root, root_id)
 
@@ -449,45 +529,51 @@ def build_tikz(root: MeasurementModel, label: str = "") -> str:
 
 def _builtin_example() -> MeasurementModel:
     """Reconstruct the H_s uncertainty tree diagram from the document."""
-    R, theta, phi0, lam_C = sp.symbols("R theta phi_0 lam_C")
+    # Sub-model: lambda_C^20 = lambda_C * R / (theta * phi_0)
+    lam_C20_latex_rhs = r"\frac{\lambda_{C} \cdot R}{\theta \cdot \phi_{0}}"
+    lam_C20_expr, st = _parse_latex_expr(lam_C20_latex_rhs, {})
 
-    # Inputs to the normalisation sub-model (lambda_C^20)
-    R_iv = InputVar(R, r"R", "purple",
+    syms = {str(s): s for s in lam_C20_expr.free_symbols}
+    R_iv = InputVar(r"R", syms["R"], "purple",
                     effects=["Geolocation", "Orbital Fitting",
                              "Antenna mis-pointing"])
-    theta_iv = InputVar(theta, r"\theta", "cyan!80!black",
+    theta_iv = InputVar(r"\theta", syms["theta"], "cyan!80!black",
                         effects=["Geolocation", "Orbital Fitting",
                                  "Antenna mis-pointing"])
-    lam_C_iv = InputVar(lam_C, r"\lambda_C", "red",
+    lam_C_iv = InputVar(r"\lambda_C", syms["lambda_{C}"], "red",
                         effects=["Bright Target Removal", "FFT", "CCS",
                                  "Range-avg CCS", "IFFT", "Gaussian fit"])
-    phi0_iv = InputVar(phi0, r"\phi_0", "green!60!black",
+    phi0_iv = InputVar(r"\phi_0", syms["phi_{0}"], "green!60!black",
                        effects=["NWP modelling"])
 
-    # Simplified normalisation expression
-    lam_C20_expr = lam_C * R / (theta * phi0)
     lam_C20_model = MeasurementModel(
-        sym=sp.Symbol("lam_C20"),
         latex_name=r"\lambda_C^{20^\circ}",
+        latex_expr=lam_C20_latex_rhs,
         expr=lam_C20_expr,
         inputs=[R_iv, theta_iv, lam_C_iv, phi0_iv],
     )
 
-    # Root model:  H_s = ((lam_C20 - b) / b)^2  (simplified; b groups b_0, b_1)
-    lam_C20_sym, b_sym = sp.symbols("lam_C20 b")
-    hs_expr = ((lam_C20_sym - b_sym) / b_sym) ** 2
+    # Root model: H_s = ((lambda_C20 - b) / b)^2
+    hs_latex_rhs = (r"\left(\frac{\lambda_C^{20^\circ} - \mathbf{b}}"
+                    r"{\mathbf{b}}\right)^{2}")
+    hs_expr, _ = _parse_latex_expr(hs_latex_rhs, {})
+    hs_syms = {str(s): s for s in hs_expr.free_symbols}
 
-    lam_C20_iv = InputVar(
-        lam_C20_sym, r"\lambda_C^{20^\circ}", "red", submodel=lam_C20_model
-    )
-    b_iv = InputVar(
-        b_sym, r"\mathbf{b}", "blue!70!black",
-        effects=["Linear Fitting"]
-    )
+    # Identify which sympy symbol corresponds to each variable
+    # parse_latex renders \lambda_C^{20^\circ} and \mathbf{b}
+    lam_C20_sym = next(s for s in hs_expr.free_symbols if "lam" in str(s).lower()
+                       or "lambda" in str(s).lower()
+                       or "C" in str(s))
+    b_sym = next(s for s in hs_expr.free_symbols if s != lam_C20_sym)
+
+    lam_C20_iv = InputVar(r"\lambda_C^{20^\circ}", lam_C20_sym, "red",
+                          submodel=lam_C20_model)
+    b_iv = InputVar(r"\mathbf{b}", b_sym, "blue!70!black",
+                    effects=["Linear Fitting"])
 
     return MeasurementModel(
-        sym=sp.Symbol("H_s"),
         latex_name=r"H_s",
+        latex_expr=hs_latex_rhs,
         expr=hs_expr,
         inputs=[lam_C20_iv, b_iv],
     )
@@ -643,18 +729,17 @@ def main() -> None:
         print("╚══════════════════════════════════════════════════════╝")
         print()
         print("Step 1: Measurand")
-        sym_name = _ask("  Python symbol name   (e.g.  H_s)")
-        lat_name = _ask("  LaTeX name           (e.g.  H_s)", sym_name)
-        default_label = f"utd_{sym_name.lower()}"
+        lat_name = _ask(r"  LaTeX name  (e.g.  H_s,  \sigma^0)")
+        default_label = f"utd_{_latex_to_sym_name(lat_name).lower()}"
         label = _ask(
-            "  Figure label (\\label{fig:<…>}, without 'fig:')",
+            r"  Figure label (\label{fig:<…>}, without 'fig:')",
             default_label,
         )
         print()
         print("Step 2: Measurement model")
-        symtable: Dict[str, sp.Basic] = {}
+        symtable: Dict[str, sp.Symbol] = {}
         color_pool = list(COLORS)
-        model = collect_model(sym_name, lat_name, symtable, color_pool)
+        model = collect_model(lat_name, symtable, color_pool)
 
     tikz_code = build_tikz(model, label=label)
 
