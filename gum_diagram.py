@@ -699,6 +699,7 @@ def collect_model(
     symtable: Dict[str, sp.Symbol],
     color_pool: List[str],
     depth: int = 0,
+    shallow: bool = False,
 ) -> MeasurementModel:
     """Recursively collect a measurement model via interactive prompts.
 
@@ -706,6 +707,13 @@ def collect_model(
     parsed with sympy; partial derivatives are computed automatically.
     For each detected input variable the user may optionally supply a
     sub-model or list uncertainty sources.
+
+    Parameters
+    ----------
+    shallow:
+        When True (used for separate-figure sub-models) only the equation
+        is collected; no further questions are asked about each input.
+        All inputs become plain leaves.
     """
     ind = "  " * depth
     print(f"\n{ind}── Model for  {latex_name}  ──")
@@ -735,36 +743,37 @@ def collect_model(
     inputs: List[InputVar] = []
     for sym in free_syms:
         sym_str = str(sym)
-        # Use the original LaTeX token if we found one, else fall back to sym_str
         latex = latex_var_map.get(sym_str, sym_str)
-        label = _sym_display(latex)
-        print(f"\n{ind}  ─ Input  {label}  ─")
         color = color_pool.pop(0) if color_pool else "black"
-        print(f"{ind}    Assigned colour: {color}")
-
         ivar = InputVar(latex_name=latex, sym=sym, color=color)
 
-        if _ask_yn(f"{ind}    Does {label} have a sub-model?"):
-            if _ask_yn(f"{ind}    Trace {label} in a separate figure?"):
-                ivar.submodel = collect_model(
-                    latex, dict(symtable), list(color_pool), depth + 1
-                )
-                default_sep_label = f"utd_{_latex_to_sym_name(latex).lower()}"
-                ivar.separate_figure = True
-                ivar.separate_label = _ask(
-                    f"{ind}    Separate figure label (without 'fig:')",
-                    default_sep_label,
-                )
+        if not shallow:
+            label = _sym_display(latex)
+            print(f"\n{ind}  ─ Input  {label}  ─")
+            print(f"{ind}    Assigned colour: {color}")
+
+            if _ask_yn(f"{ind}    Does {label} have a sub-model?"):
+                if _ask_yn(f"{ind}    Trace {label} in a separate figure?"):
+                    ivar.submodel = collect_model(
+                        latex, dict(symtable), list(color_pool), depth + 1,
+                        shallow=True,
+                    )
+                    default_sep_label = f"utd_{_latex_to_sym_name(latex).lower()}"
+                    ivar.separate_figure = True
+                    ivar.separate_label = _ask(
+                        f"{ind}    Separate figure label (without 'fig:')",
+                        default_sep_label,
+                    )
+                else:
+                    ivar.submodel = collect_model(
+                        latex, dict(symtable), list(color_pool), depth + 1
+                    )
             else:
-                ivar.submodel = collect_model(
-                    latex, dict(symtable), list(color_pool), depth + 1
+                raw = _ask(
+                    f"{ind}    Uncertainty sources (comma-separated, or blank)", ""
                 )
-        else:
-            raw = _ask(
-                f"{ind}    Uncertainty sources (comma-separated, or blank)", ""
-            )
-            if raw:
-                ivar.effects = [e.strip() for e in raw.split(",")]
+                if raw:
+                    ivar.effects = [e.strip() for e in raw.split(",")]
 
         inputs.append(ivar)
 
