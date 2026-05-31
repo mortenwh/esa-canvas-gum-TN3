@@ -823,8 +823,6 @@ _V_M0_MIN   = 1.8   # minimum deriv→model distance
 _V_D1_MIN   = 1.8   # minimum model→child-deriv distance
 _V_LEAF_MIN = 1.4   # minimum deriv→leaf distance
 # Arc parameters for radial sub-fan (sub-model children)
-_ARC_PER_LEAF_SUB = 20.0   # degrees per leaf for sub-model fan
-_ARC_CAP_SUB_DEG  = 120.0  # max fan arc for any sub-model
 
 
 def _leaf_count(ivar: "InputVar") -> int:
@@ -859,60 +857,50 @@ _ARC_PER_LEAF = 30.0
 _ARC_CAP_DEG  = 330.0
 
 
+def _sector_angles(
+    inputs: "List[InputVar]",
+    out_angle: float,
+    sector_rad: float,
+) -> "List[Tuple[float, float]]":
+    """Return ``(child_angle, child_sector_rad)`` for each input.
+
+    Divides *sector_rad* proportionally to leaf count (minimum 1 per child)
+    and places each child at the centre of its sub-sector.  Children can
+    spread to any direction within *sector_rad* centred on *out_angle*,
+    including sideways and partially backward — the sector boundary prevents
+    sub-trees from intruding into neighbouring branches.
+    """
+    if not inputs:
+        return []
+    raw_counts = [_leaf_count(iv) for iv in inputs]
+    total_leaves = max(sum(raw_counts), 1)
+    smoothed = [max(c, 1) for c in raw_counts]
+    smoothed_total = sum(smoothed)
+
+    start = out_angle + sector_rad / 2
+    result: List[Tuple[float, float]] = []
+    cumulative = 0.0
+    for s in smoothed:
+        frac = s / smoothed_total
+        child_angle = start - (cumulative + frac / 2) * sector_rad
+        child_sector = frac * sector_rad
+        result.append((child_angle, child_sector))
+        cumulative += frac
+    return result
+
+
+def _root_sector_rad(inputs: "List[InputVar]") -> float:
+    """Total arc (radians) for the root-level fan."""
+    total_leaves = sum(_leaf_count(iv) for iv in inputs)
+    return math.radians(min(_ARC_CAP_DEG, total_leaves * _ARC_PER_LEAF))
+
+
 def _root_angles(inputs: "List[InputVar]") -> "List[float]":
-    """Return the outward angle (radians) for each root-level input.
-
-    Branches are distributed in an arc centred at π/2 (straight up).
-    Angular width is proportional to each branch's leaf count (at least 1
-    per branch to prevent zero-width slices for separate-figure stubs).
-
-    The total arc grows at ``_ARC_PER_LEAF`` degrees per total leaf,
-    capped at ``_ARC_CAP_DEG``.
-    """
+    """Backward-compatible: return just the centre angles for root inputs."""
     if not inputs:
         return []
-    raw_counts = [_leaf_count(iv) for iv in inputs]
-    total_leaves = sum(raw_counts)
-    smoothed = [max(c, 1) for c in raw_counts]
-    smoothed_total = sum(smoothed)
-
-    arc_deg = min(_ARC_CAP_DEG, total_leaves * _ARC_PER_LEAF)
-    arc_rad = math.radians(arc_deg)
-    start = math.pi / 2 + arc_rad / 2          # left-most angle
-    angles: List[float] = []
-    cumulative = 0.0
-    for s in smoothed:
-        frac = s / smoothed_total
-        angles.append(start - (cumulative + frac / 2) * arc_rad)
-        cumulative += frac
-    return angles
-
-
-def _sub_angles(inputs: "List[InputVar]", out_angle: float) -> "List[float]":
-    """Return outward angles for children of a sub-model node.
-
-    Fans the children in a cone centred on *out_angle*, with arc width
-    proportional to leaf count (at least 1 per child), capped at
-    ``_ARC_CAP_SUB_DEG``.  Each child inherits its own angle for further
-    recursive sub-tree growth.
-    """
-    if not inputs:
-        return []
-    raw_counts = [_leaf_count(iv) for iv in inputs]
-    total_leaves = sum(raw_counts)
-    smoothed = [max(c, 1) for c in raw_counts]
-    smoothed_total = sum(smoothed)
-
-    arc_deg = min(_ARC_CAP_SUB_DEG, total_leaves * _ARC_PER_LEAF_SUB)
-    arc_rad = math.radians(arc_deg)
-    start = out_angle + arc_rad / 2
-    angles: List[float] = []
-    cumulative = 0.0
-    for s in smoothed:
-        frac = s / smoothed_total
-        angles.append(start - (cumulative + frac / 2) * arc_rad)
-        cumulative += frac
-    return angles
+    arc = _root_sector_rad(inputs)
+    return [a for a, _ in _sector_angles(inputs, math.pi / 2, arc)]
 
 
 class _TikZ:
@@ -1017,6 +1005,7 @@ def _simulate_branch(
     x_deriv: float,
     y_deriv: float,
     out_angle: float,
+    sector_rad: float = 0.0,
     depth: int = 0,
     cum_offset: Tuple[float, float] = (0.0, 0.0),
     root_ivar: "Optional[InputVar]" = None,
@@ -1027,6 +1016,8 @@ def _simulate_branch(
     defaults to *ivar* itself.  All descendant records carry the same
     *root_ivar* so that the auto-layout can push entire branch subtrees as a
     unit rather than individual leaves.
+    *sector_rad* is the angular sector allocated to this branch; it is
+    subdivided among sub-model children proportionally to their leaf count.
     """
     if root_ivar is None:
         root_ivar = ivar
@@ -1049,7 +1040,7 @@ def _simulate_branch(
             v_d1 = max(_V_D1 * scale, _V_D1_MIN)
             recs.extend(_simulate_inputs(
                 ivar.submodel, x_model_nat, y_model_nat,
-                v_d1, out_angle, depth + 1, (eff_ox, eff_oy),
+                v_d1, out_angle, sector_rad, depth + 1, (eff_ox, eff_oy),
                 root_ivar=root_ivar,
             ))
     else:
@@ -1072,25 +1063,28 @@ def _simulate_inputs(
     parent_dy_nat: float,
     v_to_child: float,
     out_angle: float,
+    sector_rad: float = 0.0,
     depth: int = 0,
     cum_offset: Tuple[float, float] = (0.0, 0.0),
     root_ivar: "Optional[InputVar]" = None,
 ) -> "List[_NodeRecord]":
     """Return _NodeRecords for all children of *model* (mirrors _emit_inputs).
 
-    Children are placed in a radial sub-fan centred on *out_angle* so that
-    each child grows in its own direction, preventing all branches from
-    piling up in a single perpendicular direction.
+    Uses sector-based radial layout: each child is placed at the centre of
+    its proportional sub-sector of *sector_rad*, so sub-trees fill all
+    available directions without intruding on sibling sectors.
     """
     if not model.inputs:
         return []
 
     recs: List["_NodeRecord"] = []
-    for ivar, child_angle in zip(model.inputs, _sub_angles(model.inputs, out_angle)):
+    for ivar, (child_angle, child_sector) in zip(
+        model.inputs, _sector_angles(model.inputs, out_angle, sector_rad)
+    ):
         x_d_nat = parent_dx_nat + v_to_child * math.cos(child_angle)
         y_d_nat = parent_dy_nat + v_to_child * math.sin(child_angle)
         recs.extend(_simulate_branch(model, ivar, x_d_nat, y_d_nat,
-                                     child_angle, depth, cum_offset,
+                                     child_angle, child_sector, depth, cum_offset,
                                      root_ivar=root_ivar))
     return recs
 
@@ -1104,15 +1098,16 @@ def _auto_layout(model: "MeasurementModel", max_iterations: int = 40) -> int:
     GAP  = 0.25   # minimum clearance gap added on top of each resolved overlap (cm)
     DAMP = 0.45   # damping factor — prevents oscillation
 
-    angles = _root_angles(model.inputs)
+    arc_rad = _root_sector_rad(model.inputs)
+    root_sectors = _sector_angles(model.inputs, math.pi / 2, arc_rad)
 
     for iteration in range(max_iterations):
         # ── simulate current layout ───────────────────────────────────────────
         all_recs: List["_NodeRecord"] = []
-        for ivar, angle in zip(model.inputs, angles):
+        for ivar, (angle, sector_rad) in zip(model.inputs, root_sectors):
             x_d = _V_D0 * math.cos(angle)
             y_d = _V_D0 * math.sin(angle)
-            all_recs.extend(_simulate_branch(model, ivar, x_d, y_d, angle))
+            all_recs.extend(_simulate_branch(model, ivar, x_d, y_d, angle, sector_rad))
 
         # ── detect pairwise overlaps ──────────────────────────────────────────
         # Key: id(ivar) → [ivar_ref, push_x, push_y]
@@ -1184,11 +1179,14 @@ class _Emitter:
         self.t.math_node(root_id, "root_block",
                          rf"{model.latex_name} = {model.latex_expr}")
         self.t.blank()
-        for ivar, angle in zip(model.inputs, _root_angles(model.inputs)):
+        arc_rad = _root_sector_rad(model.inputs)
+        for ivar, (angle, sector_rad) in zip(
+            model.inputs, _sector_angles(model.inputs, math.pi / 2, arc_rad)
+        ):
             x_d = _V_D0 * math.cos(angle)
             y_d = _V_D0 * math.sin(angle)
             self._emit_branch(model, root_id, ivar,
-                              x_d, y_d, root_id, angle, depth=0,
+                              x_d, y_d, root_id, angle, sector_rad, depth=0,
                               cum_offset=(0.0, 0.0))
 
     # ── single branch ────────────────────────────────────────────────────────
@@ -1197,13 +1195,15 @@ class _Emitter:
                      parent_id: str, ivar: InputVar,
                      x_deriv: float, y_deriv: float,
                      root_id: str, out_angle: float,
+                     sector_rad: float = 0.0,
                      depth: int = 0,
                      cum_offset: Tuple[float, float] = (0.0, 0.0)) -> None:
         """Emit  parent → deriv_node → [sub-model children | leaf → effects].
 
         *out_angle* is the angle (radians) pointing away from the root along
-        this branch.  Sub-model children fan out in a radial cone centred on
-        *out_angle* (see :func:`_sub_angles`), each inheriting their own angle.
+        this branch.  *sector_rad* is the angular sector allocated to this
+        branch; it is sub-divided among sub-model children proportionally to
+        their leaf counts so sub-trees always fill distinct angular regions.
         *depth* drives adaptive spacing: distances shrink by _DEPTH_SCALE per level.
         *cum_offset* accumulates branch_offsets from ancestor branches; this
         branch adds its own *ivar.branch_offset* on top.
@@ -1248,7 +1248,7 @@ class _Emitter:
                 self.t.edge(d_id, m_id, f"connection, {color}")
                 v_d1 = max(_V_D1 * scale, _V_D1_MIN)
                 self._emit_inputs(ivar.submodel, m_id, x_model_nat, y_model_nat,
-                                  root_id, v_d1, out_angle,
+                                  root_id, v_d1, out_angle, sector_rad,
                                   depth=depth + 1, cum_offset=(eff_ox, eff_oy))
         else:
             leaf_id = self._uid(f"U{_tikz_id(ivar.latex_name)}")
@@ -1276,26 +1276,28 @@ class _Emitter:
                      root_id: str,
                      v_to_child: float,
                      out_angle: float,
+                     sector_rad: float = 0.0,
                      depth: int = 0,
                      cum_offset: Tuple[float, float] = (0.0, 0.0)) -> None:
-        """Fan all inputs of *model* outward in a radial sub-fan from *parent_id*.
+        """Fan all inputs of *model* using sector-based radial layout.
 
-        Each child gets its own angle from :func:`_sub_angles`, centred on
-        *out_angle*, so sub-trees grow in distinct directions instead of all
-        piling into one perpendicular direction.
-        *depth* is passed to _emit_branch for adaptive spacing.
-        *cum_offset* is the accumulated branch_offset from all ancestor branches.
+        Each child is placed at the centre of its proportional sub-sector of
+        *sector_rad*, so sub-trees spread into genuinely different directions
+        (including sideways and below the parent node) without intruding on
+        sibling sectors.
         """
         inputs = model.inputs
         if not inputs:
             return
 
-        for ivar, child_angle in zip(inputs, _sub_angles(inputs, out_angle)):
+        for ivar, (child_angle, child_sector) in zip(
+            inputs, _sector_angles(inputs, out_angle, sector_rad)
+        ):
             x_d = parent_dx + v_to_child * math.cos(child_angle)
             y_d = parent_dy + v_to_child * math.sin(child_angle)
             self._emit_branch(model, parent_id, ivar,
-                              x_d, y_d, root_id, child_angle, depth=depth,
-                              cum_offset=cum_offset)
+                              x_d, y_d, root_id, child_angle, child_sector,
+                              depth=depth, cum_offset=cum_offset)
 
     # ── effect nodes ─────────────────────────────────────────────────────────
 
