@@ -810,23 +810,27 @@ def _tikz_id(s: str) -> str:
 
 
 # Layout constants (all in cm)
-_H_LEAF  = 1.8   # horizontal space allocated per leaf node (level 0)
-_V_D0    = 2.6   # root → root-level deriv_node (fixed; no _radial_step at root)
-_V_M0    = 2.5   # deriv_node → sub-model block (starting value; angle-adaptive floor)
-_V_D1    = 2.6   # sub-model block → nested deriv_node (floor; overridden by _radial_step)
-_V_LEAF  = 2.0   # any deriv_node → leaf_node
-_V_EFF   = 1.2   # leaf_node → effect_node
+_H_LEAF  = 1.2   # horizontal space allocated per leaf node (level 0)
+_V_D0    = 1.3   # root → root-level deriv_node (fixed; no _radial_step at root)
+_V_M0    = 1.1   # deriv_node → sub-model block (starting value; angle-adaptive floor)
+_V_D1    = 1.3   # sub-model block → nested deriv_node (floor; overridden by _radial_step)
+_V_LEAF  = 1.0   # any deriv_node → leaf_node
+_V_EFF   = 0.7   # leaf_node → effect_node
 _DEPTH_SCALE = 0.90  # multiply V distances by this factor per depth level
-_H_LEAF_MIN  = 1.3   # minimum horizontal spacing (cm) to prevent box overlap
+_H_LEAF_MIN  = 0.8   # minimum horizontal spacing (cm) to prevent box overlap
 # V_M0 is computed adaptively via _v_m0_for_angle(); the values below are fallbacks
-_V_M0_MIN   = 1.5   # absolute floor for deriv→model (angle formula overrides this)
-_V_D1_MIN   = 2.6   # minimum model→child-deriv step
-_V_LEAF_MIN = 1.8   # minimum deriv→leaf distance
+_V_M0_MIN   = 0.8   # absolute floor for deriv→model (angle formula overrides this)
+_V_D1_MIN   = 1.3   # minimum model→child-deriv step
+_V_LEAF_MIN = 0.8   # minimum deriv→leaf distance
 
 # Sector / radial-step parameters
-# min 60° per sibling → _radial_step(60°) = _NODE_WIDTH_CM exactly = _V_D1_MIN
-_MIN_SECTOR_DEG = 60.0   # minimum angular sector (degrees) per child branch
-_NODE_WIDTH_CM  = 2.6    # deriv node full width used in the chord formula
+_MIN_SECTOR_DEG = 55.0   # minimum angular sector (degrees) per child branch
+_NODE_WIDTH_CM  = 1.3    # deriv node full width used in the chord formula
+
+# Center angle for the root-level sector distribution (radians).
+# π (leftward) gives a portrait-friendly layout for ϖ_g: the large ϖ_p
+# sub-tree fans from upper-left to lower-left, exploiting vertical space.
+_ROOT_CENTER_ANGLE = math.pi
 
 
 def _leaf_count(ivar: "InputVar") -> int:
@@ -986,7 +990,7 @@ def _root_angles(inputs: "List[InputVar]") -> "List[float]":
     if not inputs:
         return []
     arc = _root_sector_rad(inputs)
-    return [a for a, _ in _sector_angles(inputs, math.pi / 2, arc,
+    return [a for a, _ in _sector_angles(inputs, _ROOT_CENTER_ANGLE, arc,
                                           apply_min_sector=False)]
 
 
@@ -1062,10 +1066,10 @@ _NodeRecord = _nt("_NodeRecord", ["x", "y", "ntype", "ivar"])
 # Approximate bounding-box half-sizes per node type (cm).
 # Based on typical rendered sizes in \small/\footnotesize LaTeX fonts.
 _BBOX_HALF: Dict[str, Tuple[float, float]] = {
-    "deriv":  (1.30, 0.60),   # partial derivative fraction
-    "model":  (1.75, 0.55),   # model equation box (\small font, ~3.5 cm wide)
-    "leaf":   (0.80, 0.45),   # u(x) box (text width 1.1cm)
-    "effect": (1.10, 0.85),   # multi-line italic text (text width 1.8cm)
+    "deriv":  (0.95, 0.42),   # \footnotesize fraction; text width=1.8cm + 2×3pt padding
+    "model":  (1.45, 0.60),   # \footnotesize bold; text width=2.8cm + 2×4pt, ~2–3 lines
+    "leaf":   (0.52, 0.33),   # \footnotesize u(x); text width=0.9cm + 2×3pt
+    "effect": (0.80, 0.60),   # \footnotesize italic; text width=1.5cm + 2×2pt, ~2–3 lines
 }
 
 
@@ -1189,7 +1193,7 @@ def _auto_layout(model: "MeasurementModel", max_iterations: int = 100) -> int:
     DAMP = 0.50   # initial damping factor
 
     arc_rad = _root_sector_rad(model.inputs)
-    root_sectors = _sector_angles(model.inputs, math.pi / 2, arc_rad,
+    root_sectors = _sector_angles(model.inputs, _ROOT_CENTER_ANGLE, arc_rad,
                                    apply_min_sector=False)
 
     for iteration in range(max_iterations):
@@ -1278,7 +1282,7 @@ class _Emitter:
         self.t.blank()
         arc_rad = _root_sector_rad(model.inputs)
         for ivar, (angle, sector_rad) in zip(
-            model.inputs, _sector_angles(model.inputs, math.pi / 2, arc_rad,
+            model.inputs, _sector_angles(model.inputs, _ROOT_CENTER_ANGLE, arc_rad,
                                           apply_min_sector=False)
         ):
             x_d = _V_D0 * math.cos(angle)   # fixed root arm
@@ -1492,13 +1496,13 @@ def build_tikz(root: MeasurementModel, label: str = "",
     t.raw(r"    root_block/.style={draw=blue!60!black, very thick, rectangle,"
           r" fill=blue!8, inner sep=8pt, font=\normalsize\bfseries, align=center},")
     t.raw(r"    model_block/.style={draw, rectangle, inner sep=4pt,"
-          r" font=\small\bfseries, align=center},")
+          r" font=\footnotesize\bfseries, align=center, text width=2.8cm},")
     t.raw(r"    deriv_node/.style={draw, rectangle, rounded corners=3pt,"
-          r" inner sep=3pt, font=\small, align=center},")
+          r" inner sep=3pt, font=\footnotesize, align=center, text width=1.8cm},")
     t.raw(r"    leaf_node/.style={draw, rectangle, inner sep=3pt,"
-          r" font=\footnotesize, align=center, text width=1.1cm},")
-    t.raw(r"    effect_node/.style={draw, dashed, font=\scriptsize\itshape,"
-          r" align=center, text width=1.8cm, inner sep=2pt}")
+          r" font=\footnotesize, align=center, text width=0.9cm},")
+    t.raw(r"    effect_node/.style={draw, dashed, font=\footnotesize\itshape,"
+          r" align=center, text width=1.5cm, inner sep=2pt}")
     t.raw(r"    ]")
 
     root_id = _tikz_id(root.latex_name) + "ROOT"

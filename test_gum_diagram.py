@@ -182,17 +182,17 @@ class TestRootAngles(unittest.TestCase):
         sym = __import__("sympy").Symbol(name)
         return gd.InputVar(latex_name=name, sym=sym, color="black")
 
-    def test_single_input_points_straight_up(self):
+    def test_single_input_points_to_root_center(self):
         iv = self._make_leaf("x")
         angles = gd._root_angles([iv])
         self.assertEqual(len(angles), 1)
-        self.assertAlmostEqual(angles[0], math.pi / 2, places=5)
+        self.assertAlmostEqual(angles[0], gd._ROOT_CENTER_ANGLE, places=5)
 
-    def test_two_inputs_symmetric_about_vertical(self):
+    def test_two_inputs_symmetric_about_center(self):
         a, b = self._make_leaf("a"), self._make_leaf("b")
         angles = gd._root_angles([a, b])
         mid = (angles[0] + angles[1]) / 2
-        self.assertAlmostEqual(mid, math.pi / 2, places=5)
+        self.assertAlmostEqual(mid, gd._ROOT_CENTER_ANGLE, places=5)
 
     def test_angles_decrease_left_to_right(self):
         """Left-most angle > right-most (counter-clockwise ordering)."""
@@ -495,7 +495,7 @@ class TestAutoLayout(unittest.TestCase):
         model = _simple_model()
         gd._auto_layout(model)
         arc_rad = gd._root_sector_rad(model.inputs)
-        root_sectors = gd._sector_angles(model.inputs, math.pi / 2, arc_rad,
+        root_sectors = gd._sector_angles(model.inputs, gd._ROOT_CENTER_ANGLE, arc_rad,
                                           apply_min_sector=False)
         all_recs = []
         for ivar, (angle, sector_rad) in zip(model.inputs, root_sectors):
