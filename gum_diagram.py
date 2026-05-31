@@ -125,6 +125,7 @@ class InputVar:
     effects: List[str] = field(default_factory=list)
     separate_figure: bool = False   # sub-model traced in a separate figure
     separate_label: str = ""        # \ref label for the cross-reference (without 'fig:')
+    branch_offset: Tuple[float, float] = (0.0, 0.0)  # auto/manual translation (cm)
 
 
 @dataclass
@@ -947,6 +948,186 @@ class _TikZ:
         return "\n".join(self._lines)
 
 
+# ── Layout simulation & automatic overlap resolution ─────────────────────────
+
+from collections import namedtuple as _nt
+
+_NodeRecord = _nt("_NodeRecord", ["x", "y", "ntype", "ivar"])
+# ntype values: 'deriv', 'model', 'leaf', 'effect'
+
+# Approximate bounding-box half-sizes per node type (cm).
+# Based on typical rendered sizes in \small/\footnotesize LaTeX fonts.
+_BBOX_HALF: Dict[str, Tuple[float, float]] = {
+    "deriv":  (0.95, 0.50),   # partial derivative fraction
+    "model":  (2.00, 0.55),   # model equation (wide but not as wide as text)
+    "leaf":   (0.75, 0.45),   # u(x) box (text width 1.1cm)
+    "effect": (1.05, 0.75),   # multi-line italic text (text width 1.8cm)
+}
+
+
+def _aabb(rec: "_NodeRecord") -> Tuple[float, float, float, float]:
+    hw, hh = _BBOX_HALF[rec.ntype]
+    return rec.x - hw, rec.x + hw, rec.y - hh, rec.y + hh
+
+
+def _aabb_overlap(
+    a: Tuple[float, float, float, float],
+    b: Tuple[float, float, float, float],
+) -> Optional[Tuple[float, float]]:
+    """Return (overlap_x, overlap_y) if AABBs overlap, else None."""
+    ox = min(a[1], b[1]) - max(a[0], b[0])
+    oy = min(a[3], b[3]) - max(a[2], b[2])
+    if ox > 0 and oy > 0:
+        return ox, oy
+    return None
+
+
+def _simulate_branch(
+    parent_model: "MeasurementModel",
+    ivar: "InputVar",
+    x_deriv: float,
+    y_deriv: float,
+    out_angle: float,
+    depth: int = 0,
+    cum_offset: Tuple[float, float] = (0.0, 0.0),
+    root_ivar: "Optional[InputVar]" = None,
+) -> "List[_NodeRecord]":
+    """Return _NodeRecords for all nodes in this branch (mirrors _emit_branch).
+
+    *root_ivar* is the top-level InputVar that owns this branch; when None it
+    defaults to *ivar* itself.  All descendant records carry the same
+    *root_ivar* so that the auto-layout can push entire branch subtrees as a
+    unit rather than individual leaves.
+    """
+    if root_ivar is None:
+        root_ivar = ivar
+    scale = max(_DEPTH_SCALE ** depth, 0.5)
+    cos_o = math.cos(out_angle)
+    sin_o = math.sin(out_angle)
+    eff_ox = cum_offset[0] + ivar.branch_offset[0]
+    eff_oy = cum_offset[1] + ivar.branch_offset[1]
+
+    recs: List["_NodeRecord"] = [
+        _NodeRecord(x_deriv + eff_ox, y_deriv + eff_oy, "deriv", root_ivar)
+    ]
+
+    if ivar.submodel is not None:
+        x_model_nat = x_deriv + _V_M0 * scale * cos_o
+        y_model_nat = y_deriv + _V_M0 * scale * sin_o
+        recs.append(_NodeRecord(x_model_nat + eff_ox, y_model_nat + eff_oy, "model", root_ivar))
+        if not ivar.separate_figure:
+            recs.extend(_simulate_inputs(
+                ivar.submodel, x_model_nat, y_model_nat,
+                _V_D1 * scale, out_angle, depth + 1, (eff_ox, eff_oy),
+                root_ivar=root_ivar,
+            ))
+    else:
+        x_leaf_nat = x_deriv + _V_LEAF * scale * cos_o
+        y_leaf_nat = y_deriv + _V_LEAF * scale * sin_o
+        recs.append(_NodeRecord(x_leaf_nat + eff_ox, y_leaf_nat + eff_oy, "leaf", root_ivar))
+        if ivar.effects:
+            recs.append(_NodeRecord(
+                x_leaf_nat + _V_EFF * scale * cos_o + eff_ox,
+                y_leaf_nat + _V_EFF * scale * sin_o + eff_oy,
+                "effect", root_ivar,
+            ))
+    return recs
+
+
+def _simulate_inputs(
+    model: "MeasurementModel",
+    parent_dx_nat: float,
+    parent_dy_nat: float,
+    v_to_child: float,
+    out_angle: float,
+    depth: int = 0,
+    cum_offset: Tuple[float, float] = (0.0, 0.0),
+    root_ivar: "Optional[InputVar]" = None,
+) -> "List[_NodeRecord]":
+    """Return _NodeRecords for all children of *model* (mirrors _emit_inputs)."""
+    if not model.inputs:
+        return []
+    scale = max(_DEPTH_SCALE ** depth, 0.5)
+    cos_o = math.cos(out_angle)
+    sin_o = math.sin(out_angle)
+    cos_p = sin_o   # clockwise-perpendicular
+    sin_p = -cos_o
+
+    recs: List["_NodeRecord"] = []
+    for ivar, perp in zip(
+        model.inputs,
+        _child_offsets(model.inputs, h_unit=max(_H_LEAF * scale, _H_LEAF_MIN)),
+    ):
+        x_d_nat = parent_dx_nat + v_to_child * cos_o + perp * cos_p
+        y_d_nat = parent_dy_nat + v_to_child * sin_o + perp * sin_p
+        recs.extend(_simulate_branch(model, ivar, x_d_nat, y_d_nat,
+                                     out_angle, depth, cum_offset,
+                                     root_ivar=root_ivar))
+    return recs
+
+
+def _auto_layout(model: "MeasurementModel", max_iterations: int = 40) -> int:
+    """Iteratively adjust *branch_offset* on each :class:`InputVar` to eliminate
+    bounding-box overlaps between nodes from different branches.
+
+    Returns the number of iterations performed.  Modifies *model* in-place.
+    """
+    GAP  = 0.25   # minimum clearance gap added on top of each resolved overlap (cm)
+    DAMP = 0.45   # damping factor — prevents oscillation
+
+    angles = _root_angles(model.inputs)
+
+    for iteration in range(max_iterations):
+        # ── simulate current layout ───────────────────────────────────────────
+        all_recs: List["_NodeRecord"] = []
+        for ivar, angle in zip(model.inputs, angles):
+            x_d = _V_D0 * math.cos(angle)
+            y_d = _V_D0 * math.sin(angle)
+            all_recs.extend(_simulate_branch(model, ivar, x_d, y_d, angle))
+
+        # ── detect pairwise overlaps ──────────────────────────────────────────
+        # Key: id(ivar) → [ivar_ref, push_x, push_y]
+        push: Dict[int, List] = {}
+        moved = False
+        n = len(all_recs)
+        for i in range(n):
+            for j in range(i + 1, n):
+                ri, rj = all_recs[i], all_recs[j]
+                if ri.ivar is rj.ivar:
+                    continue  # same branch — fine
+                ov = _aabb_overlap(_aabb(ri), _aabb(rj))
+                if ov is None:
+                    continue
+
+                ov_x, ov_y = ov
+                dx = ri.x - rj.x
+                dy = ri.y - rj.y
+                dist = math.hypot(dx, dy) or 1e-6
+
+                # Push proportional to overlap, damped, in the direction i→j
+                px = DAMP * (ov_x + GAP) * dx / dist
+                py = DAMP * (ov_y + GAP) * dy / dist
+
+                push.setdefault(id(ri.ivar), [ri.ivar, 0.0, 0.0])
+                push.setdefault(id(rj.ivar), [rj.ivar, 0.0, 0.0])
+                push[id(ri.ivar)][1] += px / 2
+                push[id(ri.ivar)][2] += py / 2
+                push[id(rj.ivar)][1] -= px / 2
+                push[id(rj.ivar)][2] -= py / 2
+                moved = True
+
+        if not moved:
+            break
+
+        for ivar_ref, px, py in push.values():
+            ivar_ref.branch_offset = (
+                ivar_ref.branch_offset[0] + px,
+                ivar_ref.branch_offset[1] + py,
+            )
+
+    return iteration + 1
+
+
 class _Emitter:
     """Walks the MeasurementModel tree and emits TikZ source.
 
@@ -978,7 +1159,8 @@ class _Emitter:
             x_d = _V_D0 * math.cos(angle)
             y_d = _V_D0 * math.sin(angle)
             self._emit_branch(model, root_id, ivar,
-                              x_d, y_d, root_id, angle, depth=0)
+                              x_d, y_d, root_id, angle, depth=0,
+                              cum_offset=(0.0, 0.0))
 
     # ── single branch ────────────────────────────────────────────────────────
 
@@ -986,7 +1168,8 @@ class _Emitter:
                      parent_id: str, ivar: InputVar,
                      x_deriv: float, y_deriv: float,
                      root_id: str, out_angle: float,
-                     depth: int = 0) -> None:
+                     depth: int = 0,
+                     cum_offset: Tuple[float, float] = (0.0, 0.0)) -> None:
         """Emit  parent → deriv_node → [sub-model children | leaf → effects].
 
         *out_angle* is the angle (radians) pointing away from the root along
@@ -994,8 +1177,12 @@ class _Emitter:
         Children of a sub-model are spread in the perpendicular direction
         (clockwise 90° from *out_angle*).
         *depth* drives adaptive spacing: distances shrink by _DEPTH_SCALE per level.
+        *cum_offset* accumulates branch_offsets from ancestor branches; this
+        branch adds its own *ivar.branch_offset* on top.
         """
         scale = max(_DEPTH_SCALE ** depth, 0.5)  # floor at 50% to avoid extreme compression
+        eff_ox = cum_offset[0] + ivar.branch_offset[0]
+        eff_oy = cum_offset[1] + ivar.branch_offset[1]
         color = ivar.color
         cos_o = math.cos(out_angle)
         sin_o = math.sin(out_angle)
@@ -1004,13 +1191,14 @@ class _Emitter:
 
         self.t.comment(f"∂{parent_model.latex_name}/∂{ivar.latex_name}")
         self.t.abs_math_node(d_id, "deriv_node", deriv_lat,
-                             ref=root_id, dx=x_deriv, dy=y_deriv)
+                             ref=root_id, dx=x_deriv + eff_ox, dy=y_deriv + eff_oy)
         self.t.edge(parent_id, d_id, f"connection, {color}")
 
         if ivar.submodel is not None:
             m_id = self._uid(f"M{_tikz_id(ivar.latex_name)}")
-            x_model = x_deriv + _V_M0 * scale * cos_o
-            y_model = y_deriv + _V_M0 * scale * sin_o
+            # Natural (un-offset) model position — children fan out from here
+            x_model_nat = x_deriv + _V_M0 * scale * cos_o
+            y_model_nat = y_deriv + _V_M0 * scale * sin_o
             self.t.blank()
             self.t.comment(f"sub-model: {ivar.submodel.latex_name}")
             if ivar.separate_figure:
@@ -1020,32 +1208,33 @@ class _Emitter:
                 self.t.abs_text_node(
                     m_id, "model_block",
                     ref_note,
-                    ref=root_id, dx=x_model, dy=y_model,
+                    ref=root_id, dx=x_model_nat + eff_ox, dy=y_model_nat + eff_oy,
                 )
                 self.t.edge(d_id, m_id, f"connection, {color}")
             else:
                 self.t.abs_math_node(
                     m_id, "model_block",
                     rf"{ivar.submodel.latex_name} = {ivar.submodel.latex_expr}",
-                    ref=root_id, dx=x_model, dy=y_model,
+                    ref=root_id, dx=x_model_nat + eff_ox, dy=y_model_nat + eff_oy,
                 )
                 self.t.edge(d_id, m_id, f"connection, {color}")
-                self._emit_inputs(ivar.submodel, m_id, x_model, y_model,
+                # Pass natural positions; effective offset carried separately
+                self._emit_inputs(ivar.submodel, m_id, x_model_nat, y_model_nat,
                                   root_id, _V_D1 * scale, out_angle,
-                                  depth=depth + 1)
+                                  depth=depth + 1, cum_offset=(eff_ox, eff_oy))
         else:
             leaf_id = self._uid(f"U{_tikz_id(ivar.latex_name)}")
-            x_leaf = x_deriv + _V_LEAF * scale * cos_o
-            y_leaf = y_deriv + _V_LEAF * scale * sin_o
+            x_leaf_nat = x_deriv + _V_LEAF * scale * cos_o
+            y_leaf_nat = y_deriv + _V_LEAF * scale * sin_o
             self.t.abs_math_node(
                 leaf_id, "leaf_node", rf"u({ivar.latex_name})",
-                ref=root_id, dx=x_leaf, dy=y_leaf,
+                ref=root_id, dx=x_leaf_nat + eff_ox, dy=y_leaf_nat + eff_oy,
                 extra=f"draw={color}, text={color}",
             )
             self.t.edge(d_id, leaf_id, f"connection, {color}")
             self._emit_effects(ivar, leaf_id,
                                root_id=root_id,
-                               dx=x_leaf, dy=y_leaf,
+                               dx=x_leaf_nat + eff_ox, dy=y_leaf_nat + eff_oy,
                                out_angle=out_angle,
                                scale=scale)
         self.t.blank()
@@ -1058,13 +1247,15 @@ class _Emitter:
                      root_id: str,
                      v_to_child: float,
                      out_angle: float,
-                     depth: int = 0) -> None:
+                     depth: int = 0,
+                     cum_offset: Tuple[float, float] = (0.0, 0.0)) -> None:
         """Fan all inputs of *model* outward from *parent_id*.
 
         Children are placed ``v_to_child`` cm further out along *out_angle*
         and spread in the clockwise-perpendicular direction so that reading
         left-to-right (when facing outward) matches the input order.
         *depth* is passed to _emit_branch for adaptive spacing.
+        *cum_offset* is the accumulated branch_offset from all ancestor branches.
         """
         inputs = model.inputs
         if not inputs:
@@ -1080,7 +1271,8 @@ class _Emitter:
             x_d = parent_dx + v_to_child * cos_o + perp * cos_p
             y_d = parent_dy + v_to_child * sin_o + perp * sin_p
             self._emit_branch(model, parent_id, ivar,
-                              x_d, y_d, root_id, out_angle, depth=depth)
+                              x_d, y_d, root_id, out_angle, depth=depth,
+                              cum_offset=cum_offset)
 
     # ── effect nodes ─────────────────────────────────────────────────────────
 
@@ -1121,8 +1313,19 @@ def collect_separate_figures(
     return result
 
 
+def _walk_inputs(model: "MeasurementModel") -> "List[InputVar]":
+    """Return all InputVar objects in the tree (depth-first)."""
+    result: List[InputVar] = []
+    for ivar in model.inputs:
+        result.append(ivar)
+        if ivar.submodel is not None and not ivar.separate_figure:
+            result.extend(_walk_inputs(ivar.submodel))
+    return result
+
+
 def build_tikz(root: MeasurementModel, label: str = "",
-               caption: str = "") -> str:
+               caption: str = "",
+               auto_layout: bool = True) -> str:
     """Return a complete LaTeX figure environment with the TikZ UTD.
 
     Parameters
@@ -1135,7 +1338,19 @@ def build_tikz(root: MeasurementModel, label: str = "",
     caption:
         Caption text.  Defaults to
         ``Uncertainty Tree Diagram for $<root.latex_name>$.``
+    auto_layout:
+        When True (default), run :func:`_auto_layout` before generating
+        TikZ to automatically resolve bounding-box overlaps between branches.
+        Set to False in tests or when branch_offsets are already hand-tuned.
     """
+    if auto_layout:
+        iters = _auto_layout(root)
+        adjusted = [iv for iv in _walk_inputs(root) if iv.branch_offset != (0.0, 0.0)]
+        if adjusted:
+            names = ", ".join(iv.latex_name for iv in adjusted)
+            print(f"  ↻  Auto-layout: {iters} iteration(s); adjusted: {names}")
+        else:
+            print(f"  ↻  Auto-layout: {iters} iteration(s); no overlaps detected")
     if not label:
         label = f"utd_{_tikz_id(root.latex_name).lower()}"
     if not caption:

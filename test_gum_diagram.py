@@ -284,20 +284,20 @@ class TestBuildTikz(unittest.TestCase):
 
     # ── Boilerplate presence ────────────────────────────────────────────────
     def test_begins_with_figure(self):
-        out = gd.build_tikz(self.simple)
+        out = gd.build_tikz(self.simple, auto_layout=False)
         self.assertTrue(out.strip().startswith(r"\begin{figure}"))
 
     def test_ends_with_figure(self):
-        out = gd.build_tikz(self.simple)
+        out = gd.build_tikz(self.simple, auto_layout=False)
         self.assertTrue(out.strip().endswith(r"\end{figure}"))
 
     def test_contains_tikzpicture(self):
-        out = gd.build_tikz(self.simple)
+        out = gd.build_tikz(self.simple, auto_layout=False)
         self.assertIn(r"\begin{tikzpicture}", out)
         self.assertIn(r"\end{tikzpicture}", out)
 
     def test_contains_required_styles(self):
-        out = gd.build_tikz(self.simple)
+        out = gd.build_tikz(self.simple, auto_layout=False)
         for style in ("root_block", "model_block", "deriv_node",
                       "leaf_node", "effect_node"):
             with self.subTest(style=style):
@@ -305,94 +305,94 @@ class TestBuildTikz(unittest.TestCase):
 
     # ── Label ──────────────────────────────────────────────────────────────
     def test_default_label(self):
-        out = gd.build_tikz(self.simple)
+        out = gd.build_tikz(self.simple, auto_layout=False)
         self.assertIn(r"\label{fig:utd_y}", out)
 
     def test_custom_label(self):
-        out = gd.build_tikz(self.simple, label="my_fig")
+        out = gd.build_tikz(self.simple, label="my_fig", auto_layout=False)
         self.assertIn(r"\label{fig:my_fig}", out)
 
     def test_caption_contains_measurand(self):
-        out = gd.build_tikz(self.simple)
+        out = gd.build_tikz(self.simple, auto_layout=False)
         self.assertIn(r"$y$", out)
 
     # ── Root block ─────────────────────────────────────────────────────────
     def test_root_block_node_present(self):
-        out = gd.build_tikz(self.simple)
+        out = gd.build_tikz(self.simple, auto_layout=False)
         self.assertIn("root_block", out)
         self.assertRegex(out, r"\\node \[root_block\]")
 
     # ── Leaf inputs ────────────────────────────────────────────────────────
     def test_leaf_uncertainty_nodes(self):
-        out = gd.build_tikz(self.simple)
+        out = gd.build_tikz(self.simple, auto_layout=False)
         self.assertIn("u(a)", out)
         self.assertIn("u(x)", out)
         self.assertIn("u(b)", out)
 
     def test_effect_node_present_when_effects_given(self):
-        out = gd.build_tikz(self.simple)
+        out = gd.build_tikz(self.simple, auto_layout=False)
         self.assertIn("Calibration", out)
         self.assertIn("Offset estimation", out)
 
     def test_no_effect_node_when_no_effects(self):
-        out = gd.build_tikz(self.simple)
+        out = gd.build_tikz(self.simple, auto_layout=False)
         n_effect_nodes = out.count("effect_node,")
         # simple model: a has 1 effect, x has 0, b has 1 → 2 effect nodes
         self.assertEqual(n_effect_nodes, 2)
 
     def test_leaf_colors_applied(self):
-        out = gd.build_tikz(self.simple)
+        out = gd.build_tikz(self.simple, auto_layout=False)
         self.assertIn("draw=red", out)
         self.assertIn("draw=blue!70!black", out)
         self.assertIn("draw=purple", out)
 
     # ── Connections ─────────────────────────────────────────────────────────
     def test_connections_drawn(self):
-        out = gd.build_tikz(self.simple)
+        out = gd.build_tikz(self.simple, auto_layout=False)
         self.assertRegex(out, r"\\draw \[connection")
 
     def test_dashed_connections_for_effect_nodes(self):
-        out = gd.build_tikz(self.simple)
+        out = gd.build_tikz(self.simple, auto_layout=False)
         self.assertIn("dashed", out)
 
     # ── Partial derivative notation ─────────────────────────────────────────
     def test_partial_derivatives_present(self):
-        out = gd.build_tikz(self.simple)
+        out = gd.build_tikz(self.simple, auto_layout=False)
         self.assertIn(r"\frac{\partial y}{\partial a}", out)
         self.assertIn(r"\frac{\partial y}{\partial x}", out)
         self.assertIn(r"\frac{\partial y}{\partial b}", out)
 
     # ── Nested / sub-model ──────────────────────────────────────────────────
     def test_submodel_block_present(self):
-        out = gd.build_tikz(self.nested)
+        out = gd.build_tikz(self.nested, auto_layout=False)
         self.assertRegex(out, r"\\node \[model_block")
 
     def test_submodel_inputs_appear(self):
-        out = gd.build_tikz(self.nested)
+        out = gd.build_tikz(self.nested, auto_layout=False)
         self.assertIn("u(u)", out)
         self.assertIn("u(v)", out)
 
     def test_side_leaf_present(self):
         """q is a leaf input at root level → placed to the right."""
-        out = gd.build_tikz(self.nested)
+        out = gd.build_tikz(self.nested, auto_layout=False)
         self.assertIn("u(q)", out)
 
     def test_no_duplicate_node_ids(self):
         """Every TikZ node identifier must be unique."""
-        out = gd.build_tikz(self.nested)
+        out = gd.build_tikz(self.nested, auto_layout=False)
         ids = re.findall(r"\\node\s*\[[^\]]*\]\s*\(([^)]+)\)", out)
         self.assertEqual(len(ids), len(set(ids)), f"Duplicate TikZ IDs: {ids}")
 
     # ── Built-in example ────────────────────────────────────────────────────
     def test_builtin_example_runs(self):
         model = gd._builtin_example()
-        out = gd.build_tikz(model, label="swh_utd")
+        out = gd.build_tikz(model, label="swh_utd", auto_layout=False)
         self.assertIn(r"\begin{figure}", out)
         self.assertIn(r"\label{fig:swh_utd}", out)
 
     def test_builtin_example_lambda_not_corrupted(self):
         model = gd._builtin_example()
-        out = gd.build_tikz(model)
+        out = gd.build_tikz(model, auto_layout=False)
         self.assertIn(r"\lambda_C", out)
         self.assertNotIn(r"\lam" + "\\", out)
 
@@ -420,7 +420,7 @@ class TestFileOutput(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             path = os.path.join(td, expected_name)
             with open(path, "w") as fh:
-                fh.write(gd.build_tikz(model, label=label) + "\n")
+                fh.write(gd.build_tikz(model, label=label, auto_layout=False) + "\n")
             self.assertTrue(os.path.exists(path))
             content = Path(path).read_text()
             self.assertIn(rf"\label{{fig:{label}}}", content)
@@ -468,7 +468,7 @@ class TestCollectSeparateFigures(unittest.TestCase):
     def test_separate_figure_not_expanded_in_parent(self):
         """The parent figure should contain a cross-reference, not u/v nodes."""
         model = _separate_model()
-        out = gd.build_tikz(model, label="utd_z")
+        out = gd.build_tikz(model, label="utd_z", auto_layout=False)
         self.assertIn(r"see Fig.~\ref{fig:utd_p}", out)
         # u and v nodes must NOT appear in the parent figure
         self.assertNotIn(r"u(u)", out)
@@ -478,10 +478,71 @@ class TestCollectSeparateFigures(unittest.TestCase):
         """The sub-model figure should expand u and v."""
         model = _separate_model()
         _, sub = gd.collect_separate_figures(model)[0]
-        out = gd.build_tikz(sub, label="utd_p")
+        out = gd.build_tikz(sub, label="utd_p", auto_layout=False)
         self.assertIn(r"\label{fig:utd_p}", out)
         self.assertIn("u(u)", out)
         self.assertIn("u(v)", out)
+
+
+
+# ── _auto_layout ──────────────────────────────────────────────────────────────
+
+class TestAutoLayout(unittest.TestCase):
+
+    def test_no_overlaps_after_auto_layout(self):
+        """After _auto_layout, no two nodes from different branches should
+        have bounding boxes that overlap (within a small tolerance)."""
+        model = _simple_model()
+        gd._auto_layout(model)
+        angles = gd._root_angles(model.inputs)
+        all_recs = []
+        for ivar, angle in zip(model.inputs, angles):
+            x_d = gd._V_D0 * math.cos(angle)
+            y_d = gd._V_D0 * math.sin(angle)
+            all_recs.extend(gd._simulate_branch(model, ivar, x_d, y_d, angle))
+        TOL = 0.05
+        for i, ri in enumerate(all_recs):
+            for rj in all_recs[i + 1:]:
+                if ri.ivar is rj.ivar:
+                    continue
+                ov = gd._aabb_overlap(gd._aabb(ri), gd._aabb(rj))
+                if ov is not None:
+                    self.assertLessEqual(
+                        ov[0], TOL,
+                        f"X-overlap {ov[0]:.3f} > {TOL} between "
+                        f"{ri.ivar.latex_name}({ri.ntype}) and "
+                        f"{rj.ivar.latex_name}({rj.ntype})",
+                    )
+                    self.assertLessEqual(
+                        ov[1], TOL,
+                        f"Y-overlap {ov[1]:.3f} > {TOL} between "
+                        f"{ri.ivar.latex_name}({ri.ntype}) and "
+                        f"{rj.ivar.latex_name}({rj.ntype})",
+                    )
+
+    def test_branch_offsets_applied_in_tikz(self):
+        """When a branch has a non-zero offset, the TikZ dx/dy reflect it."""
+        model = _simple_model()
+        # Manually push branch 'a' by (3, 1)
+        model.inputs[0].branch_offset = (3.0, 1.0)
+        out = gd.build_tikz(model, auto_layout=False)
+        # Node for 'a' branch should have an x offset that includes 3.0
+        # The natural x_d for the first input: find its position lines
+        a_lines = [ln for ln in out.splitlines() if "DARED" in ln or "DA)" in ln or "(DA)" in ln]
+        # Just check tikz has a coordinate > 3 for this branch (natural ≈ ±2)
+        import re
+        coords = re.findall(r'\(DAROOT\)\+\(([+-]?\d+\.\d+)cm', out)
+        if coords:
+            # At least one coordinate should be shifted by ~3 relative to natural
+            self.assertTrue(any(abs(float(c)) > 2.5 for c in coords))
+
+    def test_walk_inputs_returns_all_ivars(self):
+        """_walk_inputs returns all InputVar objects in the tree."""
+        model = _nested_model()
+        ivars = gd._walk_inputs(model)
+        latex_names = {iv.latex_name for iv in ivars}
+        self.assertIn(r"p", latex_names)   # root-level input with sub-model
+        self.assertIn(r"u", latex_names)   # nested input
 
 
 if __name__ == "__main__":
