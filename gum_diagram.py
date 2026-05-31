@@ -121,30 +121,26 @@ def _latex_to_sym_name(latex: str) -> str:
     """Derive a safe sympy Symbol name from a LaTeX string.
 
     ``\\lambda_C^{20^\\circ}`` → ``lam_C20``
+    ``\\Delta\\varpi_{\\rm dc}`` → ``Delvarpi_dc``
     Strips backslashes, braces, carets, and common LaTeX commands.
     """
     s = latex
-    # Map common Greek letter commands to short names
-    greek = {
-        "lambda": "lam", "Lambda": "Lam",
-        "varphi": "varph", "vartheta": "vartheta", "varpi": "varpi",
-        "varrho": "varrho", "varsigma": "varsi", "varepsilon": "vareps",
-        "theta": "theta", "Theta": "Theta",
-        "phi": "phi", "Phi": "Phi",
-        "sigma": "sig", "Sigma": "Sig",
-        "delta": "del", "Delta": "Del",
-        "alpha": "alpha", "beta": "beta", "gamma": "gamma",
-        "mu": "mu", "nu": "nu", "xi": "xi", "pi": "pi",
-        "rho": "rho", "tau": "tau", "omega": "omega", "Omega": "Omega",
-        "eta": "eta", "kappa": "kap", "epsilon": "eps",
-    }
-    for cmd, rep in greek.items():
-        s = re.sub(r"\\" + cmd + r"(?![A-Za-z])", rep, s)
-    # Remove remaining LaTeX commands and structural characters
-    s = re.sub(r"\\mathbf\{([^}]+)\}", r"\1", s)
-    s = re.sub(r"\\mathrm\{([^}]+)\}", r"\1", s)
-    s = re.sub(r"\\text\{([^}]+)\}", r"\1", s)
-    s = re.sub(r"\\[A-Za-z]+", "", s)  # remaining commands
+    # Font wrappers must come first (before single-pass command substitution)
+    for fc in (r"\\mathbf", r"\\mathrm", r"\\mathit",
+               r"\\boldsymbol", r"\\text", r"\\operatorname"):
+        s = re.sub(fc + r"\{([^}]+)\}", r"\1", s)
+    # Single-pass Greek/command substitution (avoids serial-loop prefix clashes)
+    _sym_greek = {cmd: rep for cmd, rep in _GREEK}
+    # Bare font-switch commands (\rm, \bf …) and spacing → strip
+    _sym_greek.update({"rm": "", "bf": "", "it": "",
+                       "sf": "", "tt": "", "cal": "",
+                       "circ": "", "deg": ""})
+
+    def _sub(m: re.Match) -> str:
+        return _sym_greek.get(m.group(1), m.group(1))
+
+    s = re.sub(r"\\([A-Za-z]+)(?![A-Za-z])", _sub, s)
+    s = re.sub(r"\\[A-Za-z]+", "", s)  # any remaining commands
     s = re.sub(r"[{}^\s]", "", s)       # braces, carets, spaces
     s = re.sub(r"[^A-Za-z0-9_]", "_", s)
     s = re.sub(r"_+", "_", s).strip("_")
@@ -315,6 +311,164 @@ def _latex_to_sympy_str(latex: str) -> str:
     return s
 
 
+def _extract_latex_vars(latex: str) -> Dict[str, str]:
+    """Extract variable-like tokens from a LaTeX expression.
+
+    Returns a dict mapping ``sympy_name → latex_token`` for each
+    variable-like token found in *latex*.  This lets the interactive
+    session show the original LaTeX symbol rather than the internal
+    sympy identifier.
+
+    A variable token starts with a ``\\cmd`` or plain letter, may be
+    prefixed by a modifier command (``\\Delta``, ``\\hat`` etc.), and
+    may be followed by subscripts ``_{...}`` and superscripts ``^{...}``.
+    Font wrappers (``\\mathbf{arg}``) are also recognised.
+
+    Structural/operator commands (``\\frac``, ``\\sqrt``, …) are skipped.
+    """
+    _structural = {
+        "frac", "sqrt", "left", "right", "cdot", "times",
+        "begin", "end", "sum", "prod", "int", "oint", "lim",
+        "partial", "infty", "pm", "mp", "le", "ge", "neq",
+        "rm", "bf", "it", "sf", "tt", "cal",
+        "over", "under", "overbrace", "underbrace",
+    }
+    _font_cmds = {"mathbf", "mathrm", "mathit", "boldsymbol",
+                  "text", "operatorname"}
+    # Modifier prefixes that attach to the next atom (e.g. \Delta\varpi)
+    _modifiers = {"hat", "tilde", "bar", "vec", "dot", "ddot",
+                  "Delta", "delta", "nabla", "partial"}
+
+    result: Dict[str, str] = {}
+
+    def _read_cmd(s: str, pos: int) -> Tuple[str, int]:
+        """Read a ``\\cmd`` starting at s[pos]=='\\'. Return (cmd, end_pos)."""
+        j = pos + 1
+        while j < len(s) and s[j].isalpha():
+            j += 1
+        return s[pos + 1:j], j
+
+    def _opt_subsup(s: str, pos: int) -> Tuple[str, int]:
+        """Consume optional ``_{...}``/``^{...}`` (or ``_x``/``^x``)."""
+        extra = ""
+        i = pos
+        while i < len(s):
+            if s[i] in ("_", "^") and i + 1 < len(s):
+                if s[i + 1] == "{":
+                    end = _find_brace_end(s, i + 1)  # handles nested braces
+                    extra += s[i:end + 1]
+                    i = end + 1
+                else:
+                    extra += s[i:i + 2]
+                    i += 2
+            else:
+                break
+        return extra, i
+
+    def _read_atom(s: str, pos: int):
+        """Read one variable atom (cmd, font-wrapped, or plain letter).
+
+        Returns (token_str, end_pos) or (None, pos) if not a variable atom.
+        """
+        if pos >= len(s):
+            return None, pos
+        if s[pos] == "\\":
+            cmd, j = _read_cmd(s, pos)
+            if cmd in _font_cmds and j < len(s) and s[j] == "{":
+                end = _find_brace_end(s, j)
+                token = s[pos:end + 1]
+                return token, end + 1
+            elif cmd and cmd not in _structural:
+                return s[pos:j], j
+            else:
+                return None, pos
+        elif s[pos].isalpha():
+            j = pos
+            while j < len(s) and s[j].isalpha():
+                j += 1
+            return s[pos:j], j
+        return None, pos
+
+    i = 0
+    while i < len(latex):
+        # Skip whitespace and non-variable characters
+        if latex[i] in " \t\n,;()[]{}+=-*/^_|<>!&":
+            i += 1
+            continue
+
+        if latex[i] == "\\":
+            cmd, j = _read_cmd(latex, i)
+            if cmd in _structural:
+                i = j
+                continue
+
+            # Check for modifier prefix (e.g. \Delta before \varpi)
+            if cmd in _modifiers:
+                prefix_token = latex[i:j]
+                # Try to read the next atom
+                # skip whitespace
+                k = j
+                while k < len(latex) and latex[k] == " ":
+                    k += 1
+                atom, k2 = _read_atom(latex, k)
+                if atom:
+                    # Combined token: \Delta\varpi_{\rm dc}
+                    full = prefix_token + atom
+                    extra, end = _opt_subsup(latex, k2)
+                    full += extra
+                    sym_name = _latex_to_sym_name(full)
+                    if sym_name:
+                        result[sym_name] = full
+                    i = end
+                    continue
+                # Modifier without following atom — treat as standalone
+                extra, end = _opt_subsup(latex, j)
+                full = prefix_token + extra
+                sym_name = _latex_to_sym_name(full)
+                if sym_name:
+                    result[sym_name] = full
+                i = end
+                continue
+
+            if cmd in _font_cmds and j < len(latex) and latex[j] == "{":
+                end = _find_brace_end(latex, j)
+                token = latex[i:end + 1]
+                extra, end2 = _opt_subsup(latex, end + 1)
+                token += extra
+                sym_name = _latex_to_sym_name(token)
+                if sym_name:
+                    result[sym_name] = token
+                i = end2
+                continue
+
+            # Regular \cmd (Greek letter etc.)
+            token = latex[i:j]
+            extra, end = _opt_subsup(latex, j)
+            token += extra
+            sym_name = _latex_to_sym_name(token)
+            if sym_name:
+                result[sym_name] = token
+            i = end
+
+        elif latex[i].isalpha():
+            j = i
+            while j < len(latex) and latex[j].isalpha():
+                j += 1
+            word = latex[i:j]
+            token = word
+            extra, end = _opt_subsup(latex, j)
+            token += extra
+            sym_name = _latex_to_sym_name(token)
+            if sym_name:
+                result[sym_name] = token
+            i = end
+
+        else:
+            i += 1
+
+    return result
+
+
 def _parse_latex_expr(
     latex_rhs: str,
     symtable: Dict[str, sp.Symbol],
@@ -424,23 +578,29 @@ def collect_model(
             print(f"{ind}  ✗ Parse error: {exc}. Please try again.")
 
     free_syms = sorted(expr.free_symbols, key=str)
+    # Build sym_name → LaTeX token map from the original expression
+    latex_var_map = _extract_latex_vars(latex_rhs)
+
     if free_syms:
-        print(f"{ind}  Detected symbols: "
-              f"{', '.join(str(s) for s in free_syms)}")
+        display = ", ".join(
+            latex_var_map.get(str(s), str(s)) for s in free_syms
+        )
+        print(f"{ind}  Detected symbols: {display}")
     else:
         print(f"{ind}  (No free symbols detected)")
 
     inputs: List[InputVar] = []
     for sym in free_syms:
         sym_str = str(sym)
-        print(f"\n{ind}  ─ Input  '{sym_str}'  ─")
-        latex = _ask(f"{ind}    LaTeX name", sym_str)
+        # Use the original LaTeX token if we found one, else fall back to sym_str
+        latex = latex_var_map.get(sym_str, sym_str)
+        print(f"\n{ind}  ─ Input  ${latex}$  ─")
         color = color_pool.pop(0) if color_pool else "black"
         print(f"{ind}    Assigned colour: {color}")
 
         ivar = InputVar(latex_name=latex, sym=sym, color=color)
 
-        if _ask_yn(f"{ind}    Does '{sym_str}' have a sub-model?"):
+        if _ask_yn(f"{ind}    Does '{latex}' have a sub-model?"):
             ivar.submodel = collect_model(
                 latex, dict(symtable), list(color_pool), depth + 1
             )
