@@ -809,12 +809,14 @@ def _tikz_id(s: str) -> str:
 
 
 # Layout constants (all in cm)
-_H_LEAF  = 3.5   # horizontal space allocated per leaf node
-_V_D0    = 2.8   # root → root-level deriv_node (vertical)
-_V_M0    = 2.2   # root-level deriv_node → sub-model block
-_V_D1    = 2.8   # sub-model block → nested deriv_node
-_V_LEAF  = 2.2   # any deriv_node → leaf_node
-_V_EFF   = 2.0   # leaf_node → effect_node
+_H_LEAF  = 1.8   # horizontal space allocated per leaf node (level 0)
+_V_D0    = 1.8   # root → root-level deriv_node
+_V_M0    = 1.4   # deriv_node → sub-model block
+_V_D1    = 1.8   # sub-model block → nested deriv_node
+_V_LEAF  = 1.4   # any deriv_node → leaf_node
+_V_EFF   = 1.2   # leaf_node → effect_node
+_DEPTH_SCALE = 0.85  # multiply H_LEAF and V distances by this factor per depth level
+_H_LEAF_MIN  = 1.3   # minimum horizontal spacing (cm) to prevent box overlap
 
 
 def _leaf_count(ivar: "InputVar") -> int:
@@ -976,21 +978,24 @@ class _Emitter:
             x_d = _V_D0 * math.cos(angle)
             y_d = _V_D0 * math.sin(angle)
             self._emit_branch(model, root_id, ivar,
-                              x_d, y_d, root_id, angle)
+                              x_d, y_d, root_id, angle, depth=0)
 
     # ── single branch ────────────────────────────────────────────────────────
 
     def _emit_branch(self, parent_model: MeasurementModel,
                      parent_id: str, ivar: InputVar,
                      x_deriv: float, y_deriv: float,
-                     root_id: str, out_angle: float) -> None:
+                     root_id: str, out_angle: float,
+                     depth: int = 0) -> None:
         """Emit  parent → deriv_node → [sub-model children | leaf → effects].
 
         *out_angle* is the angle (radians) pointing away from the root along
         this branch.  Sub-trees grow further outward in the same direction.
         Children of a sub-model are spread in the perpendicular direction
         (clockwise 90° from *out_angle*).
+        *depth* drives adaptive spacing: distances shrink by _DEPTH_SCALE per level.
         """
+        scale = max(_DEPTH_SCALE ** depth, 0.5)  # floor at 50% to avoid extreme compression
         color = ivar.color
         cos_o = math.cos(out_angle)
         sin_o = math.sin(out_angle)
@@ -1004,8 +1009,8 @@ class _Emitter:
 
         if ivar.submodel is not None:
             m_id = self._uid(f"M{_tikz_id(ivar.latex_name)}")
-            x_model = x_deriv + _V_M0 * cos_o
-            y_model = y_deriv + _V_M0 * sin_o
+            x_model = x_deriv + _V_M0 * scale * cos_o
+            y_model = y_deriv + _V_M0 * scale * sin_o
             self.t.blank()
             self.t.comment(f"sub-model: {ivar.submodel.latex_name}")
             if ivar.separate_figure:
@@ -1026,11 +1031,12 @@ class _Emitter:
                 )
                 self.t.edge(d_id, m_id, f"connection, {color}")
                 self._emit_inputs(ivar.submodel, m_id, x_model, y_model,
-                                  root_id, _V_D1, out_angle)
+                                  root_id, _V_D1 * scale, out_angle,
+                                  depth=depth + 1)
         else:
             leaf_id = self._uid(f"U{_tikz_id(ivar.latex_name)}")
-            x_leaf = x_deriv + _V_LEAF * cos_o
-            y_leaf = y_deriv + _V_LEAF * sin_o
+            x_leaf = x_deriv + _V_LEAF * scale * cos_o
+            y_leaf = y_deriv + _V_LEAF * scale * sin_o
             self.t.abs_math_node(
                 leaf_id, "leaf_node", rf"u({ivar.latex_name})",
                 ref=root_id, dx=x_leaf, dy=y_leaf,
@@ -1040,7 +1046,8 @@ class _Emitter:
             self._emit_effects(ivar, leaf_id,
                                root_id=root_id,
                                dx=x_leaf, dy=y_leaf,
-                               out_angle=out_angle)
+                               out_angle=out_angle,
+                               scale=scale)
         self.t.blank()
 
     # ── sub-model children ───────────────────────────────────────────────────
@@ -1050,40 +1057,43 @@ class _Emitter:
                      parent_dx: float, parent_dy: float,
                      root_id: str,
                      v_to_child: float,
-                     out_angle: float) -> None:
+                     out_angle: float,
+                     depth: int = 0) -> None:
         """Fan all inputs of *model* outward from *parent_id*.
 
         Children are placed ``v_to_child`` cm further out along *out_angle*
         and spread in the clockwise-perpendicular direction so that reading
         left-to-right (when facing outward) matches the input order.
+        *depth* is passed to _emit_branch for adaptive spacing.
         """
         inputs = model.inputs
         if not inputs:
             return
+        scale = max(_DEPTH_SCALE ** depth, 0.5)
         cos_o = math.cos(out_angle)
         sin_o = math.sin(out_angle)
         # Clockwise-perpendicular unit vector: (sin θ, -cos θ)
         cos_p = sin_o
         sin_p = -cos_o
 
-        for ivar, perp in zip(inputs, _child_offsets(inputs)):
+        for ivar, perp in zip(inputs, _child_offsets(inputs, h_unit=max(_H_LEAF * scale, _H_LEAF_MIN))):
             x_d = parent_dx + v_to_child * cos_o + perp * cos_p
             y_d = parent_dy + v_to_child * sin_o + perp * sin_p
             self._emit_branch(model, parent_id, ivar,
-                              x_d, y_d, root_id, out_angle)
+                              x_d, y_d, root_id, out_angle, depth=depth)
 
     # ── effect nodes ─────────────────────────────────────────────────────────
 
     def _emit_effects(self, ivar: InputVar, leaf_id: str,
                       root_id: str, dx: float, dy: float,
-                      out_angle: float) -> None:
+                      out_angle: float, scale: float = 1.0) -> None:
         """Emit uncertainty-source nodes further outward from the leaf."""
         if not ivar.effects:
             return
         eff_id = self._uid(f"EFF{_tikz_id(ivar.latex_name)}")
         eff_text = r" \\ ".join(ivar.effects)
-        x_eff = dx + _V_EFF * math.cos(out_angle)
-        y_eff = dy + _V_EFF * math.sin(out_angle)
+        x_eff = dx + _V_EFF * scale * math.cos(out_angle)
+        y_eff = dy + _V_EFF * scale * math.sin(out_angle)
         self.t.abs_text_node(eff_id, "effect_node", eff_text,
                              ref=root_id, dx=x_eff, dy=y_eff,
                              extra=ivar.color)
@@ -1141,16 +1151,16 @@ def build_tikz(root: MeasurementModel, label: str = "",
     t.raw(r"  \begin{adjustbox}{max width=\textwidth, max totalheight=.88\textheight, keepaspectratio}")
     t.raw(r"  \begin{tikzpicture}[")
     t.raw(r"    connection/.style={draw, thick},")
-    t.raw(r"    root_block/.style={draw, rectangle, inner sep=10pt,"
-          r" font=\Large\bfseries, align=center},")
-    t.raw(r"    model_block/.style={draw, rectangle, inner sep=8pt,"
-          r" font=\large\bfseries, align=center},")
-    t.raw(r"    deriv_node/.style={draw, rectangle, rounded corners=5pt,"
-          r" inner sep=5pt, font=\normalsize, align=center},")
-    t.raw(r"    leaf_node/.style={draw, rectangle, inner sep=5pt,"
-          r" font=\small, align=center, text width=1.3cm},")
-    t.raw(r"    effect_node/.style={draw, dashed, font=\footnotesize\itshape,"
-          r" align=center, text width=2.3cm, inner sep=3pt}")
+    t.raw(r"    root_block/.style={draw, rectangle, inner sep=6pt,"
+          r" font=\normalsize\bfseries, align=center},")
+    t.raw(r"    model_block/.style={draw, rectangle, inner sep=4pt,"
+          r" font=\small\bfseries, align=center},")
+    t.raw(r"    deriv_node/.style={draw, rectangle, rounded corners=3pt,"
+          r" inner sep=3pt, font=\small, align=center},")
+    t.raw(r"    leaf_node/.style={draw, rectangle, inner sep=3pt,"
+          r" font=\footnotesize, align=center, text width=1.1cm},")
+    t.raw(r"    effect_node/.style={draw, dashed, font=\scriptsize\itshape,"
+          r" align=center, text width=1.8cm, inner sep=2pt}")
     t.raw(r"    ]")
 
     root_id = _tikz_id(root.latex_name) + "ROOT"
