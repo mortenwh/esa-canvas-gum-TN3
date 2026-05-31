@@ -147,6 +147,108 @@ def _latex_to_sym_name(latex: str) -> str:
     return s or "x"
 
 
+_UNICODE_GREEK: Dict[str, str] = {
+    "alpha": "α", "beta": "β", "gamma": "γ", "delta": "δ",
+    "epsilon": "ε", "varepsilon": "ε", "zeta": "ζ", "eta": "η",
+    "theta": "θ", "vartheta": "ϑ", "iota": "ι", "kappa": "κ",
+    "lambda": "λ", "mu": "μ", "nu": "ν", "xi": "ξ",
+    "pi": "π", "varpi": "ϖ", "rho": "ρ", "varrho": "ϱ",
+    "sigma": "σ", "varsigma": "ς", "tau": "τ", "upsilon": "υ",
+    "phi": "φ", "varphi": "ϕ", "chi": "χ", "psi": "ψ", "omega": "ω",
+    "Alpha": "Α", "Beta": "Β", "Gamma": "Γ", "Delta": "Δ",
+    "Epsilon": "Ε", "Zeta": "Ζ", "Eta": "Η", "Theta": "Θ",
+    "Iota": "Ι", "Kappa": "Κ", "Lambda": "Λ", "Mu": "Μ",
+    "Nu": "Ν", "Xi": "Ξ", "Pi": "Π", "Rho": "Ρ", "Sigma": "Σ",
+    "Tau": "Τ", "Upsilon": "Υ", "Phi": "Φ", "Chi": "Χ",
+    "Psi": "Ψ", "Omega": "Ω",
+    "circ": "°", "deg": "°",
+    "infty": "∞", "nabla": "∇", "partial": "∂",
+    "cdot": "·", "times": "×",
+}
+
+
+def _latex_to_unicode(s: str) -> str:
+    r"""Convert a LaTeX symbol token to a Unicode terminal approximation.
+
+    ``\\Delta\\varpi_{\\rm dc}`` → ``Δϖ_dc``
+    ``\\lambda_C^{20^\\circ}``   → ``λ_C^20°``
+    ``\\mathbf{t}``              → ``t``
+    """
+    # Strip \left / \right wrappers
+    s = re.sub(r"\\(?:left|right)\s*", "", s)
+
+    # Strip font-wrapper commands: \mathbf{x} → x  (iterate for nesting)
+    _fw_re = re.compile(
+        r"\\(?:mathbf|mathrm|mathit|mathsf|mathtt|mathcal|boldsymbol|text)\{"
+    )
+    while True:
+        m = _fw_re.search(s)
+        if not m:
+            break
+        brace_i = m.end() - 1
+        # find matching closing brace manually
+        depth, i = 0, brace_i
+        while i < len(s):
+            if s[i] == "{":
+                depth += 1
+            elif s[i] == "}":
+                depth -= 1
+                if depth == 0:
+                    break
+            i += 1
+        inner = s[brace_i + 1:i]
+        s = s[:m.start()] + inner + s[i + 1:]
+
+    # Bare font-switch commands (\rm, \bf …) → stripped
+    s = re.sub(r"\\(?:rm|bf|it|sf|tt|cal)\b\s*", "", s)
+
+    # Subscripts _{content} → unicode subscript digits or _text
+    def _sub_repl(m: re.Match) -> str:
+        inner = _latex_to_unicode(m.group(1))
+        if re.match(r"^[0-9]+$", inner):
+            return "".join(chr(0x2080 + int(c)) for c in inner)
+        return "_" + inner
+
+    s = re.sub(r"_\{([^{}]*)\}", _sub_repl, s)
+    s = re.sub(r"_([A-Za-z0-9])", lambda m: "_" + m.group(1), s)
+
+    # Superscripts ^{content} → ° if purely decorative, else ^text
+    def _sup_repl(m: re.Match) -> str:
+        inner = _latex_to_unicode(m.group(1))
+        if inner.strip() == "°":
+            return "°"
+        return ("^" + inner) if inner else ""
+
+    s = re.sub(r"\^\{([^{}]*)\}", _sup_repl, s)
+    s = re.sub(r"\^([A-Za-z0-9])", lambda m: "^" + m.group(1), s)
+
+    # Single-pass Greek / symbol substitution; unknown commands stripped
+    def _greek_cb(m: re.Match) -> str:
+        return _UNICODE_GREEK.get(m.group(1), "")
+
+    s = re.sub(r"\\([A-Za-z]+)", _greek_cb, s)
+
+    # Remove orphaned carets (not followed by a letter/digit) left after command
+    # substitution, e.g. the ^ before \circ in 20^\circ → 20^° → 20°
+    s = re.sub(r"\^(?![A-Za-z0-9])", "", s)
+
+    # Remove leftover braces
+    s = re.sub(r"[{}]", "", s)
+    return s.strip()
+
+
+def _sym_display(latex_token: str) -> str:
+    """Return a terminal label: ``unicode  (latex)`` or just ``unicode``.
+
+    If the Unicode approximation equals the plain token (e.g. 'P'), the
+    parenthesised LaTeX part is omitted to keep the output clean.
+    """
+    uni = _latex_to_unicode(latex_token)
+    if uni == latex_token:
+        return uni
+    return f"{uni}  ({latex_token})"
+
+
 def _find_brace_end(s: str, start: int) -> int:
     """Return index of the ``}`` matching the ``{`` at *s[start]*."""
     depth = 0
@@ -583,7 +685,7 @@ def collect_model(
 
     if free_syms:
         display = ", ".join(
-            latex_var_map.get(str(s), str(s)) for s in free_syms
+            _sym_display(latex_var_map.get(str(s), str(s))) for s in free_syms
         )
         print(f"{ind}  Detected symbols: {display}")
     else:
@@ -594,13 +696,14 @@ def collect_model(
         sym_str = str(sym)
         # Use the original LaTeX token if we found one, else fall back to sym_str
         latex = latex_var_map.get(sym_str, sym_str)
-        print(f"\n{ind}  ─ Input  ${latex}$  ─")
+        label = _sym_display(latex)
+        print(f"\n{ind}  ─ Input  {label}  ─")
         color = color_pool.pop(0) if color_pool else "black"
         print(f"{ind}    Assigned colour: {color}")
 
         ivar = InputVar(latex_name=latex, sym=sym, color=color)
 
-        if _ask_yn(f"{ind}    Does '{latex}' have a sub-model?"):
+        if _ask_yn(f"{ind}    Does {label} have a sub-model?"):
             ivar.submodel = collect_model(
                 latex, dict(symtable), list(color_pool), depth + 1
             )
