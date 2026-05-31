@@ -818,8 +818,14 @@ _V_EFF   = 2.0   # leaf_node → effect_node
 
 
 def _leaf_count(ivar: "InputVar") -> int:
-    """Total leaf nodes in the subtree rooted at *ivar* (minimum 1)."""
+    """Total leaf nodes in the subtree rooted at *ivar* (minimum 1).
+
+    Separate-figure sub-models count as 1 leaf regardless of their
+    shallow-model size — they render as a single compact node.
+    """
     if ivar.submodel is None:
+        return 1
+    if ivar.separate_figure:
         return 1
     return max(1, sum(_leaf_count(iv) for iv in ivar.submodel.inputs))
 
@@ -847,25 +853,31 @@ def _root_angles(inputs: "List[InputVar]") -> "List[float]":
     """Return the outward angle (radians) for each root-level input.
 
     Branches are distributed in an arc centred at π/2 (straight up).
-    Each input is allocated angular width proportional to its leaf count
-    so denser sub-trees occupy more arc.  The total arc grows at
-    ``_ARC_PER_LEAF`` degrees per total leaf, capped at ``_ARC_CAP_DEG``:
+    Angular width is proportional to each branch's leaf count, but each
+    branch is guaranteed at least 1/n of the total arc (equal share) so
+    that compact branches (e.g. a separate-figure stub) are not crammed
+    into a sliver next to a large sub-tree.
 
-    * few branches  → narrow top arc (all above the root)
-    * many branches → arc widens to the sides and below the root
-
-    Convention: π/2 = up, 0 = right, π = left, 3π/2 = down.
+    The total arc grows at ``_ARC_PER_LEAF`` degrees per total leaf,
+    capped at ``_ARC_CAP_DEG``.
     """
     if not inputs:
         return []
-    total_leaves = sum(_leaf_count(iv) for iv in inputs)
+    n = len(inputs)
+    raw_counts = [_leaf_count(iv) for iv in inputs]
+    total_leaves = sum(raw_counts)
+    # Each branch gets at least an equal share; then renormalise.
+    equal_share = total_leaves / n
+    smoothed = [max(c, equal_share) for c in raw_counts]
+    smoothed_total = sum(smoothed)
+
     arc_deg = min(_ARC_CAP_DEG, total_leaves * _ARC_PER_LEAF)
     arc_rad = math.radians(arc_deg)
     start = math.pi / 2 + arc_rad / 2          # left-most angle
     angles: List[float] = []
     cumulative = 0.0
-    for ivar in inputs:
-        frac = _leaf_count(ivar) / total_leaves
+    for s in smoothed:
+        frac = s / smoothed_total
         angles.append(start - (cumulative + frac / 2) * arc_rad)
         cumulative += frac
     return angles
@@ -997,9 +1009,7 @@ class _Emitter:
             self.t.blank()
             self.t.comment(f"sub-model: {ivar.submodel.latex_name}")
             if ivar.separate_figure:
-                # Show model equation + cross-ref as mixed text/math node.
-                # abs_math_node wraps everything in $…$ which breaks \footnotesize
-                # and \\; use abs_text_node and wrap only the equation in $…$.
+                # Show model equation + cross-ref only — no u(x) leaf needed.
                 ref_note = (rf"${ivar.submodel.latex_name} = {ivar.submodel.latex_expr}$"
                             rf"\\ \footnotesize(see Fig.~\ref{{fig:{ivar.separate_label}}})")
                 self.t.abs_text_node(
@@ -1008,20 +1018,6 @@ class _Emitter:
                     ref=root_id, dx=x_model, dy=y_model,
                 )
                 self.t.edge(d_id, m_id, f"connection, {color}")
-                # Treat as leaf: show u(x) node and effects
-                leaf_id = self._uid(f"U{_tikz_id(ivar.latex_name)}")
-                x_leaf = x_model + _V_LEAF * cos_o
-                y_leaf = y_model + _V_LEAF * sin_o
-                self.t.abs_math_node(
-                    leaf_id, "leaf_node", rf"u({ivar.latex_name})",
-                    ref=root_id, dx=x_leaf, dy=y_leaf,
-                    extra=f"draw={color}, text={color}",
-                )
-                self.t.edge(m_id, leaf_id, f"connection, {color}")
-                self._emit_effects(ivar, leaf_id,
-                                   root_id=root_id,
-                                   dx=x_leaf, dy=y_leaf,
-                                   out_angle=out_angle)
             else:
                 self.t.abs_math_node(
                     m_id, "model_block",
