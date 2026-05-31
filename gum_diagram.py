@@ -995,7 +995,8 @@ class _Emitter:
         self.t.edge(eff_id, leaf_id, f"connection, {ivar.color}, dashed")
 
 
-def build_tikz(root: MeasurementModel, label: str = "") -> str:
+def build_tikz(root: MeasurementModel, label: str = "",
+               caption: str = "") -> str:
     """Return a complete LaTeX figure environment with the TikZ UTD.
 
     Parameters
@@ -1005,9 +1006,14 @@ def build_tikz(root: MeasurementModel, label: str = "") -> str:
     label:
         LaTeX ``\\label`` key used inside the figure (without the
         ``fig:`` prefix).  Defaults to ``utd_<ROOTSYM>``.
+    caption:
+        Caption text.  Defaults to
+        ``Uncertainty Tree Diagram for $<root.latex_name>$.``
     """
     if not label:
         label = f"utd_{_tikz_id(root.latex_name).lower()}"
+    if not caption:
+        caption = rf"Uncertainty Tree Diagram for ${root.latex_name}$."
     t = _TikZ()
     # Requires in the including document:
     #   \usepackage{tikz}
@@ -1037,7 +1043,7 @@ def build_tikz(root: MeasurementModel, label: str = "") -> str:
 
     t.raw(r"  \end{tikzpicture}")
     t.raw(r"  \end{adjustbox}")
-    t.raw(rf"  \caption{{Uncertainty Tree Diagram for ${root.latex_name}$.}}")
+    t.raw(rf"  \caption{{{caption}}}")
     t.raw(rf"  \label{{fig:{label}}}")
     t.raw(r"\end{figure}")
     return t.get()
@@ -1242,6 +1248,7 @@ def main() -> None:
     if args.example:
         model = _builtin_example()
         label = "swh_utd"
+        caption = ""  # use build_tikz default
     else:
         print("╔══════════════════════════════════════════════════════╗")
         print("║  GUM Uncertainty Tree Diagram Generator              ║")
@@ -1254,13 +1261,15 @@ def main() -> None:
             r"  Figure label (\label{fig:<…>}, without 'fig:')",
             default_label,
         )
+        default_caption = rf"Uncertainty Tree Diagram for ${lat_name}$."
+        caption = _ask("  Figure caption", default_caption)
         print()
         print("Step 2: Measurement model")
         symtable: Dict[str, sp.Symbol] = {}
         color_pool = list(COLORS)
         model = collect_model(lat_name, symtable, color_pool)
 
-    tikz_code = build_tikz(model, label=label)
+    tikz_code = build_tikz(model, label=label, caption=caption)
 
     out_path = args.output if args.output else _label_to_filename(label)
     with open(out_path, "w") as fh:
