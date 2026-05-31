@@ -494,12 +494,15 @@ class TestAutoLayout(unittest.TestCase):
         have bounding boxes that overlap (within a small tolerance)."""
         model = _simple_model()
         gd._auto_layout(model)
-        angles = gd._root_angles(model.inputs)
+        arc_rad = gd._root_sector_rad(model.inputs)
+        root_sectors = gd._sector_angles(model.inputs, math.pi / 2, arc_rad,
+                                          apply_min_sector=False)
         all_recs = []
-        for ivar, angle in zip(model.inputs, angles):
-            x_d = gd._V_D0 * math.cos(angle)
-            y_d = gd._V_D0 * math.sin(angle)
-            all_recs.extend(gd._simulate_branch(model, ivar, x_d, y_d, angle))
+        for ivar, (angle, sector_rad) in zip(model.inputs, root_sectors):
+            d = gd._radial_step(sector_rad)
+            x_d = d * math.cos(angle)
+            y_d = d * math.sin(angle)
+            all_recs.extend(gd._simulate_branch(model, ivar, x_d, y_d, angle, sector_rad))
         TOL = 0.05
         for i, ri in enumerate(all_recs):
             for rj in all_recs[i + 1:]:

@@ -811,18 +811,21 @@ def _tikz_id(s: str) -> str:
 
 # Layout constants (all in cm)
 _H_LEAF  = 1.8   # horizontal space allocated per leaf node (level 0)
-_V_D0    = 1.8   # root → root-level deriv_node
-_V_M0    = 1.4   # deriv_node → sub-model block
-_V_D1    = 1.8   # sub-model block → nested deriv_node
-_V_LEAF  = 1.4   # any deriv_node → leaf_node
-_V_EFF   = 1.2   # leaf_node → effect_node
-_DEPTH_SCALE = 0.85  # multiply H_LEAF and V distances by this factor per depth level
+_V_D0    = 1.8   # root → root-level deriv_node (used as floor, overridden by _radial_step)
+_V_M0    = 3.5   # deriv_node → sub-model block (must clear both boxes along the arm)
+_V_D1    = 2.5   # sub-model block → nested deriv_node (used as floor)
+_V_LEAF  = 2.0   # any deriv_node → leaf_node
+_V_EFF   = 1.4   # leaf_node → effect_node
+_DEPTH_SCALE = 0.90  # multiply V distances by this factor per depth level
 _H_LEAF_MIN  = 1.3   # minimum horizontal spacing (cm) to prevent box overlap
 # Minimum distances that override depth-scaling (prevent within-branch overlaps)
-_V_M0_MIN   = 1.8   # minimum deriv→model distance
-_V_D1_MIN   = 1.8   # minimum model→child-deriv distance
-_V_LEAF_MIN = 1.4   # minimum deriv→leaf distance
-# Arc parameters for radial sub-fan (sub-model children)
+_V_M0_MIN   = 5.0   # minimum deriv→model distance (deriv_hw + gap + model_hw)
+_V_D1_MIN   = 2.5   # minimum model→child-deriv distance
+_V_LEAF_MIN = 2.0   # minimum deriv→leaf distance
+
+# Sector / radial-step parameters
+_MIN_SECTOR_DEG = 25.0  # minimum angular sector (degrees) guaranteed to every child branch
+_NODE_WIDTH_CM  = 2.8   # typical node bounding-box width used in the chord formula
 
 
 def _leaf_count(ivar: "InputVar") -> int:
@@ -857,33 +860,57 @@ _ARC_PER_LEAF = 30.0
 _ARC_CAP_DEG  = 330.0
 
 
+def _radial_step(sector_rad: float) -> float:
+    """Minimum radial distance so a node in *sector_rad* doesn't crowd siblings.
+
+    Uses the inscribed-chord formula: a node of width *_NODE_WIDTH_CM* placed
+    at distance *d* from its parent subtends a chord of ``2*d*sin(θ/2)``.
+    Requiring the chord ≥ node width gives:
+
+        d ≥ _NODE_WIDTH_CM / (2 * sin(θ/2))
+
+    Clamped to [_V_D1_MIN, 12] so it stays in a reasonable range.
+    """
+    half = min(sector_rad / 2.0, math.pi / 2.0)
+    if half <= 1e-9:
+        return 12.0
+    return max(_NODE_WIDTH_CM / (2.0 * math.sin(half)), _V_D1_MIN)
+
+
 def _sector_angles(
     inputs: "List[InputVar]",
     out_angle: float,
     sector_rad: float,
+    apply_min_sector: bool = True,
 ) -> "List[Tuple[float, float]]":
     """Return ``(child_angle, child_sector_rad)`` for each input.
 
-    Divides *sector_rad* proportionally to leaf count (minimum 1 per child)
-    and places each child at the centre of its sub-sector.  Children can
-    spread to any direction within *sector_rad* centred on *out_angle*,
-    including sideways and partially backward — the sector boundary prevents
-    sub-trees from intruding into neighbouring branches.
+    Divides *sector_rad* proportionally to leaf count.  When
+    *apply_min_sector* is True (the default, used for sub-model fans), each
+    child is guaranteed at least ``_MIN_SECTOR_DEG`` degrees so narrow
+    inherited sectors are widened automatically (variable angles), keeping
+    edge lengths reasonable (see :func:`_radial_step`).  Pass
+    *apply_min_sector=False* at the root level where the arc is already
+    set by :func:`_root_sector_rad` and should not be expanded further.
     """
     if not inputs:
         return []
-    raw_counts = [_leaf_count(iv) for iv in inputs]
-    total_leaves = max(sum(raw_counts), 1)
-    smoothed = [max(c, 1) for c in raw_counts]
+    n = len(inputs)
+    if apply_min_sector:
+        eff_sector = max(sector_rad, math.radians(_MIN_SECTOR_DEG) * n)
+    else:
+        eff_sector = sector_rad
+
+    smoothed = [max(_leaf_count(iv), 1) for iv in inputs]
     smoothed_total = sum(smoothed)
 
-    start = out_angle + sector_rad / 2
+    start = out_angle + eff_sector / 2
     result: List[Tuple[float, float]] = []
     cumulative = 0.0
     for s in smoothed:
         frac = s / smoothed_total
-        child_angle = start - (cumulative + frac / 2) * sector_rad
-        child_sector = frac * sector_rad
+        child_angle = start - (cumulative + frac / 2) * eff_sector
+        child_sector = frac * eff_sector
         result.append((child_angle, child_sector))
         cumulative += frac
     return result
@@ -900,7 +927,8 @@ def _root_angles(inputs: "List[InputVar]") -> "List[float]":
     if not inputs:
         return []
     arc = _root_sector_rad(inputs)
-    return [a for a, _ in _sector_angles(inputs, math.pi / 2, arc)]
+    return [a for a, _ in _sector_angles(inputs, math.pi / 2, arc,
+                                          apply_min_sector=False)]
 
 
 class _TikZ:
@@ -975,10 +1003,10 @@ _NodeRecord = _nt("_NodeRecord", ["x", "y", "ntype", "ivar"])
 # Approximate bounding-box half-sizes per node type (cm).
 # Based on typical rendered sizes in \small/\footnotesize LaTeX fonts.
 _BBOX_HALF: Dict[str, Tuple[float, float]] = {
-    "deriv":  (0.95, 0.50),   # partial derivative fraction
-    "model":  (2.00, 0.55),   # model equation (wide but not as wide as text)
-    "leaf":   (0.75, 0.45),   # u(x) box (text width 1.1cm)
-    "effect": (1.05, 0.75),   # multi-line italic text (text width 1.8cm)
+    "deriv":  (1.30, 0.60),   # partial derivative fraction (can be wide)
+    "model":  (3.50, 0.65),   # model equation box (wide; equations can be 7+ cm)
+    "leaf":   (0.80, 0.45),   # u(x) box (text width 1.1cm)
+    "effect": (1.10, 0.85),   # multi-line italic text (text width 1.8cm)
 }
 
 
@@ -1070,9 +1098,8 @@ def _simulate_inputs(
 ) -> "List[_NodeRecord]":
     """Return _NodeRecords for all children of *model* (mirrors _emit_inputs).
 
-    Uses sector-based radial layout: each child is placed at the centre of
-    its proportional sub-sector of *sector_rad*, so sub-trees fill all
-    available directions without intruding on sibling sectors.
+    Per-child arm length is ``max(v_to_child, _radial_step(child_sector))``
+    so that narrow sectors always produce enough separation.
     """
     if not model.inputs:
         return []
@@ -1081,8 +1108,9 @@ def _simulate_inputs(
     for ivar, (child_angle, child_sector) in zip(
         model.inputs, _sector_angles(model.inputs, out_angle, sector_rad)
     ):
-        x_d_nat = parent_dx_nat + v_to_child * math.cos(child_angle)
-        y_d_nat = parent_dy_nat + v_to_child * math.sin(child_angle)
+        v_i = max(v_to_child, _radial_step(child_sector))
+        x_d_nat = parent_dx_nat + v_i * math.cos(child_angle)
+        y_d_nat = parent_dy_nat + v_i * math.sin(child_angle)
         recs.extend(_simulate_branch(model, ivar, x_d_nat, y_d_nat,
                                      child_angle, child_sector, depth, cum_offset,
                                      root_ivar=root_ivar))
@@ -1099,14 +1127,16 @@ def _auto_layout(model: "MeasurementModel", max_iterations: int = 40) -> int:
     DAMP = 0.45   # damping factor — prevents oscillation
 
     arc_rad = _root_sector_rad(model.inputs)
-    root_sectors = _sector_angles(model.inputs, math.pi / 2, arc_rad)
+    root_sectors = _sector_angles(model.inputs, math.pi / 2, arc_rad,
+                                   apply_min_sector=False)
 
     for iteration in range(max_iterations):
         # ── simulate current layout ───────────────────────────────────────────
         all_recs: List["_NodeRecord"] = []
         for ivar, (angle, sector_rad) in zip(model.inputs, root_sectors):
-            x_d = _V_D0 * math.cos(angle)
-            y_d = _V_D0 * math.sin(angle)
+            d = _radial_step(sector_rad)   # variable root arm
+            x_d = d * math.cos(angle)
+            y_d = d * math.sin(angle)
             all_recs.extend(_simulate_branch(model, ivar, x_d, y_d, angle, sector_rad))
 
         # ── detect pairwise overlaps ──────────────────────────────────────────
@@ -1181,13 +1211,15 @@ class _Emitter:
         self.t.blank()
         arc_rad = _root_sector_rad(model.inputs)
         for ivar, (angle, sector_rad) in zip(
-            model.inputs, _sector_angles(model.inputs, math.pi / 2, arc_rad)
+            model.inputs, _sector_angles(model.inputs, math.pi / 2, arc_rad,
+                                          apply_min_sector=False)
         ):
-            x_d = _V_D0 * math.cos(angle)
-            y_d = _V_D0 * math.sin(angle)
+            d = _radial_step(sector_rad)   # variable-length root arm
+            x_d = d * math.cos(angle)
+            y_d = d * math.sin(angle)
             self._emit_branch(model, root_id, ivar,
-                              x_d, y_d, root_id, angle, sector_rad, depth=0,
-                              cum_offset=(0.0, 0.0))
+                               x_d, y_d, root_id, angle, sector_rad, depth=0,
+                               cum_offset=(0.0, 0.0))
 
     # ── single branch ────────────────────────────────────────────────────────
 
@@ -1281,10 +1313,9 @@ class _Emitter:
                      cum_offset: Tuple[float, float] = (0.0, 0.0)) -> None:
         """Fan all inputs of *model* using sector-based radial layout.
 
-        Each child is placed at the centre of its proportional sub-sector of
-        *sector_rad*, so sub-trees spread into genuinely different directions
-        (including sideways and below the parent node) without intruding on
-        sibling sectors.
+        Each child's arm length is computed by :func:`_radial_step` from its
+        own sector angle (variable-length edges): narrow sectors → longer arms
+        so nodes always have enough separation.  *v_to_child* acts as a floor.
         """
         inputs = model.inputs
         if not inputs:
@@ -1293,8 +1324,9 @@ class _Emitter:
         for ivar, (child_angle, child_sector) in zip(
             inputs, _sector_angles(inputs, out_angle, sector_rad)
         ):
-            x_d = parent_dx + v_to_child * math.cos(child_angle)
-            y_d = parent_dy + v_to_child * math.sin(child_angle)
+            v_i = max(v_to_child, _radial_step(child_sector))
+            x_d = parent_dx + v_i * math.cos(child_angle)
+            y_d = parent_dy + v_i * math.sin(child_angle)
             self._emit_branch(model, parent_id, ivar,
                               x_d, y_d, root_id, child_angle, child_sector,
                               depth=depth, cum_offset=cum_offset)
@@ -1391,8 +1423,8 @@ def build_tikz(root: MeasurementModel, label: str = "",
     t.raw(r"  \begin{adjustbox}{max width=\textwidth, max totalheight=.88\textheight, keepaspectratio}")
     t.raw(r"  \begin{tikzpicture}[")
     t.raw(r"    connection/.style={draw, thick},")
-    t.raw(r"    root_block/.style={draw, rectangle, inner sep=6pt,"
-          r" font=\normalsize\bfseries, align=center},")
+    t.raw(r"    root_block/.style={draw=blue!60!black, very thick, rectangle,"
+          r" fill=blue!8, inner sep=8pt, font=\normalsize\bfseries, align=center},")
     t.raw(r"    model_block/.style={draw, rectangle, inner sep=4pt,"
           r" font=\small\bfseries, align=center},")
     t.raw(r"    deriv_node/.style={draw, rectangle, rounded corners=3pt,"
