@@ -1170,28 +1170,31 @@ def _simulate_inputs(
         v_i = max(v_to_child, _radial_step(child_sector), _v_child_for_angle(child_angle))
         x_d_nat = parent_dx_nat + v_i * math.cos(child_angle)
         y_d_nat = parent_dy_nat + v_i * math.sin(child_angle)
-        # Each child sub-branch uses its own ivar as root so the auto-layout
-        # can push sub-branches independently (not just root-level branches).
+        # Each child uses itself as root_ivar so the auto-layout can push
+        # any sub-branch independently.  Effect nodes are excluded from the
+        # collision loop so leaf-vs-effect tip overlaps don't cause oscillation.
         recs.extend(_simulate_branch(model, ivar, x_d_nat, y_d_nat,
                                      child_angle, child_sector, depth, cum_offset,
                                      root_ivar=ivar))
     return recs
 
 
-def _auto_layout(model: "MeasurementModel", max_iterations: int = 40) -> int:
+def _auto_layout(model: "MeasurementModel", max_iterations: int = 100) -> int:
     """Iteratively adjust *branch_offset* on each :class:`InputVar` to eliminate
     bounding-box overlaps between nodes from different branches.
 
     Returns the number of iterations performed.  Modifies *model* in-place.
     """
     GAP  = 0.25   # minimum clearance gap added on top of each resolved overlap (cm)
-    DAMP = 0.45   # damping factor — prevents oscillation
+    DAMP = 0.50   # initial damping factor
 
     arc_rad = _root_sector_rad(model.inputs)
     root_sectors = _sector_angles(model.inputs, math.pi / 2, arc_rad,
                                    apply_min_sector=False)
 
     for iteration in range(max_iterations):
+        # Cooling schedule: reduce damping over time to dampen oscillation
+        damp = max(DAMP * (1.0 - iteration / (1.5 * max_iterations)), 0.08)
         # ── simulate current layout ───────────────────────────────────────────
         all_recs: List["_NodeRecord"] = []
         for ivar, (angle, sector_rad) in zip(model.inputs, root_sectors):
@@ -1209,6 +1212,10 @@ def _auto_layout(model: "MeasurementModel", max_iterations: int = 40) -> int:
                 ri, rj = all_recs[i], all_recs[j]
                 if ri.ivar is rj.ivar:
                     continue  # same branch — fine
+                # Exclude effect nodes from the push loop — they are
+                # annotation-only and a small tip overlap is acceptable.
+                if ri.ntype == "effect" or rj.ntype == "effect":
+                    continue
                 ov = _aabb_overlap(_aabb(ri), _aabb(rj))
                 if ov is None:
                     continue
@@ -1219,8 +1226,8 @@ def _auto_layout(model: "MeasurementModel", max_iterations: int = 40) -> int:
                 dist = math.hypot(dx, dy) or 1e-6
 
                 # Push proportional to overlap, damped, in the direction i→j
-                px = DAMP * (ov_x + GAP) * dx / dist
-                py = DAMP * (ov_y + GAP) * dy / dist
+                px = damp * (ov_x + GAP) * dx / dist
+                py = damp * (ov_y + GAP) * dy / dist
 
                 push.setdefault(id(ri.ivar), [ri.ivar, 0.0, 0.0])
                 push.setdefault(id(rj.ivar), [rj.ivar, 0.0, 0.0])
