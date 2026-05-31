@@ -129,6 +129,7 @@ class InputVar:
     effects: List[str] = field(default_factory=list)
     separate_figure: bool = False   # sub-model traced in a separate figure
     separate_label: str = ""        # label for that figure (without 'fig:' prefix)
+    separate_caption: str = ""      # caption for that figure
 
 
 @dataclass
@@ -778,11 +779,16 @@ def collect_model(
                         latex, dict(symtable), list(color_pool), depth + 1,
                         shallow=True,
                     )
-                    default_sep_label = f"utd_{_latex_to_sym_name(latex).lower()}"
                     ivar.separate_figure = True
+                    default_sep_label = f"utd_{_latex_to_sym_name(latex).lower()}"
                     ivar.separate_label = _ask(
                         f"{ind}    Separate figure label (without 'fig:')",
                         default_sep_label,
+                    )
+                    default_sep_cap = rf"Uncertainty Tree Diagram for ${latex}$."
+                    ivar.separate_caption = _ask(
+                        f"{ind}    Separate figure caption",
+                        default_sep_cap,
                     )
                 else:
                     ivar.submodel = collect_model(
@@ -1001,10 +1007,12 @@ class _Emitter:
             self.t.blank()
             self.t.comment(f"sub-model: {ivar.submodel.latex_name}")
             if ivar.separate_figure:
-                # Show model equation but don't expand further; add a cross-ref.
-                ref_note = (rf"{ivar.submodel.latex_name} = {ivar.submodel.latex_expr}"
+                # Show model equation + cross-ref as mixed text/math node.
+                # abs_math_node wraps everything in $…$ which breaks \footnotesize
+                # and \\; use abs_text_node and wrap only the equation in $…$.
+                ref_note = (rf"${ivar.submodel.latex_name} = {ivar.submodel.latex_expr}$"
                             rf"\\ \footnotesize(see Fig.~\ref{{fig:{ivar.separate_label}}})")
-                self.t.abs_math_node(
+                self.t.abs_text_node(
                     m_id, "model_block",
                     ref_note,
                     ref=root_id, dx=x_model, dy=y_model,
@@ -1413,10 +1421,7 @@ def main() -> None:
     # ── Separate sub-model figures ────────────────────────────────────────────
     for ivar, sub in collect_separate_figures(model):
         sub_label = ivar.separate_label
-        default_cap = rf"Uncertainty Tree Diagram for ${sub.latex_name}$."
-        sub_caption = _ask(
-            f"\n  Caption for separate figure '{sub_label}'", default_cap
-        ) if not args.example else default_cap
+        sub_caption = ivar.separate_caption  # already collected at declaration time
         sub_tikz = build_tikz(sub, label=sub_label, caption=sub_caption)
         sub_path = _label_to_filename(sub_label)
         with open(sub_path, "w") as fh:
