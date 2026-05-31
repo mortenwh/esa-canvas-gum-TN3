@@ -1235,6 +1235,32 @@ def _label_to_filename(label: str) -> str:
 
 # ── PNG rendering ─────────────────────────────────────────────────────────────
 
+def _strip_latex_command(text: str, cmd: str) -> str:
+    """Remove all occurrences of \\cmd{...} (with balanced braces) from *text*."""
+    result = []
+    i = 0
+    pattern = re.compile(r'\s*\\' + re.escape(cmd) + r'\s*\{')
+    while i < len(text):
+        m = pattern.search(text, i)
+        if not m:
+            result.append(text[i:])
+            break
+        result.append(text[i:m.start()])
+        # Walk forward to find the matching closing brace
+        j = m.end()  # position after opening '{'
+        depth = 1
+        while j < len(text) and depth:
+            if text[j] == '{':
+                depth += 1
+            elif text[j] == '}':
+                depth -= 1
+            j += 1
+        # Skip optional trailing newline
+        if j < len(text) and text[j] == '\n':
+            j += 1
+        i = j
+    return ''.join(result)
+
 # Minimal LaTeX wrapper that compiles a bare \begin{figure}…\end{figure} snippet.
 _LATEX_WRAPPER = r"""
 \documentclass[border=6pt]{{standalone}}
@@ -1278,7 +1304,9 @@ def render_png(tex_path: str, png_path: str, dpi: int = 150) -> bool:
         r"\\begin\{figure\}[^\n]*\n?", "", body
     )
     body_inner = re.sub(r"\\end\{figure\}", "", body_inner)
-    body_inner = re.sub(r"\s*\\caption\{[^}]*\}\n?", "", body_inner)
+    # Use brace-balanced strip for \caption{…} so nested {} (e.g. $\varpi_{\rm g}$)
+    # are handled correctly.
+    body_inner = _strip_latex_command(body_inner, "caption")
     body_inner = re.sub(r"\s*\\label\{[^}]*\}\n?", "", body_inner)
     body_inner = re.sub(r"\\centering\n?", "", body_inner)
     # Strip adjustbox wrapper — standalone auto-sizes; adjustbox is a no-op there
