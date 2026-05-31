@@ -9,10 +9,14 @@ Tree Diagram (UTD) consistent with the esa-canvas-gum style.
 
 Layout rules (matching the document conventions):
   • The root measurement model is placed at the centre.
-  • Each input that has its own sub-model produces an upward branch:
-      root → ∂y/∂xi (deriv_node) → sub-model block (model_block)
-      The sub-model's inputs are then fanned above the model block.
-  • Pure leaf inputs at the root level are placed to the right of the root.
+  • Root-level inputs radiate outward at angles distributed in an arc.
+    Each input is allocated angular width proportional to its leaf count,
+    so the arc grows with the number of branches:
+      ≤ 6 leaves  → top arc only  (≤ 180°)
+      ~12 leaves  → extends to sides (270°)
+      many leaves → nearly full circle (capped at 330°)
+  • The sub-tree of each branch grows outward in that branch's angle,
+    with children spread perpendicularly.
   • Every leaf has an optional effect_node (dashed) with uncertainty sources.
   • Each input variable gets a unique colour from the palette.
 
@@ -41,6 +45,7 @@ The converter handles a practical subset of LaTeX math:
 """
 
 import argparse
+import math
 import re
 import sys
 from dataclasses import dataclass, field
@@ -760,6 +765,40 @@ def _child_offsets(inputs: "List[InputVar]",
     return xs
 
 
+# Degrees of arc allocated per leaf node when distributing root branches.
+# 30° per leaf → 6 leaves fill 180°, 12 leaves fill 360° (capped at 330°).
+_ARC_PER_LEAF = 30.0
+_ARC_CAP_DEG  = 330.0
+
+
+def _root_angles(inputs: "List[InputVar]") -> "List[float]":
+    """Return the outward angle (radians) for each root-level input.
+
+    Branches are distributed in an arc centred at π/2 (straight up).
+    Each input is allocated angular width proportional to its leaf count
+    so denser sub-trees occupy more arc.  The total arc grows at
+    ``_ARC_PER_LEAF`` degrees per total leaf, capped at ``_ARC_CAP_DEG``:
+
+    * few branches  → narrow top arc (all above the root)
+    * many branches → arc widens to the sides and below the root
+
+    Convention: π/2 = up, 0 = right, π = left, 3π/2 = down.
+    """
+    if not inputs:
+        return []
+    total_leaves = sum(_leaf_count(iv) for iv in inputs)
+    arc_deg = min(_ARC_CAP_DEG, total_leaves * _ARC_PER_LEAF)
+    arc_rad = math.radians(arc_deg)
+    start = math.pi / 2 + arc_rad / 2          # left-most angle
+    angles: List[float] = []
+    cumulative = 0.0
+    for ivar in inputs:
+        frac = _leaf_count(ivar) / total_leaves
+        angles.append(start - (cumulative + frac / 2) * arc_rad)
+        cumulative += frac
+    return angles
+
+
 class _TikZ:
     """Thin helper that accumulates TikZ source lines."""
 
@@ -823,7 +862,13 @@ class _TikZ:
 
 
 class _Emitter:
-    """Walks the MeasurementModel tree and emits TikZ source."""
+    """Walks the MeasurementModel tree and emits TikZ source.
+
+    Root-level inputs are placed at angles computed by :func:`_root_angles`.
+    Each sub-tree grows outward in its branch's angle; children are spread
+    in the perpendicular direction (clockwise 90° from outward so the fan
+    matches the standard left-to-right reading order when facing outward).
+    """
 
     def __init__(self, tikz: _TikZ) -> None:
         self.t = tikz
@@ -835,96 +880,117 @@ class _Emitter:
         self._counters[base] = n + 1
         return base if n == 0 else f"{base}{n + 1}"
 
-    # ── recursive absolute-coordinate layout ─────────────────────────────────
+    # ── root ─────────────────────────────────────────────────────────────────
 
     def emit_root(self, model: MeasurementModel, root_id: str) -> None:
-        """Emit the root block and recursively all branches."""
+        """Emit the root block then radiate all branches at their angles."""
         self.t.comment(f"ROOT: {model.latex_name}")
-        content = rf"{model.latex_name} = {model.latex_expr}"
-        self.t.math_node(root_id, "root_block", content)
+        self.t.math_node(root_id, "root_block",
+                         rf"{model.latex_name} = {model.latex_expr}")
         self.t.blank()
-        self._emit_inputs(model, parent_id=root_id,
-                          parent_dx=0.0, parent_dy=0.0,
-                          root_id=root_id, v_to_child=_V_D0)
+        for ivar, angle in zip(model.inputs, _root_angles(model.inputs)):
+            x_d = _V_D0 * math.cos(angle)
+            y_d = _V_D0 * math.sin(angle)
+            self._emit_branch(model, root_id, ivar,
+                              x_d, y_d, root_id, angle)
+
+    # ── single branch ────────────────────────────────────────────────────────
+
+    def _emit_branch(self, parent_model: MeasurementModel,
+                     parent_id: str, ivar: InputVar,
+                     x_deriv: float, y_deriv: float,
+                     root_id: str, out_angle: float) -> None:
+        """Emit  parent → deriv_node → [sub-model children | leaf → effects].
+
+        *out_angle* is the angle (radians) pointing away from the root along
+        this branch.  Sub-trees grow further outward in the same direction.
+        Children of a sub-model are spread in the perpendicular direction
+        (clockwise 90° from *out_angle*).
+        """
+        color = ivar.color
+        cos_o = math.cos(out_angle)
+        sin_o = math.sin(out_angle)
+        deriv_lat = _deriv_label(parent_model.latex_name, ivar.latex_name)
+        d_id = self._uid(f"D{_tikz_id(ivar.latex_name)}")
+
+        self.t.comment(f"∂{parent_model.latex_name}/∂{ivar.latex_name}")
+        self.t.abs_math_node(d_id, "deriv_node", deriv_lat,
+                             ref=root_id, dx=x_deriv, dy=y_deriv)
+        self.t.edge(parent_id, d_id, f"connection, {color}")
+
+        if ivar.submodel is not None:
+            m_id = self._uid(f"M{_tikz_id(ivar.latex_name)}")
+            x_model = x_deriv + _V_M0 * cos_o
+            y_model = y_deriv + _V_M0 * sin_o
+            self.t.blank()
+            self.t.comment(f"sub-model: {ivar.submodel.latex_name}")
+            self.t.abs_math_node(
+                m_id, "model_block",
+                rf"{ivar.submodel.latex_name} = {ivar.submodel.latex_expr}",
+                ref=root_id, dx=x_model, dy=y_model,
+            )
+            self.t.edge(d_id, m_id, f"connection, {color}")
+            self._emit_inputs(ivar.submodel, m_id, x_model, y_model,
+                              root_id, _V_D1, out_angle)
+        else:
+            leaf_id = self._uid(f"U{_tikz_id(ivar.latex_name)}")
+            x_leaf = x_deriv + _V_LEAF * cos_o
+            y_leaf = y_deriv + _V_LEAF * sin_o
+            self.t.abs_math_node(
+                leaf_id, "leaf_node", rf"u({ivar.latex_name})",
+                ref=root_id, dx=x_leaf, dy=y_leaf,
+                extra=f"draw={color}, text={color}",
+            )
+            self.t.edge(d_id, leaf_id, f"connection, {color}")
+            self._emit_effects(ivar, leaf_id,
+                               root_id=root_id,
+                               dx=x_leaf, dy=y_leaf,
+                               out_angle=out_angle)
+        self.t.blank()
+
+    # ── sub-model children ───────────────────────────────────────────────────
 
     def _emit_inputs(self, model: MeasurementModel,
                      parent_id: str,
                      parent_dx: float, parent_dy: float,
                      root_id: str,
-                     v_to_child: float) -> None:
-        """Fan all inputs of *model* evenly above *parent_id*.
+                     v_to_child: float,
+                     out_angle: float) -> None:
+        """Fan all inputs of *model* outward from *parent_id*.
 
-        Parameters
-        ----------
-        parent_dx, parent_dy:
-            Absolute offset of *parent_id* from the root node (used to
-            compute the absolute positions of children).
-        root_id:
-            TikZ node name of the root block; all ``at`` expressions are
-            relative to it via the ``calc`` library.
-        v_to_child:
-            Vertical distance (cm) from parent to the derivative nodes.
+        Children are placed ``v_to_child`` cm further out along *out_angle*
+        and spread in the clockwise-perpendicular direction so that reading
+        left-to-right (when facing outward) matches the input order.
         """
         inputs = model.inputs
         if not inputs:
             return
-        offsets = _child_offsets(inputs)
-        y_deriv = parent_dy + v_to_child
+        cos_o = math.cos(out_angle)
+        sin_o = math.sin(out_angle)
+        # Clockwise-perpendicular unit vector: (sin θ, -cos θ)
+        cos_p = sin_o
+        sin_p = -cos_o
 
-        for ivar, dx in zip(inputs, offsets):
-            x_deriv = parent_dx + dx
-            color = ivar.color
-            deriv_lat = _deriv_label(model.latex_name, ivar.latex_name)
-            d_id = self._uid(f"D{_tikz_id(ivar.latex_name)}")
+        for ivar, perp in zip(inputs, _child_offsets(inputs)):
+            x_d = parent_dx + v_to_child * cos_o + perp * cos_p
+            y_d = parent_dy + v_to_child * sin_o + perp * sin_p
+            self._emit_branch(model, parent_id, ivar,
+                              x_d, y_d, root_id, out_angle)
 
-            self.t.comment(
-                f"∂{model.latex_name}/∂{ivar.latex_name}"
-            )
-            self.t.abs_math_node(d_id, "deriv_node", deriv_lat,
-                                 ref=root_id, dx=x_deriv, dy=y_deriv)
-            self.t.edge(parent_id, d_id, f"connection, {color}")
-
-            if ivar.submodel is not None:
-                # Sub-model block above the deriv_node
-                m_id = self._uid(f"M{_tikz_id(ivar.latex_name)}")
-                y_model = y_deriv + _V_M0
-                sub_content = (rf"{ivar.submodel.latex_name}"
-                               rf" = {ivar.submodel.latex_expr}")
-                self.t.blank()
-                self.t.comment(f"sub-model: {ivar.submodel.latex_name}")
-                self.t.abs_math_node(m_id, "model_block", sub_content,
-                                     ref=root_id, dx=x_deriv, dy=y_model)
-                self.t.edge(d_id, m_id, f"connection, {color}")
-                # Recurse into the sub-model
-                self._emit_inputs(ivar.submodel,
-                                  parent_id=m_id,
-                                  parent_dx=x_deriv, parent_dy=y_model,
-                                  root_id=root_id, v_to_child=_V_D1)
-            else:
-                # Leaf node above the deriv_node
-                leaf_id = self._uid(f"U{_tikz_id(ivar.latex_name)}")
-                y_leaf = y_deriv + _V_LEAF
-                self.t.abs_math_node(
-                    leaf_id, "leaf_node", rf"u({ivar.latex_name})",
-                    ref=root_id, dx=x_deriv, dy=y_leaf,
-                    extra=f"draw={color}, text={color}",
-                )
-                self.t.edge(d_id, leaf_id, f"connection, {color}")
-                self._emit_effects(ivar, leaf_id,
-                                   root_id=root_id,
-                                   dx=x_deriv, dy=y_leaf)
-            self.t.blank()
+    # ── effect nodes ─────────────────────────────────────────────────────────
 
     def _emit_effects(self, ivar: InputVar, leaf_id: str,
-                      root_id: str, dx: float, dy: float) -> None:
-        """Emit effect (uncertainty source) nodes above *leaf_id*."""
+                      root_id: str, dx: float, dy: float,
+                      out_angle: float) -> None:
+        """Emit uncertainty-source nodes further outward from the leaf."""
         if not ivar.effects:
             return
         eff_id = self._uid(f"EFF{_tikz_id(ivar.latex_name)}")
         eff_text = r" \\ ".join(ivar.effects)
-        y_eff = dy + _V_EFF
+        x_eff = dx + _V_EFF * math.cos(out_angle)
+        y_eff = dy + _V_EFF * math.sin(out_angle)
         self.t.abs_text_node(eff_id, "effect_node", eff_text,
-                             ref=root_id, dx=dx, dy=y_eff,
+                             ref=root_id, dx=x_eff, dy=y_eff,
                              extra=ivar.color)
         self.t.edge(eff_id, leaf_id, f"connection, {ivar.color}, dashed")
 

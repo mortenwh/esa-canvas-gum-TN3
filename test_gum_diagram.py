@@ -6,6 +6,7 @@ Run with:
     # or directly:
     python test_gum_diagram.py
 """
+import math
 import re
 import sys
 import unittest
@@ -150,7 +151,7 @@ class TestLabelToFilename(unittest.TestCase):
         self.assertTrue(gd._label_to_filename("xyz").endswith(".tex"))
 
 
-# ── _child_offsets ───────────────────────────────────────────────────────────
+# ── _child_offsets / _root_angles ────────────────────────────────────────────
 
 class TestChildOffsets(unittest.TestCase):
     def _make_leaf(self, name: str = "x") -> gd.InputVar:
@@ -174,6 +175,54 @@ class TestChildOffsets(unittest.TestCase):
         offs = gd._child_offsets(ivs)
         self.assertLess(offs[0], offs[1])
         self.assertLess(offs[1], offs[2])
+
+
+class TestRootAngles(unittest.TestCase):
+    def _make_leaf(self, name: str = "x") -> gd.InputVar:
+        sym = __import__("sympy").Symbol(name)
+        return gd.InputVar(latex_name=name, sym=sym, color="black")
+
+    def test_single_input_points_straight_up(self):
+        iv = self._make_leaf("x")
+        angles = gd._root_angles([iv])
+        self.assertEqual(len(angles), 1)
+        self.assertAlmostEqual(angles[0], math.pi / 2, places=5)
+
+    def test_two_inputs_symmetric_about_vertical(self):
+        a, b = self._make_leaf("a"), self._make_leaf("b")
+        angles = gd._root_angles([a, b])
+        mid = (angles[0] + angles[1]) / 2
+        self.assertAlmostEqual(mid, math.pi / 2, places=5)
+
+    def test_angles_decrease_left_to_right(self):
+        """Left-most angle > right-most (counter-clockwise ordering)."""
+        ivs = [self._make_leaf(n) for n in ("a", "b", "c")]
+        angles = gd._root_angles(ivs)
+        self.assertGreater(angles[0], angles[1])
+        self.assertGreater(angles[1], angles[2])
+
+    def test_narrow_arc_for_few_leaves(self):
+        """6 or fewer leaves → arc ≤ 180° (all above the root)."""
+        ivs = [self._make_leaf(n) for n in ("a", "b", "c", "d", "e", "f")]
+        angles = gd._root_angles(ivs)
+        arc = angles[0] - angles[-1]
+        self.assertLessEqual(math.degrees(arc), 180.0 + 1e-9)
+        # all angles in upper half-plane
+        for a in angles:
+            self.assertGreaterEqual(a, 0.0)
+
+    def test_wide_arc_for_many_leaves(self):
+        """12 leaves → arc ≥ 300° (wraps well past the sides)."""
+        ivs = [self._make_leaf(str(i)) for i in range(12)]
+        angles = gd._root_angles(ivs)
+        arc = angles[0] - angles[-1]
+        self.assertGreater(math.degrees(arc), 300.0)
+
+    def test_capped_at_arc_cap(self):
+        ivs = [self._make_leaf(str(i)) for i in range(30)]
+        angles = gd._root_angles(ivs)
+        arc = math.degrees(angles[0] - angles[-1])
+        self.assertLessEqual(arc, gd._ARC_CAP_DEG + 1e-9)
 
 
 # ── _render_deriv ─────────────────────────────────────────────────────────────
