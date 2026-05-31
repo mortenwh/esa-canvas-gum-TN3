@@ -818,6 +818,13 @@ _V_LEAF  = 1.4   # any deriv_node → leaf_node
 _V_EFF   = 1.2   # leaf_node → effect_node
 _DEPTH_SCALE = 0.85  # multiply H_LEAF and V distances by this factor per depth level
 _H_LEAF_MIN  = 1.3   # minimum horizontal spacing (cm) to prevent box overlap
+# Minimum distances that override depth-scaling (prevent within-branch overlaps)
+_V_M0_MIN   = 1.8   # minimum deriv→model distance
+_V_D1_MIN   = 1.8   # minimum model→child-deriv distance
+_V_LEAF_MIN = 1.4   # minimum deriv→leaf distance
+# Arc parameters for radial sub-fan (sub-model children)
+_ARC_PER_LEAF_SUB = 20.0   # degrees per leaf for sub-model fan
+_ARC_CAP_SUB_DEG  = 120.0  # max fan arc for any sub-model
 
 
 def _leaf_count(ivar: "InputVar") -> int:
@@ -856,27 +863,49 @@ def _root_angles(inputs: "List[InputVar]") -> "List[float]":
     """Return the outward angle (radians) for each root-level input.
 
     Branches are distributed in an arc centred at π/2 (straight up).
-    Angular width is proportional to each branch's leaf count, but each
-    branch is guaranteed at least 1/n of the total arc (equal share) so
-    that compact branches (e.g. a separate-figure stub) are not crammed
-    into a sliver next to a large sub-tree.
+    Angular width is proportional to each branch's leaf count (at least 1
+    per branch to prevent zero-width slices for separate-figure stubs).
 
     The total arc grows at ``_ARC_PER_LEAF`` degrees per total leaf,
     capped at ``_ARC_CAP_DEG``.
     """
     if not inputs:
         return []
-    n = len(inputs)
     raw_counts = [_leaf_count(iv) for iv in inputs]
     total_leaves = sum(raw_counts)
-    # Each branch gets at least an equal share; then renormalise.
-    equal_share = total_leaves / n
-    smoothed = [max(c, equal_share) for c in raw_counts]
+    smoothed = [max(c, 1) for c in raw_counts]
     smoothed_total = sum(smoothed)
 
     arc_deg = min(_ARC_CAP_DEG, total_leaves * _ARC_PER_LEAF)
     arc_rad = math.radians(arc_deg)
     start = math.pi / 2 + arc_rad / 2          # left-most angle
+    angles: List[float] = []
+    cumulative = 0.0
+    for s in smoothed:
+        frac = s / smoothed_total
+        angles.append(start - (cumulative + frac / 2) * arc_rad)
+        cumulative += frac
+    return angles
+
+
+def _sub_angles(inputs: "List[InputVar]", out_angle: float) -> "List[float]":
+    """Return outward angles for children of a sub-model node.
+
+    Fans the children in a cone centred on *out_angle*, with arc width
+    proportional to leaf count (at least 1 per child), capped at
+    ``_ARC_CAP_SUB_DEG``.  Each child inherits its own angle for further
+    recursive sub-tree growth.
+    """
+    if not inputs:
+        return []
+    raw_counts = [_leaf_count(iv) for iv in inputs]
+    total_leaves = sum(raw_counts)
+    smoothed = [max(c, 1) for c in raw_counts]
+    smoothed_total = sum(smoothed)
+
+    arc_deg = min(_ARC_CAP_SUB_DEG, total_leaves * _ARC_PER_LEAF_SUB)
+    arc_rad = math.radians(arc_deg)
+    start = out_angle + arc_rad / 2
     angles: List[float] = []
     cumulative = 0.0
     for s in smoothed:
@@ -1012,18 +1041,21 @@ def _simulate_branch(
     ]
 
     if ivar.submodel is not None:
-        x_model_nat = x_deriv + _V_M0 * scale * cos_o
-        y_model_nat = y_deriv + _V_M0 * scale * sin_o
+        v_m0 = max(_V_M0 * scale, _V_M0_MIN)
+        x_model_nat = x_deriv + v_m0 * cos_o
+        y_model_nat = y_deriv + v_m0 * sin_o
         recs.append(_NodeRecord(x_model_nat + eff_ox, y_model_nat + eff_oy, "model", root_ivar))
         if not ivar.separate_figure:
+            v_d1 = max(_V_D1 * scale, _V_D1_MIN)
             recs.extend(_simulate_inputs(
                 ivar.submodel, x_model_nat, y_model_nat,
-                _V_D1 * scale, out_angle, depth + 1, (eff_ox, eff_oy),
+                v_d1, out_angle, depth + 1, (eff_ox, eff_oy),
                 root_ivar=root_ivar,
             ))
     else:
-        x_leaf_nat = x_deriv + _V_LEAF * scale * cos_o
-        y_leaf_nat = y_deriv + _V_LEAF * scale * sin_o
+        v_leaf = max(_V_LEAF * scale, _V_LEAF_MIN)
+        x_leaf_nat = x_deriv + v_leaf * cos_o
+        y_leaf_nat = y_deriv + v_leaf * sin_o
         recs.append(_NodeRecord(x_leaf_nat + eff_ox, y_leaf_nat + eff_oy, "leaf", root_ivar))
         if ivar.effects:
             recs.append(_NodeRecord(
@@ -1044,24 +1076,21 @@ def _simulate_inputs(
     cum_offset: Tuple[float, float] = (0.0, 0.0),
     root_ivar: "Optional[InputVar]" = None,
 ) -> "List[_NodeRecord]":
-    """Return _NodeRecords for all children of *model* (mirrors _emit_inputs)."""
+    """Return _NodeRecords for all children of *model* (mirrors _emit_inputs).
+
+    Children are placed in a radial sub-fan centred on *out_angle* so that
+    each child grows in its own direction, preventing all branches from
+    piling up in a single perpendicular direction.
+    """
     if not model.inputs:
         return []
-    scale = max(_DEPTH_SCALE ** depth, 0.5)
-    cos_o = math.cos(out_angle)
-    sin_o = math.sin(out_angle)
-    cos_p = sin_o   # clockwise-perpendicular
-    sin_p = -cos_o
 
     recs: List["_NodeRecord"] = []
-    for ivar, perp in zip(
-        model.inputs,
-        _child_offsets(model.inputs, h_unit=max(_H_LEAF * scale, _H_LEAF_MIN)),
-    ):
-        x_d_nat = parent_dx_nat + v_to_child * cos_o + perp * cos_p
-        y_d_nat = parent_dy_nat + v_to_child * sin_o + perp * sin_p
+    for ivar, child_angle in zip(model.inputs, _sub_angles(model.inputs, out_angle)):
+        x_d_nat = parent_dx_nat + v_to_child * math.cos(child_angle)
+        y_d_nat = parent_dy_nat + v_to_child * math.sin(child_angle)
         recs.extend(_simulate_branch(model, ivar, x_d_nat, y_d_nat,
-                                     out_angle, depth, cum_offset,
+                                     child_angle, depth, cum_offset,
                                      root_ivar=root_ivar))
     return recs
 
@@ -1173,9 +1202,8 @@ class _Emitter:
         """Emit  parent → deriv_node → [sub-model children | leaf → effects].
 
         *out_angle* is the angle (radians) pointing away from the root along
-        this branch.  Sub-trees grow further outward in the same direction.
-        Children of a sub-model are spread in the perpendicular direction
-        (clockwise 90° from *out_angle*).
+        this branch.  Sub-model children fan out in a radial cone centred on
+        *out_angle* (see :func:`_sub_angles`), each inheriting their own angle.
         *depth* drives adaptive spacing: distances shrink by _DEPTH_SCALE per level.
         *cum_offset* accumulates branch_offsets from ancestor branches; this
         branch adds its own *ivar.branch_offset* on top.
@@ -1196,9 +1224,9 @@ class _Emitter:
 
         if ivar.submodel is not None:
             m_id = self._uid(f"M{_tikz_id(ivar.latex_name)}")
-            # Natural (un-offset) model position — children fan out from here
-            x_model_nat = x_deriv + _V_M0 * scale * cos_o
-            y_model_nat = y_deriv + _V_M0 * scale * sin_o
+            v_m0 = max(_V_M0 * scale, _V_M0_MIN)
+            x_model_nat = x_deriv + v_m0 * cos_o
+            y_model_nat = y_deriv + v_m0 * sin_o
             self.t.blank()
             self.t.comment(f"sub-model: {ivar.submodel.latex_name}")
             if ivar.separate_figure:
@@ -1218,14 +1246,15 @@ class _Emitter:
                     ref=root_id, dx=x_model_nat + eff_ox, dy=y_model_nat + eff_oy,
                 )
                 self.t.edge(d_id, m_id, f"connection, {color}")
-                # Pass natural positions; effective offset carried separately
+                v_d1 = max(_V_D1 * scale, _V_D1_MIN)
                 self._emit_inputs(ivar.submodel, m_id, x_model_nat, y_model_nat,
-                                  root_id, _V_D1 * scale, out_angle,
+                                  root_id, v_d1, out_angle,
                                   depth=depth + 1, cum_offset=(eff_ox, eff_oy))
         else:
             leaf_id = self._uid(f"U{_tikz_id(ivar.latex_name)}")
-            x_leaf_nat = x_deriv + _V_LEAF * scale * cos_o
-            y_leaf_nat = y_deriv + _V_LEAF * scale * sin_o
+            v_leaf = max(_V_LEAF * scale, _V_LEAF_MIN)
+            x_leaf_nat = x_deriv + v_leaf * cos_o
+            y_leaf_nat = y_deriv + v_leaf * sin_o
             self.t.abs_math_node(
                 leaf_id, "leaf_node", rf"u({ivar.latex_name})",
                 ref=root_id, dx=x_leaf_nat + eff_ox, dy=y_leaf_nat + eff_oy,
@@ -1249,29 +1278,23 @@ class _Emitter:
                      out_angle: float,
                      depth: int = 0,
                      cum_offset: Tuple[float, float] = (0.0, 0.0)) -> None:
-        """Fan all inputs of *model* outward from *parent_id*.
+        """Fan all inputs of *model* outward in a radial sub-fan from *parent_id*.
 
-        Children are placed ``v_to_child`` cm further out along *out_angle*
-        and spread in the clockwise-perpendicular direction so that reading
-        left-to-right (when facing outward) matches the input order.
+        Each child gets its own angle from :func:`_sub_angles`, centred on
+        *out_angle*, so sub-trees grow in distinct directions instead of all
+        piling into one perpendicular direction.
         *depth* is passed to _emit_branch for adaptive spacing.
         *cum_offset* is the accumulated branch_offset from all ancestor branches.
         """
         inputs = model.inputs
         if not inputs:
             return
-        scale = max(_DEPTH_SCALE ** depth, 0.5)
-        cos_o = math.cos(out_angle)
-        sin_o = math.sin(out_angle)
-        # Clockwise-perpendicular unit vector: (sin θ, -cos θ)
-        cos_p = sin_o
-        sin_p = -cos_o
 
-        for ivar, perp in zip(inputs, _child_offsets(inputs, h_unit=max(_H_LEAF * scale, _H_LEAF_MIN))):
-            x_d = parent_dx + v_to_child * cos_o + perp * cos_p
-            y_d = parent_dy + v_to_child * sin_o + perp * sin_p
+        for ivar, child_angle in zip(inputs, _sub_angles(inputs, out_angle)):
+            x_d = parent_dx + v_to_child * math.cos(child_angle)
+            y_d = parent_dy + v_to_child * math.sin(child_angle)
             self._emit_branch(model, parent_id, ivar,
-                              x_d, y_d, root_id, out_angle, depth=depth,
+                              x_d, y_d, root_id, child_angle, depth=depth,
                               cum_offset=cum_offset)
 
     # ── effect nodes ─────────────────────────────────────────────────────────
