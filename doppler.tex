@@ -250,75 +250,7 @@ Figure~\ref{fig:dc_uncertainty_trace} is a \ac{UTD} for the \ac{DC},
 $\Delta\varpi_{\rm dc}$. \textcolor{red}{This relates to the diagrams coming from
 other level-1 sections. Wait for their completion by NORCE.}
 
-\begin{figure*}
-  \centering
-  %\begin{tikzpicture}
-  \begin{tikzpicture}[node distance=1.15cm and 1.15cm, every node/.style={font=\scriptsize}]
-
-    % scene variations
-    % ..
-     \node[draw,
-          text width = 5cm,
-          align = center,
-          minimum width=2cm,
-          minimum height=1cm] (dc) {$\varpi_{\rm dc}=g(P, \varpi, \mathbf{t}) + \Delta\varpi_{\rm dc}$};
-    \node[draw,
-          below = of dc,
-          text width = 0.7cm,
-          align = center,
-          minimum width=0.8cm,
-          minimum height=1cm] (dcdP) {$\frac{\partial\varpi_{\rm dc}}{\partial P}$};
-    \node[draw,
-          right = of dcdP,
-          text width = 0.7cm,
-          align = center,
-          minimum width=0.8cm,
-          minimum height=1cm] (uP) {$u(P)$};
-    \node[right = of uP, text width = 3cm] (uPleaves) {Speckle\\Scene backscatter variability};
-
-    \node[draw,
-          above = of dc,
-          text width = 0.7cm,
-          align = center,
-          minimum width=0.8cm,
-          minimum height=1cm] (dcdvarpi) {$\frac{\partial\varpi_{\rm dc}}{\partial\varpi}$};
-    \node[draw,
-          right = of dcdvarpi,
-          text width = 0.7cm,
-          align = center,
-          minimum width=0.8cm,
-          minimum height=1cm] (uvarpi) {$u(\varpi)$};
-    \node[right = of uvarpi, text width = 3cm] (uvarpileaves) {Surface motion};
-
-    \node[draw,
-          right = of dc,
-          text width = 0.7cm,
-          align = center,
-          minimum width=0.8cm,
-          minimum height=1cm] (dcdt) {$\frac{\partial\varpi_{\rm dc}}{\partial\mathbf{t}}$};
-    \node[draw,
-          right = of dcdt,
-          text width = 0.7cm,
-          align = center,
-          minimum width=0.8cm,
-          minimum height=1cm] (ut) {$u(\mathbf{t})$};
-    \node[right = of ut, text width = 3cm] (utleaves) {Timing};
-
-    \draw[-latex] (dc) edge (dcdP)
-    (dcdP) edge (uP)
-    (uP) edge (uPleaves)
-    (dc) edge (dcdvarpi)
-    (dcdvarpi) edge (uvarpi)
-    (uvarpi) edge (uvarpileaves)
-    (dc) edge (dcdt)
-    (dcdt) edge (ut)
-    (ut) edge (utleaves);
-
-  \end{tikzpicture}
-  \caption{Uncertainty tree diagram for the Doppler Centroid frequency shift, $\varpi_{\rm g}$.}
-  \label{fig:dc_uncertainty_trace}
-\end{figure*}
-
+\input{dc_uncertainty_trace}
 \clearpage
 %\FloatBarrier
 

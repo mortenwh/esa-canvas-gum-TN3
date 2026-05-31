@@ -1,0 +1,50 @@
+\begin{figure}[p]
+  \centering
+  % Scale to fit page: preserves aspect ratio within textwidth × 0.88 textheight
+  \begin{adjustbox}{max width=\textwidth, max totalheight=.88\textheight, keepaspectratio}
+  \begin{tikzpicture}[
+    connection/.style={draw, thick},
+    root_block/.style={draw, rectangle, inner sep=10pt, font=\Large\bfseries, align=center},
+    model_block/.style={draw, rectangle, inner sep=8pt, font=\large\bfseries, align=center},
+    deriv_node/.style={draw, rectangle, rounded corners=5pt, inner sep=5pt, font=\normalsize, align=center},
+    leaf_node/.style={draw, rectangle, inner sep=5pt, font=\small, align=center, text width=1.3cm},
+    effect_node/.style={draw, dashed, font=\footnotesize\itshape, align=center, text width=2.3cm, inner sep=3pt}
+    ]
+		% ROOT: \varpi_{\rm dc}
+		\node [root_block] (VARPIRMDCROOT) {$\varpi_{\rm dc} = g(P, \varpi, \mathbf{t}) + \Delta\varpi_{\rm dc}$};
+
+		% ∂\varpi_{\rm dc}/∂\Delta\varpi_{\rm dc}
+		\node [deriv_node] at ($(VARPIRMDCROOT)+(-1.98cm,1.98cm)$) (DDELTAVARPIRMDC) {$\frac{\partial \varpi_{\rm dc}}{\partial \Delta\varpi_{\rm dc}}$};
+		\draw [connection, red] (VARPIRMDCROOT) -- (DDELTAVARPIRMDC);
+		\node [leaf_node, draw=red, text=red] at ($(VARPIRMDCROOT)+(-3.54cm,3.54cm)$) (UDELTAVARPIRMDC) {$u(\Delta\varpi_{\rm dc})$};
+		\draw [connection, red] (DDELTAVARPIRMDC) -- (UDELTAVARPIRMDC);
+
+		% ∂\varpi_{\rm dc}/∂P
+		\node [deriv_node] at ($(VARPIRMDCROOT)+(-0.72cm,2.70cm)$) (DP) {$\frac{\partial \varpi_{\rm dc}}{\partial P}$};
+		\draw [connection, blue!70!black] (VARPIRMDCROOT) -- (DP);
+		\node [leaf_node, draw=blue!70!black, text=blue!70!black] at ($(VARPIRMDCROOT)+(-1.29cm,4.83cm)$) (UP) {$u(P)$};
+		\draw [connection, blue!70!black] (DP) -- (UP);
+		\node [effect_node, blue!70!black] at ($(VARPIRMDCROOT)+(-1.81cm,6.76cm)$) (EFFP) {Speckle \\ Scene backscatter variability};
+		\draw [connection, blue!70!black, dashed] (EFFP) -- (UP);
+
+		% ∂\varpi_{\rm dc}/∂\mathbf{t}
+		\node [deriv_node] at ($(VARPIRMDCROOT)+(0.72cm,2.70cm)$) (DMATHBFT) {$\frac{\partial \varpi_{\rm dc}}{\partial \mathbf{t}}$};
+		\draw [connection, purple] (VARPIRMDCROOT) -- (DMATHBFT);
+		\node [leaf_node, draw=purple, text=purple] at ($(VARPIRMDCROOT)+(1.29cm,4.83cm)$) (UMATHBFT) {$u(\mathbf{t})$};
+		\draw [connection, purple] (DMATHBFT) -- (UMATHBFT);
+		\node [effect_node, purple] at ($(VARPIRMDCROOT)+(1.81cm,6.76cm)$) (EFFMATHBFT) {Timing errors};
+		\draw [connection, purple, dashed] (EFFMATHBFT) -- (UMATHBFT);
+
+		% ∂\varpi_{\rm dc}/∂\varpi
+		\node [deriv_node] at ($(VARPIRMDCROOT)+(1.98cm,1.98cm)$) (DVARPI) {$\frac{\partial \varpi_{\rm dc}}{\partial \varpi}$};
+		\draw [connection, cyan!80!black] (VARPIRMDCROOT) -- (DVARPI);
+		\node [leaf_node, draw=cyan!80!black, text=cyan!80!black] at ($(VARPIRMDCROOT)+(3.54cm,3.54cm)$) (UVARPI) {$u(\varpi)$};
+		\draw [connection, cyan!80!black] (DVARPI) -- (UVARPI);
+		\node [effect_node, cyan!80!black] at ($(VARPIRMDCROOT)+(4.95cm,4.95cm)$) (EFFVARPI) {Surface motion \\ Terrain height};
+		\draw [connection, cyan!80!black, dashed] (EFFVARPI) -- (UVARPI);
+
+  \end{tikzpicture}
+  \end{adjustbox}
+  \caption{Uncertainty tree diagram for the Doppler Centroid frequency shift, $\varpi_{\rm g}$.}
+  \label{fig:dc_uncertainty_trace}
+\end{figure}
