@@ -625,12 +625,14 @@ def _parse_latex_expr(
     """
     sym_str = _latex_to_sympy_str(latex_rhs)
 
-    # Build sympify locals: start from symtable, then override sympy's
-    # built-in single-letter constants (I=ImaginaryUnit, E=Euler's number,
-    # S=singleton, N=numerical evaluator, C=category, O=Order, Q=assumptions)
-    # with plain Symbol objects (or UndefinedFunction when called as f(…))
-    # so that user variables like I(…) or E don't clash.
-    _RESERVED = {"I", "E", "S", "N", "C", "O", "Q"}
+    # Build sympify locals: start from symtable, then override sympy names
+    # that would silently swallow user variables:
+    #   Single-letter: I=ImaginaryUnit, E=Euler's number, S=singleton,
+    #                  N=numerical evaluator, C=category, O=Order, Q=assumptions
+    #   Greek-derived: gamma/beta/zeta → sympy special functions (no free_symbols);
+    #                  these are common physics variables, not special functions.
+    # We do NOT override 'pi' (users writing \pi almost always mean the constant).
+    _RESERVED = {"I", "E", "S", "N", "C", "O", "Q", "gamma", "beta", "zeta"}
     sym_locals: Dict[str, Any] = dict(symtable)
     for name in _RESERVED:
         if name in sym_locals:
