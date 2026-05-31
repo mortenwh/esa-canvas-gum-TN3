@@ -27,6 +27,33 @@ Usage
     python gum_diagram.py --example -o fig.tex # write output to file
     python gum_diagram.py --no-preview         # skip PNG preview
 
+Output
+------
+The tool writes a self-contained LaTeX figure environment to <label>.tex
+(or the file given with -o).  To include the figure in your document:
+
+  1. Copy the .tex file next to your main .tex source (or to a subfolder).
+
+  2. Make sure the following packages are loaded in your preamble::
+
+       \\usepackage{tikz}
+       \\usetikzlibrary{positioning,calc}
+       \\usepackage{amsmath,amssymb,xcolor,adjustbox}
+
+  3. Include the figure at the desired location::
+
+       \\input{<label>.tex}
+
+     The figure is wrapped in a ``figure`` environment and will float.
+     Refer to it in the text with::
+
+       \\ref{fig:<label>}   or   \\autoref{fig:<label>}
+
+  4. (Optional) To keep all figures together in the appendix, use::
+
+       \\usepackage{float}
+       \\floatplacement{figure}{p}   % one figure per page (already the default)
+
 Dependencies:  sympy  (only standard dependency; no antlr4 / lark needed)
                pdflatex + gs  (for PNG preview)
 
