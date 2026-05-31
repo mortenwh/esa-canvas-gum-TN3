@@ -150,27 +150,30 @@ class TestLabelToFilename(unittest.TestCase):
         self.assertTrue(gd._label_to_filename("xyz").endswith(".tex"))
 
 
-# ── _fan_pos ─────────────────────────────────────────────────────────────────
+# ── _child_offsets ───────────────────────────────────────────────────────────
 
-class TestFanPos(unittest.TestCase):
-    def test_single_input_goes_straight_above(self):
-        pos = gd._fan_pos(0, 1, "NODE")
-        self.assertIn("above=", pos)
-        self.assertNotIn("left", pos)
-        self.assertNotIn("right", pos)
+class TestChildOffsets(unittest.TestCase):
+    def _make_leaf(self, name: str = "x") -> gd.InputVar:
+        sym = __import__("sympy").Symbol(name)
+        return gd.InputVar(latex_name=name, sym=sym, color="black")
+
+    def test_single_input_centred_at_zero(self):
+        iv = self._make_leaf("x")
+        offs = gd._child_offsets([iv])
+        self.assertEqual(len(offs), 1)
+        self.assertAlmostEqual(offs[0], 0.0)
 
     def test_two_inputs_symmetric(self):
-        left = gd._fan_pos(0, 2, "NODE")
-        right = gd._fan_pos(1, 2, "NODE")
-        self.assertIn("left", left)
-        self.assertIn("right", right)
-        l_cm = float(re.search(r"and ([\d.]+)cm", left).group(1))
-        r_cm = float(re.search(r"and ([\d.]+)cm", right).group(1))
-        self.assertAlmostEqual(l_cm, r_cm)
+        a, b = self._make_leaf("a"), self._make_leaf("b")
+        offs = gd._child_offsets([a, b])
+        self.assertAlmostEqual(offs[0], -offs[1])
+        self.assertGreater(offs[1], 0)
 
-    def test_anchor_name_embedded(self):
-        pos = gd._fan_pos(0, 3, "MYNODE")
-        self.assertIn("MYNODE", pos)
+    def test_offsets_increase_left_to_right(self):
+        ivs = [self._make_leaf(n) for n in ("a", "b", "c")]
+        offs = gd._child_offsets(ivs)
+        self.assertLess(offs[0], offs[1])
+        self.assertLess(offs[1], offs[2])
 
 
 # ── _render_deriv ─────────────────────────────────────────────────────────────

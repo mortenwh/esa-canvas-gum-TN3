@@ -731,18 +731,33 @@ def _tikz_id(s: str) -> str:
     return re.sub(r"[^A-Za-z0-9]", "", s).upper()
 
 
-def _fan_pos(idx: int, n: int, anchor: str,
-             v_cm: float = 2.2, h_step: float = 2.8) -> str:
-    """TikZ positioning string for a fan layout above *anchor*."""
-    if n == 1:
-        return f"above={v_cm}cm of {anchor}"
-    total = (n - 1) * h_step
-    offset = idx * h_step - total / 2.0
-    if abs(offset) < 0.05:
-        return f"above={v_cm}cm of {anchor}"
-    if offset < 0:
-        return f"above left={v_cm}cm and {abs(offset):.1f}cm of {anchor}"
-    return f"above right={v_cm}cm and {offset:.1f}cm of {anchor}"
+# Layout constants (all in cm)
+_H_LEAF  = 3.5   # horizontal space allocated per leaf node
+_V_D0    = 2.8   # root → root-level deriv_node (vertical)
+_V_M0    = 2.2   # root-level deriv_node → sub-model block
+_V_D1    = 2.8   # sub-model block → nested deriv_node
+_V_LEAF  = 2.2   # any deriv_node → leaf_node
+_V_EFF   = 2.0   # leaf_node → effect_node
+
+
+def _leaf_count(ivar: "InputVar") -> int:
+    """Total leaf nodes in the subtree rooted at *ivar* (minimum 1)."""
+    if ivar.submodel is None:
+        return 1
+    return max(1, sum(_leaf_count(iv) for iv in ivar.submodel.inputs))
+
+
+def _child_offsets(inputs: "List[InputVar]",
+                   h_unit: float = _H_LEAF) -> "List[float]":
+    """Return horizontal offsets (cm, centred at 0) for each input's subtree."""
+    widths = [_leaf_count(iv) * h_unit for iv in inputs]
+    total = sum(widths)
+    xs: List[float] = []
+    x = -total / 2.0
+    for w in widths:
+        xs.append(x + w / 2.0)
+        x += w
+    return xs
 
 
 class _TikZ:
@@ -768,12 +783,34 @@ class _TikZ:
             "\t" * ind + rf"\node [{style}{e}{p}] ({nid}) {{${math}$}};"
         )
 
+    def abs_math_node(self, nid: str, style: str, math: str,
+                      ref: str, dx: float, dy: float,
+                      extra: str = "", ind: int = 2) -> None:
+        """Emit a node at an absolute offset (dx, dy) cm from *ref*."""
+        e = f", {extra}" if extra else ""
+        self._lines.append(
+            "\t" * ind
+            + rf"\node [{style}{e}] at ($({ref})+({dx:.2f}cm,{dy:.2f}cm)$)"
+            + rf" ({nid}) {{${math}$}};"
+        )
+
     def text_node(self, nid: str, style: str, text: str,
                   pos: str = "", extra: str = "", ind: int = 2) -> None:
         p = f", {pos}" if pos else ""
         e = f", {extra}" if extra else ""
         self._lines.append(
             "\t" * ind + rf"\node [{style}{e}{p}] ({nid}) {{{text}}};"
+        )
+
+    def abs_text_node(self, nid: str, style: str, text: str,
+                      ref: str, dx: float, dy: float,
+                      extra: str = "", ind: int = 2) -> None:
+        """Emit a text node at an absolute offset (dx, dy) cm from *ref*."""
+        e = f", {extra}" if extra else ""
+        self._lines.append(
+            "\t" * ind
+            + rf"\node [{style}{e}] at ($({ref})+({dx:.2f}cm,{dy:.2f}cm)$)"
+            + rf" ({nid}) {{{text}}};"
         )
 
     def edge(self, src: str, dst: str, style: str, ind: int = 2) -> None:
@@ -798,135 +835,97 @@ class _Emitter:
         self._counters[base] = n + 1
         return base if n == 0 else f"{base}{n + 1}"
 
-    # ── model / root block ───────────────────────────────────────────────────
-
-    def _model_node(self, model: MeasurementModel, node_id: str,
-                    is_root: bool, pos: str) -> None:
-        style = "root_block" if is_root else "model_block"
-        content = rf"{model.latex_name} = {model.latex_expr}"
-        label = "ROOT" if is_root else "sub-model"
-        self.t.comment(f"{label}: {model.latex_name}")
-        self.t.math_node(node_id, style, content, pos=pos)
-        self.t.blank()
-
-    # ── root-level layout (up-branches + side branches) ─────────────────────
+    # ── recursive absolute-coordinate layout ─────────────────────────────────
 
     def emit_root(self, model: MeasurementModel, root_id: str) -> None:
-        self._model_node(model, root_id, is_root=True, pos="")
+        """Emit the root block and recursively all branches."""
+        self.t.comment(f"ROOT: {model.latex_name}")
+        content = rf"{model.latex_name} = {model.latex_expr}"
+        self.t.math_node(root_id, "root_block", content)
+        self.t.blank()
+        self._emit_inputs(model, parent_id=root_id,
+                          parent_dx=0.0, parent_dy=0.0,
+                          root_id=root_id, v_to_child=_V_D0)
 
-        up_vars = [iv for iv in model.inputs if iv.submodel is not None]
-        side_vars = [iv for iv in model.inputs if iv.submodel is None]
+    def _emit_inputs(self, model: MeasurementModel,
+                     parent_id: str,
+                     parent_dx: float, parent_dy: float,
+                     root_id: str,
+                     v_to_child: float) -> None:
+        """Fan all inputs of *model* evenly above *parent_id*.
 
-        # Upward branches: one or more inputs with sub-models
-        n_up = len(up_vars)
-        for i, ivar in enumerate(up_vars):
+        Parameters
+        ----------
+        parent_dx, parent_dy:
+            Absolute offset of *parent_id* from the root node (used to
+            compute the absolute positions of children).
+        root_id:
+            TikZ node name of the root block; all ``at`` expressions are
+            relative to it via the ``calc`` library.
+        v_to_child:
+            Vertical distance (cm) from parent to the derivative nodes.
+        """
+        inputs = model.inputs
+        if not inputs:
+            return
+        offsets = _child_offsets(inputs)
+        y_deriv = parent_dy + v_to_child
+
+        for ivar, dx in zip(inputs, offsets):
+            x_deriv = parent_dx + dx
+            color = ivar.color
+            deriv_lat = _deriv_label(model.latex_name, ivar.latex_name)
             d_id = self._uid(f"D{_tikz_id(ivar.latex_name)}")
-            m_id = self._uid(f"M{_tikz_id(ivar.latex_name)}")
-            d_pos = _fan_pos(i, n_up, root_id, v_cm=2.0, h_step=3.5)
-            self._up_branch(model, root_id, ivar, d_id, m_id, d_pos)
 
-        # Side branches: leaf inputs at the root level
-        prev_d = root_id
-        for i, ivar in enumerate(side_vars):
-            d_id = self._uid(f"D{_tikz_id(ivar.latex_name)}S")
-            leaf_id = self._uid(f"U{_tikz_id(ivar.latex_name)}")
-            if i == 0:
-                d_pos = f"right=1.0cm of {root_id}"
-            else:
-                d_pos = f"below=0.8cm of {prev_d}"
-            self._side_leaf(model, root_id, ivar, d_id, leaf_id, d_pos)
-            prev_d = d_id
+            self.t.comment(
+                f"∂{model.latex_name}/∂{ivar.latex_name}"
+            )
+            self.t.abs_math_node(d_id, "deriv_node", deriv_lat,
+                                 ref=root_id, dx=x_deriv, dy=y_deriv)
+            self.t.edge(parent_id, d_id, f"connection, {color}")
 
-    def _up_branch(self, parent: MeasurementModel, parent_id: str,
-                   ivar: InputVar, d_id: str, m_id: str, d_pos: str) -> None:
-        """Emit  parent → deriv_node → sub-model block → sub-model inputs."""
-        color = ivar.color
-        deriv_lat = _deriv_label(parent.latex_name, ivar.latex_name)
-        self.t.comment(f"up-branch: ∂{parent.latex_name}/∂{ivar.latex_name}")
-        self.t.math_node(d_id, "deriv_node", deriv_lat, pos=d_pos)
-        self.t.edge(parent_id, d_id, f"connection, {color}")
-        self.t.blank()
-        # Sub-model block above the derivative
-        self._model_node(ivar.submodel, m_id, is_root=False,
-                         pos=f"above=of {d_id}")
-        self.t.edge(d_id, m_id, f"connection, {color}")
-        # Fan the sub-model's own inputs above it
-        self._fan_inputs(ivar.submodel, m_id)
-
-    # ── fan layout: all inputs of a sub-model fanned above it ───────────────
-
-    def _fan_inputs(self, model: MeasurementModel, model_id: str) -> None:
-        n = len(model.inputs)
-        for i, ivar in enumerate(model.inputs):
-            pos = _fan_pos(i, n, model_id, v_cm=2.2, h_step=2.8)
             if ivar.submodel is not None:
-                self._fan_submodel(model, model_id, ivar, pos)
+                # Sub-model block above the deriv_node
+                m_id = self._uid(f"M{_tikz_id(ivar.latex_name)}")
+                y_model = y_deriv + _V_M0
+                sub_content = (rf"{ivar.submodel.latex_name}"
+                               rf" = {ivar.submodel.latex_expr}")
+                self.t.blank()
+                self.t.comment(f"sub-model: {ivar.submodel.latex_name}")
+                self.t.abs_math_node(m_id, "model_block", sub_content,
+                                     ref=root_id, dx=x_deriv, dy=y_model)
+                self.t.edge(d_id, m_id, f"connection, {color}")
+                # Recurse into the sub-model
+                self._emit_inputs(ivar.submodel,
+                                  parent_id=m_id,
+                                  parent_dx=x_deriv, parent_dy=y_model,
+                                  root_id=root_id, v_to_child=_V_D1)
             else:
-                self._fan_leaf(model, model_id, ivar, pos)
+                # Leaf node above the deriv_node
+                leaf_id = self._uid(f"U{_tikz_id(ivar.latex_name)}")
+                y_leaf = y_deriv + _V_LEAF
+                self.t.abs_math_node(
+                    leaf_id, "leaf_node", rf"u({ivar.latex_name})",
+                    ref=root_id, dx=x_deriv, dy=y_leaf,
+                    extra=f"draw={color}, text={color}",
+                )
+                self.t.edge(d_id, leaf_id, f"connection, {color}")
+                self._emit_effects(ivar, leaf_id,
+                                   root_id=root_id,
+                                   dx=x_deriv, dy=y_leaf)
+            self.t.blank()
 
-    def _fan_submodel(self, parent: MeasurementModel, parent_id: str,
-                      ivar: InputVar, pos: str) -> None:
-        color = ivar.color
-        d_id = self._uid(f"D{_tikz_id(ivar.latex_name)}")
-        m_id = self._uid(f"M{_tikz_id(ivar.latex_name)}")
-        deriv_lat = _deriv_label(parent.latex_name, ivar.latex_name)
-        self.t.comment(f"nested sub-model for {ivar.latex_name}")
-        self.t.math_node(d_id, "deriv_node", deriv_lat, pos=pos)
-        self.t.edge(parent_id, d_id, f"connection, {color}")
-        self.t.blank()
-        self._model_node(ivar.submodel, m_id, is_root=False,
-                         pos=f"above=of {d_id}")
-        self.t.edge(d_id, m_id, f"connection, {color}")
-        self._fan_inputs(ivar.submodel, m_id)
-
-    def _fan_leaf(self, parent: MeasurementModel, parent_id: str,
-                  ivar: InputVar, pos: str) -> None:
-        color = ivar.color
-        d_id = self._uid(f"D{_tikz_id(ivar.latex_name)}")
-        leaf_id = self._uid(f"U{_tikz_id(ivar.latex_name)}")
-        deriv_lat = _deriv_label(parent.latex_name, ivar.latex_name)
-        self.t.comment(f"leaf: u({ivar.latex_name})")
-        self.t.math_node(d_id, "deriv_node", deriv_lat, pos=pos)
-        self.t.math_node(
-            leaf_id, "leaf_node", rf"u({ivar.latex_name})",
-            pos=f"above=of {d_id}",
-            extra=f"draw={color}, text={color}",
-        )
-        self.t.edge(parent_id, d_id, f"connection, {color}")
-        self.t.edge(d_id, leaf_id, f"connection, {color}")
-        self._effect_node(ivar, leaf_id)
-        self.t.blank()
-
-    # ── side leaf (root-level leaf input, placed to the right) ───────────────
-
-    def _side_leaf(self, parent: MeasurementModel, parent_id: str,
-                   ivar: InputVar, d_id: str, leaf_id: str, d_pos: str) -> None:
-        color = ivar.color
-        deriv_lat = _deriv_label(parent.latex_name, ivar.latex_name)
-        self.t.comment(f"side leaf: u({ivar.latex_name})")
-        self.t.math_node(d_id, "deriv_node", deriv_lat, pos=d_pos)
-        self.t.math_node(
-            leaf_id, "leaf_node", rf"u({ivar.latex_name})",
-            pos=f"right=0.5cm of {d_id}",
-            extra=f"draw={color}, text={color}",
-        )
-        self.t.edge(parent_id, d_id, f"connection, {color}")
-        self.t.edge(d_id, leaf_id, f"connection, {color}")
-        self._effect_node(ivar, leaf_id)
-        self.t.blank()
-
-    # ── effect node (dashed box with uncertainty sources) ────────────────────
-
-    def _effect_node(self, ivar: InputVar, leaf_id: str) -> None:
+    def _emit_effects(self, ivar: InputVar, leaf_id: str,
+                      root_id: str, dx: float, dy: float) -> None:
+        """Emit effect (uncertainty source) nodes above *leaf_id*."""
         if not ivar.effects:
             return
         eff_id = self._uid(f"EFF{_tikz_id(ivar.latex_name)}")
         eff_text = r" \\ ".join(ivar.effects)
-        self.t.text_node(
-            eff_id, "effect_node", eff_text,
-            pos=f"above=0.4cm of {leaf_id}",
-            extra=ivar.color,
-        )
+        y_eff = dy + _V_EFF
+        self.t.abs_text_node(eff_id, "effect_node", eff_text,
+                             ref=root_id, dx=dx, dy=y_eff,
+                             extra=ivar.color)
         self.t.edge(eff_id, leaf_id, f"connection, {ivar.color}, dashed")
 
 
@@ -948,7 +947,6 @@ def build_tikz(root: MeasurementModel, label: str = "") -> str:
     t.raw(r"  \centering")
     t.raw(r"  \resizebox{\textwidth}{!}{%")
     t.raw(r"  \begin{tikzpicture}[")
-    t.raw(r"    node distance=0.7cm and 0.6cm,")
     t.raw(r"    connection/.style={draw, thick},")
     t.raw(r"    root_block/.style={draw, rectangle, inner sep=10pt,"
           r" font=\Large\bfseries, align=center},")
