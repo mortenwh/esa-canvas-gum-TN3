@@ -832,6 +832,13 @@ _NODE_WIDTH_CM  = 1.3    # deriv node full width used in the chord formula
 # sub-tree fans from upper-left to lower-left, exploiting vertical space.
 _ROOT_CENTER_ANGLE = math.pi
 
+# Anisotropic arm-length boost: amplifies near-vertical arms so the figure
+# aspect ratio approaches A4 portrait (0.71) rather than ~0.92 (nearly square).
+# factor(θ) = 1 + _ANISO_BOOST × max(0, |sin θ| − |cos θ|)
+# → no extra length for near-horizontal branches; up to (1+_ANISO_BOOST)×
+#   for branches pointing straight up/down.
+_ANISO_BOOST = 0.60
+
 
 def _leaf_count(ivar: "InputVar") -> int:
     """Total leaf nodes in the subtree rooted at *ivar* (minimum 1).
@@ -924,6 +931,19 @@ def _v_leaf_for_angle(out_angle: float) -> float:
     dhw, dhh = _BBOX_HALF["deriv"]
     lhw, lhh = _BBOX_HALF["leaf"]
     return max(c * (dhw + lhw) + s * (dhh + lhh) + 0.35, _V_LEAF_MIN)
+
+
+def _aniso_factor(angle: float) -> float:
+    """Anisotropic arm-length multiplier: longer for near-vertical branches.
+
+    Returns ``1 + _ANISO_BOOST * max(0, |sin θ| − |cos θ|)``.
+    This is 1.0 for near-horizontal arms (|θ| ≤ 45° from horizontal) and
+    rises to ``1 + _ANISO_BOOST`` for arms pointing straight up or down.
+    Branches near ±45° receive a smooth intermediate boost.
+    The effect is to stretch the figure in the vertical direction so it
+    fills an A4 portrait page more completely.
+    """
+    return 1.0 + _ANISO_BOOST * max(0.0, abs(math.sin(angle)) - abs(math.cos(angle)))
 
 
 def _sector_angles(
@@ -1122,7 +1142,7 @@ def _simulate_branch(
     ]
 
     if ivar.submodel is not None:
-        v_m0 = _v_m0_for_angle(out_angle)
+        v_m0 = _v_m0_for_angle(out_angle) * _aniso_factor(out_angle)
         x_model_nat = x_deriv + v_m0 * cos_o
         y_model_nat = y_deriv + v_m0 * sin_o
         recs.append(_NodeRecord(x_model_nat + eff_ox, y_model_nat + eff_oy, "model", root_ivar))
@@ -1134,12 +1154,12 @@ def _simulate_branch(
                 root_ivar=root_ivar,
             ))
     else:
-        v_leaf = _v_leaf_for_angle(out_angle)
+        v_leaf = _v_leaf_for_angle(out_angle) * _aniso_factor(out_angle)
         x_leaf_nat = x_deriv + v_leaf * cos_o
         y_leaf_nat = y_deriv + v_leaf * sin_o
         recs.append(_NodeRecord(x_leaf_nat + eff_ox, y_leaf_nat + eff_oy, "leaf", root_ivar))
         if ivar.effects:
-            v_eff = _v_eff_for_angle(out_angle)
+            v_eff = _v_eff_for_angle(out_angle) * _aniso_factor(out_angle)
             recs.append(_NodeRecord(
                 x_leaf_nat + v_eff * cos_o + eff_ox,
                 y_leaf_nat + v_eff * sin_o + eff_oy,
@@ -1172,6 +1192,7 @@ def _simulate_inputs(
         model.inputs, _sector_angles(model.inputs, out_angle, sector_rad)
     ):
         v_i = max(v_to_child, _radial_step(child_sector), _v_child_for_angle(child_angle))
+        v_i *= _aniso_factor(child_angle)
         x_d_nat = parent_dx_nat + v_i * math.cos(child_angle)
         y_d_nat = parent_dy_nat + v_i * math.sin(child_angle)
         # Each child uses itself as root_ivar so the auto-layout can push
@@ -1326,7 +1347,7 @@ class _Emitter:
 
         if ivar.submodel is not None:
             m_id = self._uid(f"M{_tikz_id(ivar.latex_name)}")
-            v_m0 = _v_m0_for_angle(out_angle)
+            v_m0 = _v_m0_for_angle(out_angle) * _aniso_factor(out_angle)
             x_model_nat = x_deriv + v_m0 * cos_o
             y_model_nat = y_deriv + v_m0 * sin_o
             self.t.blank()
@@ -1354,7 +1375,7 @@ class _Emitter:
                                   depth=depth + 1, cum_offset=(eff_ox, eff_oy))
         else:
             leaf_id = self._uid(f"U{_tikz_id(ivar.latex_name)}")
-            v_leaf = _v_leaf_for_angle(out_angle)
+            v_leaf = _v_leaf_for_angle(out_angle) * _aniso_factor(out_angle)
             x_leaf_nat = x_deriv + v_leaf * cos_o
             y_leaf_nat = y_deriv + v_leaf * sin_o
             self.t.abs_math_node(
@@ -1395,6 +1416,7 @@ class _Emitter:
             inputs, _sector_angles(inputs, out_angle, sector_rad)
         ):
             v_i = max(v_to_child, _radial_step(child_sector), _v_child_for_angle(child_angle))
+            v_i *= _aniso_factor(child_angle)
             x_d = parent_dx + v_i * math.cos(child_angle)
             y_d = parent_dy + v_i * math.sin(child_angle)
             self._emit_branch(model, parent_id, ivar,
@@ -1411,8 +1433,8 @@ class _Emitter:
             return
         eff_id = self._uid(f"EFF{_tikz_id(ivar.latex_name)}")
         eff_text = r" \\ ".join(ivar.effects)
-        x_eff = dx + _v_eff_for_angle(out_angle) * math.cos(out_angle)
-        y_eff = dy + _v_eff_for_angle(out_angle) * math.sin(out_angle)
+        x_eff = dx + _v_eff_for_angle(out_angle) * _aniso_factor(out_angle) * math.cos(out_angle)
+        y_eff = dy + _v_eff_for_angle(out_angle) * _aniso_factor(out_angle) * math.sin(out_angle)
         self.t.abs_text_node(eff_id, "effect_node", eff_text,
                              ref=root_id, dx=x_eff, dy=y_eff,
                              extra=ivar.color)
@@ -1490,7 +1512,7 @@ def build_tikz(root: MeasurementModel, label: str = "",
     t.raw(r"\begin{figure}[p]")
     t.raw(r"  \centering")
     t.raw(r"  % Scale to fit page: preserves aspect ratio within textwidth × 0.88 textheight")
-    t.raw(r"  \begin{adjustbox}{max width=\textwidth, max totalheight=.88\textheight, keepaspectratio}")
+    t.raw(r"  \begin{adjustbox}{max width=\textwidth, max totalheight=\textheight, keepaspectratio}")
     t.raw(r"  \begin{tikzpicture}[")
     t.raw(r"    connection/.style={draw, thick},")
     t.raw(r"    root_block/.style={draw=blue!60!black, very thick, rectangle,"

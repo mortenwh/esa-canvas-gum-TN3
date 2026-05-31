@@ -1,7 +1,7 @@
 \begin{figure}[p]
   \centering
   % Scale to fit page: preserves aspect ratio within textwidth × 0.88 textheight
-  \begin{adjustbox}{max width=\textwidth, max totalheight=.88\textheight, keepaspectratio}
+  \begin{adjustbox}{max width=\textwidth, max totalheight=\textheight, keepaspectratio}
   \begin{tikzpicture}[
     connection/.style={draw, thick},
     root_block/.style={draw=blue!60!black, very thick, rectangle, fill=blue!8, inner sep=8pt, font=\normalsize\bfseries, align=center},
@@ -37,11 +37,11 @@
 		\node [model_block] at ($(VARPIRMGROOT)+(-4.03cm,1.34cm)$) (MVARPIRMP) {$\varpi_{\rm p} = h(\varpi_{\rm geo}, \varpi_{\rm e}) + \Delta\varpi_{\rm p}$};
 		\draw [connection, purple] (DVARPIRMP) -- (MVARPIRMP);
 		% ∂\varpi_{\rm p}/∂\Delta\varpi_{\rm p}
-		\node [deriv_node] at ($(VARPIRMGROOT)+(-3.69cm,-0.43cm)$) (DDELTAVARPIRMP) {$\frac{\partial \varpi_{\rm p}}{\partial \Delta\varpi_{\rm p}}$};
+		\node [deriv_node] at ($(VARPIRMGROOT)+(-3.53cm,-1.28cm)$) (DDELTAVARPIRMP) {$\frac{\partial \varpi_{\rm p}}{\partial \Delta\varpi_{\rm p}}$};
 		\draw [connection, cyan!80!black] (MVARPIRMP) -- (DDELTAVARPIRMP);
-		\node [leaf_node, draw=cyan!80!black, text=cyan!80!black] at ($(VARPIRMGROOT)+(-3.44cm,-1.77cm)$) (UDELTAVARPIRMP) {$u(\Delta\varpi_{\rm p})$};
+		\node [leaf_node, draw=cyan!80!black, text=cyan!80!black] at ($(VARPIRMGROOT)+(-3.15cm,-3.25cm)$) (UDELTAVARPIRMP) {$u(\Delta\varpi_{\rm p})$};
 		\draw [connection, cyan!80!black] (DDELTAVARPIRMP) -- (UDELTAVARPIRMP);
-		\node [effect_node, cyan!80!black] at ($(VARPIRMGROOT)+(-3.17cm,-3.16cm)$) (EFFDELTAVARPIRMP) {Pointing \\ Fitting};
+		\node [effect_node, cyan!80!black] at ($(VARPIRMGROOT)+(-2.76cm,-5.30cm)$) (EFFDELTAVARPIRMP) {Pointing \\ Fitting};
 		\draw [connection, cyan!80!black, dashed] (EFFDELTAVARPIRMP) -- (UDELTAVARPIRMP);
 
 		% ∂\varpi_{\rm p}/∂\varpi_{\rm e}
@@ -52,11 +52,11 @@
 		\node [model_block] at ($(VARPIRMGROOT)+(-8.31cm,-2.37cm)$) (MVARPIRME) {$\varpi_{\rm e} = h(\Delta\varpi_{\rm e}, \theta_n)$};
 		\draw [connection, green!60!black] (DVARPIRME) -- (MVARPIRME);
 		% ∂\varpi_{\rm e}/∂\Delta\varpi_{\rm e}
-		\node [deriv_node] at ($(VARPIRMGROOT)+(-9.12cm,-4.40cm)$) (DDELTAVARPIRME) {$\frac{\partial \varpi_{\rm e}}{\partial \Delta\varpi_{\rm e}}$};
+		\node [deriv_node] at ($(VARPIRMGROOT)+(-9.39cm,-5.08cm)$) (DDELTAVARPIRME) {$\frac{\partial \varpi_{\rm e}}{\partial \Delta\varpi_{\rm e}}$};
 		\draw [connection, green!60!black] (MVARPIRME) -- (DDELTAVARPIRME);
-		\node [leaf_node, draw=green!60!black, text=green!60!black] at ($(VARPIRMGROOT)+(-9.70cm,-5.88cm)$) (UDELTAVARPIRME) {$u(\Delta\varpi_{\rm e})$};
+		\node [leaf_node, draw=green!60!black, text=green!60!black] at ($(VARPIRMGROOT)+(-10.17cm,-7.06cm)$) (UDELTAVARPIRME) {$u(\Delta\varpi_{\rm e})$};
 		\draw [connection, green!60!black] (DDELTAVARPIRME) -- (UDELTAVARPIRME);
-		\node [effect_node, green!60!black] at ($(VARPIRMGROOT)+(-10.29cm,-7.37cm)$) (EFFDELTAVARPIRME) {Random noise \\ Fitting uncertainty};
+		\node [effect_node, green!60!black] at ($(VARPIRMGROOT)+(-10.96cm,-9.05cm)$) (EFFDELTAVARPIRME) {Random noise \\ Fitting uncertainty};
 		\draw [connection, green!60!black, dashed] (EFFDELTAVARPIRME) -- (UDELTAVARPIRME);
 
 		% ∂\varpi_{\rm e}/∂\theta_n
@@ -69,145 +69,145 @@
 
 
 		% ∂\varpi_{\rm p}/∂\varpi_{\rm geo}
-		\node [deriv_node] at ($(VARPIRMGROOT)+(-4.41cm,3.13cm)$) (DVARPIRMGEO) {$\frac{\partial \varpi_{\rm p}}{\partial \varpi_{\rm geo}}$};
+		\node [deriv_node] at ($(VARPIRMGROOT)+(-4.58cm,3.97cm)$) (DVARPIRMGEO) {$\frac{\partial \varpi_{\rm p}}{\partial \varpi_{\rm geo}}$};
 		\draw [connection, orange!80!black] (MVARPIRMP) -- (DVARPIRMGEO);
 
 		% sub-model: \varpi_{\rm geo}
-		\node [model_block] at ($(VARPIRMGROOT)+(-4.78cm,4.93cm)$) (MVARPIRMGEO) {$\varpi_{\rm geo} = h(\Delta\varpi_{\rm geo}, \varpi_{\rm aux}, \varpi_{\rm fit}, \varpi_{\rm orb})$};
+		\node [model_block] at ($(VARPIRMGROOT)+(-5.13cm,6.61cm)$) (MVARPIRMGEO) {$\varpi_{\rm geo} = h(\Delta\varpi_{\rm geo}, \varpi_{\rm aux}, \varpi_{\rm fit}, \varpi_{\rm orb})$};
 		\draw [connection, orange!80!black] (DVARPIRMGEO) -- (MVARPIRMGEO);
 		% ∂\varpi_{\rm geo}/∂\Delta\varpi_{\rm geo}
-		\node [deriv_node] at ($(VARPIRMGROOT)+(-7.59cm,4.73cm)$) (DDELTAVARPIRMGEO) {$\frac{\partial \varpi_{\rm geo}}{\partial \Delta\varpi_{\rm geo}}$};
+		\node [deriv_node] at ($(VARPIRMGROOT)+(-7.94cm,6.40cm)$) (DDELTAVARPIRMGEO) {$\frac{\partial \varpi_{\rm geo}}{\partial \Delta\varpi_{\rm geo}}$};
 		\draw [connection, magenta!70!black] (MVARPIRMGEO) -- (DDELTAVARPIRMGEO);
-		\node [leaf_node, draw=magenta!70!black, text=magenta!70!black] at ($(VARPIRMGROOT)+(-9.46cm,4.59cm)$) (UDELTAVARPIRMGEO) {$u(\Delta\varpi_{\rm geo})$};
+		\node [leaf_node, draw=magenta!70!black, text=magenta!70!black] at ($(VARPIRMGROOT)+(-9.81cm,6.26cm)$) (UDELTAVARPIRMGEO) {$u(\Delta\varpi_{\rm geo})$};
 		\draw [connection, magenta!70!black] (DDELTAVARPIRMGEO) -- (UDELTAVARPIRMGEO);
-		\node [effect_node, magenta!70!black] at ($(VARPIRMGROOT)+(-11.09cm,4.47cm)$) (EFFDELTAVARPIRMGEO) {Random noise \\ Fitting uncertainty};
+		\node [effect_node, magenta!70!black] at ($(VARPIRMGROOT)+(-11.44cm,6.14cm)$) (EFFDELTAVARPIRMGEO) {Random noise \\ Fitting uncertainty};
 		\draw [connection, magenta!70!black, dashed] (EFFDELTAVARPIRMGEO) -- (UDELTAVARPIRMGEO);
 
 		% ∂\varpi_{\rm geo}/∂\varpi_{\rm aux}
-		\node [deriv_node] at ($(VARPIRMGROOT)+(-7.58cm,6.66cm)$) (DVARPIRMAUX) {$\frac{\partial \varpi_{\rm geo}}{\partial \varpi_{\rm aux}}$};
+		\node [deriv_node] at ($(VARPIRMGROOT)+(-6.95cm,8.84cm)$) (DVARPIRMAUX) {$\frac{\partial \varpi_{\rm geo}}{\partial \varpi_{\rm aux}}$};
 		\draw [connection, teal] (MVARPIRMGEO) -- (DVARPIRMAUX);
 
 		% sub-model: \varpi_{\rm aux}
-		\node [model_block] at ($(VARPIRMGROOT)+(-9.26cm,8.72cm)$) (MVARPIRMAUX) {$\varpi_{\rm aux} = h(\Delta\varpi_{\rm aux}, P, \alpha)$};
+		\node [model_block] at ($(VARPIRMGROOT)+(-8.78cm,11.08cm)$) (MVARPIRMAUX) {$\varpi_{\rm aux} = h(\Delta\varpi_{\rm aux}, P, \alpha)$};
 		\draw [connection, teal] (DVARPIRMAUX) -- (MVARPIRMAUX);
 		% ∂\varpi_{\rm aux}/∂\Delta\varpi_{\rm aux}
-		\node [deriv_node] at ($(VARPIRMGROOT)+(-12.08cm,8.51cm)$) (DDELTAVARPIRMAUX) {$\frac{\partial \varpi_{\rm aux}}{\partial \Delta\varpi_{\rm aux}}$};
+		\node [deriv_node] at ($(VARPIRMGROOT)+(-11.59cm,10.87cm)$) (DDELTAVARPIRMAUX) {$\frac{\partial \varpi_{\rm aux}}{\partial \Delta\varpi_{\rm aux}}$};
 		\draw [connection, teal] (MVARPIRMAUX) -- (DDELTAVARPIRMAUX);
-		\node [leaf_node, draw=teal, text=teal] at ($(VARPIRMGROOT)+(-13.94cm,8.37cm)$) (UDELTAVARPIRMAUX) {$u(\Delta\varpi_{\rm aux})$};
+		\node [leaf_node, draw=teal, text=teal] at ($(VARPIRMGROOT)+(-13.45cm,10.73cm)$) (UDELTAVARPIRMAUX) {$u(\Delta\varpi_{\rm aux})$};
 		\draw [connection, teal] (DDELTAVARPIRMAUX) -- (UDELTAVARPIRMAUX);
-		\node [effect_node, teal] at ($(VARPIRMGROOT)+(-15.57cm,8.25cm)$) (EFFDELTAVARPIRMAUX) {Random noise \\ Fitting uncertainty};
+		\node [effect_node, teal] at ($(VARPIRMGROOT)+(-15.08cm,10.61cm)$) (EFFDELTAVARPIRMAUX) {Random noise \\ Fitting uncertainty};
 		\draw [connection, teal, dashed] (EFFDELTAVARPIRMAUX) -- (UDELTAVARPIRMAUX);
 
 		% ∂\varpi_{\rm aux}/∂P
-		\node [deriv_node] at ($(VARPIRMGROOT)+(-10.95cm,10.78cm)$) (DP) {$\frac{\partial \varpi_{\rm aux}}{\partial P}$};
+		\node [deriv_node] at ($(VARPIRMGROOT)+(-10.60cm,13.31cm)$) (DP) {$\frac{\partial \varpi_{\rm aux}}{\partial P}$};
 		\draw [connection, teal] (MVARPIRMAUX) -- (DP);
-		\node [leaf_node, draw=teal, text=teal] at ($(VARPIRMGROOT)+(-12.12cm,12.22cm)$) (UP) {$u(P)$};
+		\node [leaf_node, draw=teal, text=teal] at ($(VARPIRMGROOT)+(-11.88cm,14.87cm)$) (UP) {$u(P)$};
 		\draw [connection, teal] (DP) -- (UP);
-		\node [effect_node, teal] at ($(VARPIRMGROOT)+(-13.26cm,13.62cm)$) (EFFP) {DORIS uncertainty};
+		\node [effect_node, teal] at ($(VARPIRMGROOT)+(-13.12cm,16.39cm)$) (EFFP) {DORIS uncertainty};
 		\draw [connection, teal, dashed] (EFFP) -- (UP);
 
 		% ∂\varpi_{\rm aux}/∂\alpha
-		\node [deriv_node] at ($(VARPIRMGROOT)+(-7.16cm,11.18cm)$) (DALPHA) {$\frac{\partial \varpi_{\rm aux}}{\partial \alpha}$};
+		\node [deriv_node] at ($(VARPIRMGROOT)+(-8.15cm,13.48cm)$) (DALPHA) {$\frac{\partial \varpi_{\rm aux}}{\partial \alpha}$};
 		\draw [connection, teal] (MVARPIRMAUX) -- (DALPHA);
 
 		% sub-model: \alpha
-		\node [model_block] at ($(VARPIRMGROOT)+(-6.62cm,13.09cm)$) (MALPHA) {$\alpha = h(\Delta\alpha, \gamma, \varphi, \psi)$};
+		\node [model_block] at ($(VARPIRMGROOT)+(-7.39cm,16.18cm)$) (MALPHA) {$\alpha = h(\Delta\alpha, \gamma, \varphi, \psi)$};
 		\draw [connection, teal] (DALPHA) -- (MALPHA);
 		% ∂\alpha/∂\Delta\alpha
-		\node [deriv_node] at ($(VARPIRMGROOT)+(-9.34cm,14.26cm)$) (DDELTAALPHA) {$\frac{\partial \alpha}{\partial \Delta\alpha}$};
+		\node [deriv_node] at ($(VARPIRMGROOT)+(-10.11cm,17.34cm)$) (DDELTAALPHA) {$\frac{\partial \alpha}{\partial \Delta\alpha}$};
 		\draw [connection, teal] (MALPHA) -- (DDELTAALPHA);
-		\node [leaf_node, draw=teal, text=teal] at ($(VARPIRMGROOT)+(-11.17cm,15.05cm)$) (UDELTAALPHA) {$u(\Delta\alpha)$};
+		\node [leaf_node, draw=teal, text=teal] at ($(VARPIRMGROOT)+(-11.94cm,18.13cm)$) (UDELTAALPHA) {$u(\Delta\alpha)$};
 		\draw [connection, teal] (DDELTAALPHA) -- (UDELTAALPHA);
-		\node [effect_node, teal] at ($(VARPIRMGROOT)+(-12.86cm,15.77cm)$) (EFFDELTAALPHA) {Attitude restitution \\ Missing attitude data};
+		\node [effect_node, teal] at ($(VARPIRMGROOT)+(-13.62cm,18.86cm)$) (EFFDELTAALPHA) {Attitude restitution \\ Missing attitude data};
 		\draw [connection, teal, dashed] (EFFDELTAALPHA) -- (UDELTAALPHA);
 
 		% ∂\alpha/∂\gamma
-		\node [deriv_node] at ($(VARPIRMGROOT)+(-7.00cm,14.89cm)$) (DGAMMA) {$\frac{\partial \alpha}{\partial \gamma}$};
+		\node [deriv_node] at ($(VARPIRMGROOT)+(-7.94cm,18.81cm)$) (DGAMMA) {$\frac{\partial \alpha}{\partial \gamma}$};
 		\draw [connection, teal] (MALPHA) -- (DGAMMA);
-		\node [leaf_node, draw=teal, text=teal] at ($(VARPIRMGROOT)+(-7.28cm,16.24cm)$) (UGAMMA) {$u(\gamma)$};
+		\node [leaf_node, draw=teal, text=teal] at ($(VARPIRMGROOT)+(-8.35cm,20.80cm)$) (UGAMMA) {$u(\gamma)$};
 		\draw [connection, teal] (DGAMMA) -- (UGAMMA);
-		\node [effect_node, teal] at ($(VARPIRMGROOT)+(-7.57cm,17.64cm)$) (EFFGAMMA) {Attitude restitution \\ Missing attitude data};
+		\node [effect_node, teal] at ($(VARPIRMGROOT)+(-8.78cm,22.85cm)$) (EFFGAMMA) {Attitude restitution \\ Missing attitude data};
 		\draw [connection, teal, dashed] (EFFGAMMA) -- (UGAMMA);
 
 		% ∂\alpha/∂\varphi
-		\node [deriv_node] at ($(VARPIRMGROOT)+(-4.75cm,15.09cm)$) (DVARPHI) {$\frac{\partial \alpha}{\partial \varphi}$};
+		\node [deriv_node] at ($(VARPIRMGROOT)+(-5.47cm,18.22cm)$) (DVARPHI) {$\frac{\partial \alpha}{\partial \varphi}$};
 		\draw [connection, teal] (MALPHA) -- (DVARPHI);
-		\node [leaf_node, draw=teal, text=teal] at ($(VARPIRMGROOT)+(-3.44cm,16.47cm)$) (UVARPHI) {$u(\varphi)$};
+		\node [leaf_node, draw=teal, text=teal] at ($(VARPIRMGROOT)+(-4.13cm,19.64cm)$) (UVARPHI) {$u(\varphi)$};
 		\draw [connection, teal] (DVARPHI) -- (UVARPHI);
-		\node [effect_node, teal] at ($(VARPIRMGROOT)+(-2.19cm,17.81cm)$) (EFFVARPHI) {Attitude restitution \\ Missing attitude data};
+		\node [effect_node, teal] at ($(VARPIRMGROOT)+(-2.84cm,21.01cm)$) (EFFVARPHI) {Attitude restitution \\ Missing attitude data};
 		\draw [connection, teal, dashed] (EFFVARPHI) -- (UVARPHI);
 
 		% ∂\alpha/∂\psi
-		\node [deriv_node] at ($(VARPIRMGROOT)+(-3.70cm,12.79cm)$) (DPSI) {$\frac{\partial \alpha}{\partial \psi}$};
+		\node [deriv_node] at ($(VARPIRMGROOT)+(-4.46cm,15.66cm)$) (DPSI) {$\frac{\partial \alpha}{\partial \psi}$};
 		\draw [connection, teal] (MALPHA) -- (DPSI);
-		\node [leaf_node, draw=teal, text=teal] at ($(VARPIRMGROOT)+(-1.81cm,12.51cm)$) (UPSI) {$u(\psi)$};
+		\node [leaf_node, draw=teal, text=teal] at ($(VARPIRMGROOT)+(-2.57cm,15.38cm)$) (UPSI) {$u(\psi)$};
 		\draw [connection, teal] (DPSI) -- (UPSI);
-		\node [effect_node, teal] at ($(VARPIRMGROOT)+(-0.14cm,12.27cm)$) (EFFPSI) {Attitude restitution \\ Missing attitude data};
+		\node [effect_node, teal] at ($(VARPIRMGROOT)+(-0.90cm,15.14cm)$) (EFFPSI) {Attitude restitution \\ Missing attitude data};
 		\draw [connection, teal, dashed] (EFFPSI) -- (UPSI);
 
 
 
 		% ∂\varpi_{\rm geo}/∂\varpi_{\rm fit}
-		\node [deriv_node] at ($(VARPIRMGROOT)+(-4.24cm,6.84cm)$) (DVARPIRMFIT) {$\frac{\partial \varpi_{\rm geo}}{\partial \varpi_{\rm fit}}$};
+		\node [deriv_node] at ($(VARPIRMGROOT)+(-4.37cm,9.31cm)$) (DVARPIRMFIT) {$\frac{\partial \varpi_{\rm geo}}{\partial \varpi_{\rm fit}}$};
 		\draw [connection, brown!70!black] (MVARPIRMGEO) -- (DVARPIRMFIT);
 
 		% sub-model: \varpi_{\rm fit}
-		\node [model_block] at ($(VARPIRMGROOT)+(-3.70cm,8.75cm)$) (MVARPIRMFIT) {$\varpi_{\rm fit} = h(\Delta\gamma, \Delta\varphi, \Delta\psi, \Delta\varpi_{\rm fit})$};
+		\node [model_block] at ($(VARPIRMGROOT)+(-3.60cm,12.01cm)$) (MVARPIRMFIT) {$\varpi_{\rm fit} = h(\Delta\gamma, \Delta\varphi, \Delta\psi, \Delta\varpi_{\rm fit})$};
 		\draw [connection, brown!70!black] (DVARPIRMFIT) -- (MVARPIRMFIT);
 		% ∂\varpi_{\rm fit}/∂\Delta\gamma
-		\node [deriv_node] at ($(VARPIRMGROOT)+(-6.86cm,9.70cm)$) (DDELTAGAMMA) {$\frac{\partial \varpi_{\rm fit}}{\partial \Delta\gamma}$};
+		\node [deriv_node] at ($(VARPIRMGROOT)+(-6.18cm,13.48cm)$) (DDELTAGAMMA) {$\frac{\partial \varpi_{\rm fit}}{\partial \Delta\gamma}$};
 		\draw [connection, brown!70!black] (MVARPIRMFIT) -- (DDELTAGAMMA);
-		\node [leaf_node, draw=brown!70!black, text=brown!70!black] at ($(VARPIRMGROOT)+(-8.69cm,10.49cm)$) (UDELTAGAMMA) {$u(\Delta\gamma)$};
+		\node [leaf_node, draw=brown!70!black, text=brown!70!black] at ($(VARPIRMGROOT)+(-8.02cm,14.27cm)$) (UDELTAGAMMA) {$u(\Delta\gamma)$};
 		\draw [connection, brown!70!black] (DDELTAGAMMA) -- (UDELTAGAMMA);
-		\node [effect_node, brown!70!black] at ($(VARPIRMGROOT)+(-10.38cm,11.21cm)$) (EFFDELTAGAMMA) {Random noise \\ Fitting uncertainty};
+		\node [effect_node, brown!70!black] at ($(VARPIRMGROOT)+(-9.70cm,14.99cm)$) (EFFDELTAGAMMA) {Random noise \\ Fitting uncertainty};
 		\draw [connection, brown!70!black, dashed] (EFFDELTAGAMMA) -- (UDELTAGAMMA);
 
 		% ∂\varpi_{\rm fit}/∂\Delta\varphi
-		\node [deriv_node] at ($(VARPIRMGROOT)+(-4.15cm,10.44cm)$) (DDELTAVARPHI) {$\frac{\partial \varpi_{\rm fit}}{\partial \Delta\varphi}$};
+		\node [deriv_node] at ($(VARPIRMGROOT)+(-4.23cm,14.75cm)$) (DDELTAVARPHI) {$\frac{\partial \varpi_{\rm fit}}{\partial \Delta\varphi}$};
 		\draw [connection, brown!70!black] (MVARPIRMFIT) -- (DDELTAVARPHI);
-		\node [leaf_node, draw=brown!70!black, text=brown!70!black] at ($(VARPIRMGROOT)+(-4.43cm,11.80cm)$) (UDELTAVARPHI) {$u(\Delta\varphi)$};
+		\node [leaf_node, draw=brown!70!black, text=brown!70!black] at ($(VARPIRMGROOT)+(-4.65cm,16.73cm)$) (UDELTAVARPHI) {$u(\Delta\varphi)$};
 		\draw [connection, brown!70!black] (DDELTAVARPHI) -- (UDELTAVARPHI);
-		\node [effect_node, brown!70!black] at ($(VARPIRMGROOT)+(-4.72cm,13.19cm)$) (EFFDELTAVARPHI) {Random noise \\ Fitting uncertainty};
+		\node [effect_node, brown!70!black] at ($(VARPIRMGROOT)+(-5.07cm,18.78cm)$) (EFFDELTAVARPHI) {Random noise \\ Fitting uncertainty};
 		\draw [connection, brown!70!black, dashed] (EFFDELTAVARPHI) -- (UDELTAVARPHI);
 
 		% ∂\varpi_{\rm fit}/∂\Delta\psi
-		\node [deriv_node] at ($(VARPIRMGROOT)+(-1.83cm,10.74cm)$) (DDELTAPSI) {$\frac{\partial \varpi_{\rm fit}}{\partial \Delta\psi}$};
+		\node [deriv_node] at ($(VARPIRMGROOT)+(-1.68cm,14.05cm)$) (DDELTAPSI) {$\frac{\partial \varpi_{\rm fit}}{\partial \Delta\psi}$};
 		\draw [connection, brown!70!black] (MVARPIRMFIT) -- (DDELTAPSI);
-		\node [leaf_node, draw=brown!70!black, text=brown!70!black] at ($(VARPIRMGROOT)+(-0.52cm,12.13cm)$) (UDELTAPSI) {$u(\Delta\psi)$};
+		\node [leaf_node, draw=brown!70!black, text=brown!70!black] at ($(VARPIRMGROOT)+(-0.34cm,15.47cm)$) (UDELTAPSI) {$u(\Delta\psi)$};
 		\draw [connection, brown!70!black] (DDELTAPSI) -- (UDELTAPSI);
-		\node [effect_node, brown!70!black] at ($(VARPIRMGROOT)+(0.74cm,13.46cm)$) (EFFDELTAPSI) {Random noise \\ Fitting uncertainty};
+		\node [effect_node, brown!70!black] at ($(VARPIRMGROOT)+(0.95cm,16.84cm)$) (EFFDELTAPSI) {Random noise \\ Fitting uncertainty};
 		\draw [connection, brown!70!black, dashed] (EFFDELTAPSI) -- (UDELTAPSI);
 
 		% ∂\varpi_{\rm fit}/∂\Delta\varpi_{\rm fit}
-		\node [deriv_node] at ($(VARPIRMGROOT)+(-0.86cm,8.34cm)$) (DDELTAVARPIRMFIT) {$\frac{\partial \varpi_{\rm fit}}{\partial \Delta\varpi_{\rm fit}}$};
+		\node [deriv_node] at ($(VARPIRMGROOT)+(-0.86cm,11.63cm)$) (DDELTAVARPIRMFIT) {$\frac{\partial \varpi_{\rm fit}}{\partial \Delta\varpi_{\rm fit}}$};
 		\draw [connection, brown!70!black] (MVARPIRMFIT) -- (DDELTAVARPIRMFIT);
-		\node [leaf_node, draw=brown!70!black, text=brown!70!black] at ($(VARPIRMGROOT)+(1.03cm,8.06cm)$) (UDELTAVARPIRMFIT) {$u(\Delta\varpi_{\rm fit})$};
+		\node [leaf_node, draw=brown!70!black, text=brown!70!black] at ($(VARPIRMGROOT)+(1.03cm,11.35cm)$) (UDELTAVARPIRMFIT) {$u(\Delta\varpi_{\rm fit})$};
 		\draw [connection, brown!70!black] (DDELTAVARPIRMFIT) -- (UDELTAVARPIRMFIT);
-		\node [effect_node, brown!70!black] at ($(VARPIRMGROOT)+(2.71cm,7.82cm)$) (EFFDELTAVARPIRMFIT) {Random noise \\ Fitting uncertainty};
+		\node [effect_node, brown!70!black] at ($(VARPIRMGROOT)+(2.70cm,11.11cm)$) (EFFDELTAVARPIRMFIT) {Random noise \\ Fitting uncertainty};
 		\draw [connection, brown!70!black, dashed] (EFFDELTAVARPIRMFIT) -- (UDELTAVARPIRMFIT);
 
 
 		% ∂\varpi_{\rm geo}/∂\varpi_{\rm orb}
-		\node [deriv_node] at ($(VARPIRMGROOT)+(-1.99cm,5.91cm)$) (DVARPIRMORB) {$\frac{\partial \varpi_{\rm geo}}{\partial \varpi_{\rm orb}}$};
+		\node [deriv_node] at ($(VARPIRMGROOT)+(-2.34cm,7.58cm)$) (DVARPIRMORB) {$\frac{\partial \varpi_{\rm geo}}{\partial \varpi_{\rm orb}}$};
 		\draw [connection, violet] (MVARPIRMGEO) -- (DVARPIRMORB);
 
 		% sub-model: \varpi_{\rm orb}
-		\node [model_block] at ($(VARPIRMGROOT)+(0.79cm,6.88cm)$) (MVARPIRMORB) {$\varpi_{\rm orb} = h(\Delta\varpi_{\rm orb}, \gamma_h)$};
+		\node [model_block] at ($(VARPIRMGROOT)+(0.45cm,8.55cm)$) (MVARPIRMORB) {$\varpi_{\rm orb} = h(\Delta\varpi_{\rm orb}, \gamma_h)$};
 		\draw [connection, violet] (DVARPIRMORB) -- (MVARPIRMORB);
 		% ∂\varpi_{\rm orb}/∂\Delta\varpi_{\rm orb}
-		\node [deriv_node] at ($(VARPIRMGROOT)+(2.67cm,8.87cm)$) (DDELTAVARPIRMORB) {$\frac{\partial \varpi_{\rm orb}}{\partial \Delta\varpi_{\rm orb}}$};
+		\node [deriv_node] at ($(VARPIRMGROOT)+(2.48cm,10.56cm)$) (DDELTAVARPIRMORB) {$\frac{\partial \varpi_{\rm orb}}{\partial \Delta\varpi_{\rm orb}}$};
 		\draw [connection, violet] (MVARPIRMORB) -- (DDELTAVARPIRMORB);
-		\node [leaf_node, draw=violet, text=violet] at ($(VARPIRMGROOT)+(3.98cm,10.26cm)$) (UDELTAVARPIRMORB) {$u(\Delta\varpi_{\rm orb})$};
+		\node [leaf_node, draw=violet, text=violet] at ($(VARPIRMGROOT)+(3.81cm,11.98cm)$) (UDELTAVARPIRMORB) {$u(\Delta\varpi_{\rm orb})$};
 		\draw [connection, violet] (DDELTAVARPIRMORB) -- (UDELTAVARPIRMORB);
-		\node [effect_node, violet] at ($(VARPIRMGROOT)+(5.23cm,11.59cm)$) (EFFDELTAVARPIRMORB) {Random noise \\ Fitting uncertainty};
+		\node [effect_node, violet] at ($(VARPIRMGROOT)+(5.10cm,13.35cm)$) (EFFDELTAVARPIRMORB) {Random noise \\ Fitting uncertainty};
 		\draw [connection, violet, dashed] (EFFDELTAVARPIRMORB) -- (UDELTAVARPIRMORB);
 
 		% ∂\varpi_{\rm orb}/∂\gamma_h
-		\node [deriv_node] at ($(VARPIRMGROOT)+(3.64cm,6.46cm)$) (DGAMMAH) {$\frac{\partial \varpi_{\rm orb}}{\partial \gamma_h}$};
+		\node [deriv_node] at ($(VARPIRMGROOT)+(3.29cm,8.14cm)$) (DGAMMAH) {$\frac{\partial \varpi_{\rm orb}}{\partial \gamma_h}$};
 		\draw [connection, violet] (MVARPIRMORB) -- (DGAMMAH);
-		\node [leaf_node, draw=violet, text=violet] at ($(VARPIRMGROOT)+(5.53cm,6.19cm)$) (UGAMMAH) {$u(\gamma_h)$};
+		\node [leaf_node, draw=violet, text=violet] at ($(VARPIRMGROOT)+(5.18cm,7.86cm)$) (UGAMMAH) {$u(\gamma_h)$};
 		\draw [connection, violet] (DGAMMAH) -- (UGAMMAH);
-		\node [effect_node, violet] at ($(VARPIRMGROOT)+(7.20cm,5.95cm)$) (EFFGAMMAH) {Random noise \\ Fitting uncertainty};
+		\node [effect_node, violet] at ($(VARPIRMGROOT)+(6.85cm,7.62cm)$) (EFFGAMMAH) {Random noise \\ Fitting uncertainty};
 		\draw [connection, violet, dashed] (EFFGAMMAH) -- (UGAMMAH);
 
 
