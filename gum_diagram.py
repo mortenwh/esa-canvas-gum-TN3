@@ -49,6 +49,13 @@ The tool writes a self-contained LaTeX figure environment to <label>.tex
 
        \\ref{fig:<label>}   or   \\autoref{fig:<label>}
 
+     If a sub-model was traced in a separate figure, a corresponding
+     ``<sub_label>.tex`` file is also written.  Include all generated
+     files the same way::
+
+       \\input{<label>.tex}
+       \\input{<sub_label>.tex}
+
   4. (Optional) To keep all figures together in the appendix, use::
 
        \\usepackage{float}
@@ -120,6 +127,8 @@ class InputVar:
     color: str
     submodel: Optional["MeasurementModel"] = None
     effects: List[str] = field(default_factory=list)
+    separate_figure: bool = False   # sub-model traced in a separate figure
+    separate_label: str = ""        # label for that figure (without 'fig:' prefix)
 
 
 @dataclass
@@ -736,9 +745,20 @@ def collect_model(
         ivar = InputVar(latex_name=latex, sym=sym, color=color)
 
         if _ask_yn(f"{ind}    Does {label} have a sub-model?"):
-            ivar.submodel = collect_model(
-                latex, dict(symtable), list(color_pool), depth + 1
-            )
+            if _ask_yn(f"{ind}    Trace {label} in a separate figure?"):
+                ivar.submodel = collect_model(
+                    latex, dict(symtable), list(color_pool), depth + 1
+                )
+                default_sep_label = f"utd_{_latex_to_sym_name(latex).lower()}"
+                ivar.separate_figure = True
+                ivar.separate_label = _ask(
+                    f"{ind}    Separate figure label (without 'fig:')",
+                    default_sep_label,
+                )
+            else:
+                ivar.submodel = collect_model(
+                    latex, dict(symtable), list(color_pool), depth + 1
+                )
         else:
             raw = _ask(
                 f"{ind}    Uncertainty sources (comma-separated, or blank)", ""
@@ -951,14 +971,39 @@ class _Emitter:
             y_model = y_deriv + _V_M0 * sin_o
             self.t.blank()
             self.t.comment(f"sub-model: {ivar.submodel.latex_name}")
-            self.t.abs_math_node(
-                m_id, "model_block",
-                rf"{ivar.submodel.latex_name} = {ivar.submodel.latex_expr}",
-                ref=root_id, dx=x_model, dy=y_model,
-            )
-            self.t.edge(d_id, m_id, f"connection, {color}")
-            self._emit_inputs(ivar.submodel, m_id, x_model, y_model,
-                              root_id, _V_D1, out_angle)
+            if ivar.separate_figure:
+                # Show model equation but don't expand further; add a cross-ref.
+                ref_note = (rf"{ivar.submodel.latex_name} = {ivar.submodel.latex_expr}"
+                            rf"\\ \footnotesize(see Fig.~\ref{{fig:{ivar.separate_label}}})")
+                self.t.abs_math_node(
+                    m_id, "model_block",
+                    ref_note,
+                    ref=root_id, dx=x_model, dy=y_model,
+                )
+                self.t.edge(d_id, m_id, f"connection, {color}")
+                # Treat as leaf: show u(x) node and effects
+                leaf_id = self._uid(f"U{_tikz_id(ivar.latex_name)}")
+                x_leaf = x_model + _V_LEAF * cos_o
+                y_leaf = y_model + _V_LEAF * sin_o
+                self.t.abs_math_node(
+                    leaf_id, "leaf_node", rf"u({ivar.latex_name})",
+                    ref=root_id, dx=x_leaf, dy=y_leaf,
+                    extra=f"draw={color}, text={color}",
+                )
+                self.t.edge(m_id, leaf_id, f"connection, {color}")
+                self._emit_effects(ivar, leaf_id,
+                                   root_id=root_id,
+                                   dx=x_leaf, dy=y_leaf,
+                                   out_angle=out_angle)
+            else:
+                self.t.abs_math_node(
+                    m_id, "model_block",
+                    rf"{ivar.submodel.latex_name} = {ivar.submodel.latex_expr}",
+                    ref=root_id, dx=x_model, dy=y_model,
+                )
+                self.t.edge(d_id, m_id, f"connection, {color}")
+                self._emit_inputs(ivar.submodel, m_id, x_model, y_model,
+                                  root_id, _V_D1, out_angle)
         else:
             leaf_id = self._uid(f"U{_tikz_id(ivar.latex_name)}")
             x_leaf = x_deriv + _V_LEAF * cos_o
@@ -1020,6 +1065,27 @@ class _Emitter:
                              ref=root_id, dx=x_eff, dy=y_eff,
                              extra=ivar.color)
         self.t.edge(eff_id, leaf_id, f"connection, {ivar.color}, dashed")
+
+
+def collect_separate_figures(
+    model: MeasurementModel,
+) -> List[tuple]:  # list of (InputVar, MeasurementModel) pairs
+    """Recursively collect all sub-models marked for separate figures.
+
+    Returns a flat list of ``(ivar, submodel)`` pairs in depth-first order,
+    where *ivar.separate_figure* is True.  The caller can then call
+    :func:`build_tikz` for each sub-model using ``ivar.separate_label``.
+    """
+    result = []
+    for ivar in model.inputs:
+        if ivar.submodel is not None:
+            if ivar.separate_figure:
+                result.append((ivar, ivar.submodel))
+                # Also recurse into the separate sub-model itself
+                result.extend(collect_separate_figures(ivar.submodel))
+            else:
+                result.extend(collect_separate_figures(ivar.submodel))
+    return result
 
 
 def build_tikz(root: MeasurementModel, label: str = "",
@@ -1314,6 +1380,30 @@ def main() -> None:
             _open_image(png_path)
         else:
             print("failed (use --no-preview to skip)")
+
+    # ── Separate sub-model figures ────────────────────────────────────────────
+    for ivar, sub in collect_separate_figures(model):
+        sub_label = ivar.separate_label
+        default_cap = rf"Uncertainty Tree Diagram for ${sub.latex_name}$."
+        sub_caption = _ask(
+            f"\n  Caption for separate figure '{sub_label}'", default_cap
+        ) if not args.example else default_cap
+        sub_tikz = build_tikz(sub, label=sub_label, caption=sub_caption)
+        sub_path = _label_to_filename(sub_label)
+        with open(sub_path, "w") as fh:
+            fh.write(sub_tikz + "\n")
+        print(f"\n✓  Separate figure written to  {sub_path}")
+        print(f"   Include in LaTeX with:  \\input{{{sub_path}}}")
+        print(f"   Reference with:         \\ref{{fig:{sub_label}}}")
+        if not args.no_preview:
+            sub_png = sub_path.replace(".tex", ".png")
+            print(f"\n   Rendering PNG preview … ", end="", flush=True)
+            ok = render_png(sub_path, sub_png, dpi=args.dpi)
+            if ok:
+                print(f"saved to  {sub_png}")
+                _open_image(sub_png)
+            else:
+                print("failed (use --no-preview to skip)")
 
 
 if __name__ == "__main__":

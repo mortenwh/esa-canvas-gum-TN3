@@ -426,5 +426,63 @@ class TestFileOutput(unittest.TestCase):
             self.assertIn(rf"\label{{fig:{label}}}", content)
 
 
+
+
+# ── collect_separate_figures ─────────────────────────────────────────────────
+
+def _separate_model() -> gd.MeasurementModel:
+    """z = p * q  where p has a sub-model marked separate_figure=True."""
+    sub_expr, _ = gd._parse_latex_expr(r"\frac{u}{v}", {})
+    syms_sub = {str(s): s for s in sub_expr.free_symbols}
+    p_model = gd.MeasurementModel(
+        latex_name="p", latex_expr=r"\frac{u}{v}", expr=sub_expr,
+        inputs=[
+            gd.InputVar("u", syms_sub["u"], "red"),
+            gd.InputVar("v", syms_sub["v"], "purple"),
+        ],
+    )
+    root_expr, _ = gd._parse_latex_expr(r"p \cdot q", {})
+    syms = {str(s): s for s in root_expr.free_symbols}
+    p_iv = gd.InputVar("p", syms["p"], "red", submodel=p_model,
+                       separate_figure=True, separate_label="utd_p")
+    q_iv = gd.InputVar("q", syms["q"], "blue!70!black")
+    return gd.MeasurementModel(
+        latex_name="z", latex_expr=r"p \cdot q",
+        expr=root_expr, inputs=[p_iv, q_iv],
+    )
+
+
+class TestCollectSeparateFigures(unittest.TestCase):
+
+    def test_no_separate_returns_empty(self):
+        self.assertEqual(gd.collect_separate_figures(_nested_model()), [])
+
+    def test_finds_one_separate(self):
+        model = _separate_model()
+        result = gd.collect_separate_figures(model)
+        self.assertEqual(len(result), 1)
+        ivar, sub = result[0]
+        self.assertEqual(ivar.separate_label, "utd_p")
+        self.assertEqual(sub.latex_name, "p")
+
+    def test_separate_figure_not_expanded_in_parent(self):
+        """The parent figure should contain a cross-reference, not u/v nodes."""
+        model = _separate_model()
+        out = gd.build_tikz(model, label="utd_z")
+        self.assertIn(r"see Fig.~\ref{fig:utd_p}", out)
+        # u and v nodes must NOT appear in the parent figure
+        self.assertNotIn(r"u(u)", out)
+        self.assertNotIn(r"u(v)", out)
+
+    def test_separate_figure_contains_full_trace(self):
+        """The sub-model figure should expand u and v."""
+        model = _separate_model()
+        _, sub = gd.collect_separate_figures(model)[0]
+        out = gd.build_tikz(sub, label="utd_p")
+        self.assertIn(r"\label{fig:utd_p}", out)
+        self.assertIn("u(u)", out)
+        self.assertIn("u(v)", out)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
