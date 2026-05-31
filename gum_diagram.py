@@ -943,9 +943,14 @@ def build_tikz(root: MeasurementModel, label: str = "") -> str:
     if not label:
         label = f"utd_{_tikz_id(root.latex_name).lower()}"
     t = _TikZ()
-    t.raw(r"\begin{figure}[H]")
+    # Requires in the including document:
+    #   \usepackage{tikz}
+    #   \usetikzlibrary{positioning,calc}
+    #   \usepackage{amsmath,amssymb,xcolor,float,adjustbox}
+    t.raw(r"\begin{figure}[p]")
     t.raw(r"  \centering")
-    t.raw(r"  \resizebox{\textwidth}{!}{%")
+    t.raw(r"  % Scale to fit page: preserves aspect ratio within textwidth × 0.88 textheight")
+    t.raw(r"  \begin{adjustbox}{max width=\textwidth, max totalheight=.88\textheight, keepaspectratio}")
     t.raw(r"  \begin{tikzpicture}[")
     t.raw(r"    connection/.style={draw, thick},")
     t.raw(r"    root_block/.style={draw, rectangle, inner sep=10pt,"
@@ -964,8 +969,8 @@ def build_tikz(root: MeasurementModel, label: str = "") -> str:
     emitter = _Emitter(t)
     emitter.emit_root(root, root_id)
 
-    t.raw(r"  \end{tikzpicture}%")
-    t.raw(r"  }")
+    t.raw(r"  \end{tikzpicture}")
+    t.raw(r"  \end{adjustbox}")
     t.raw(rf"  \caption{{Uncertainty Tree Diagram for ${root.latex_name}$.}}")
     t.raw(rf"  \label{{fig:{label}}}")
     t.raw(r"\end{figure}")
@@ -1036,6 +1041,7 @@ _LATEX_WRAPPER = r"""
 \usepackage{{amsmath, amssymb}}
 \usepackage{{xcolor}}
 \usepackage{{float}}
+\usepackage{{adjustbox}}
 \begin{{document}}
 {body}
 \end{{document}}
@@ -1073,6 +1079,11 @@ def render_png(tex_path: str, png_path: str, dpi: int = 150) -> bool:
     body_inner = re.sub(r"\s*\\caption\{[^}]*\}\n?", "", body_inner)
     body_inner = re.sub(r"\s*\\label\{[^}]*\}\n?", "", body_inner)
     body_inner = re.sub(r"\\centering\n?", "", body_inner)
+    # Strip adjustbox wrapper — standalone auto-sizes; adjustbox is a no-op there
+    body_inner = re.sub(r"\\begin\{adjustbox\}[^\n]*\n?", "", body_inner)
+    body_inner = re.sub(r"\\end\{adjustbox\}\n?", "", body_inner)
+    # Strip comment lines added by build_tikz
+    body_inner = re.sub(r"\s*%[^\n]*\n", "\n", body_inner)
 
     wrapper = _LATEX_WRAPPER.format(body=body_inner.strip())
 
