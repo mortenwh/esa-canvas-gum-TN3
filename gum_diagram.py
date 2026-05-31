@@ -49,13 +49,9 @@ The tool writes a self-contained LaTeX figure environment to <label>.tex
 
        \\ref{fig:<label>}   or   \\autoref{fig:<label>}
 
-     If a sub-model was traced in a separate figure, a corresponding
-     ``<sub_label>.tex`` file is also written.  Include all generated
-     files the same way::
-
-       \\input{<label>.tex}
-       \\input{<sub_label>.tex}
-
+     Sub-models marked as separate figures appear in the parent as a
+     model-equation block with a cross-reference note.  Run the tool
+     again to generate each sub-model figure separately.
   4. (Optional) To keep all figures together in the appendix, use::
 
        \\usepackage{float}
@@ -128,8 +124,7 @@ class InputVar:
     submodel: Optional["MeasurementModel"] = None
     effects: List[str] = field(default_factory=list)
     separate_figure: bool = False   # sub-model traced in a separate figure
-    separate_label: str = ""        # label for that figure (without 'fig:' prefix)
-    separate_caption: str = ""      # caption for that figure
+    separate_label: str = ""        # \ref label for the cross-reference (without 'fig:')
 
 
 @dataclass
@@ -784,11 +779,6 @@ def collect_model(
                     ivar.separate_label = _ask(
                         f"{ind}    Separate figure label (without 'fig:')",
                         default_sep_label,
-                    )
-                    default_sep_cap = rf"Uncertainty Tree Diagram for ${latex}$."
-                    ivar.separate_caption = _ask(
-                        f"{ind}    Separate figure caption",
-                        default_sep_cap,
                     )
                 else:
                     ivar.submodel = collect_model(
@@ -1445,27 +1435,6 @@ def main() -> None:
             _open_image(png_path)
         else:
             print("failed (use --no-preview to skip)")
-
-    # ── Separate sub-model figures ────────────────────────────────────────────
-    for ivar, sub in collect_separate_figures(model):
-        sub_label = ivar.separate_label
-        sub_caption = ivar.separate_caption  # already collected at declaration time
-        sub_tikz = build_tikz(sub, label=sub_label, caption=sub_caption)
-        sub_path = _label_to_filename(sub_label)
-        with open(sub_path, "w") as fh:
-            fh.write(sub_tikz + "\n")
-        print(f"\n✓  Separate figure written to  {sub_path}")
-        print(f"   Include in LaTeX with:  \\input{{{sub_path}}}")
-        print(f"   Reference with:         \\ref{{fig:{sub_label}}}")
-        if not args.no_preview:
-            sub_png = sub_path.replace(".tex", ".png")
-            print(f"\n   Rendering PNG preview … ", end="", flush=True)
-            ok = render_png(sub_path, sub_png, dpi=args.dpi)
-            if ok:
-                print(f"saved to  {sub_png}")
-                _open_image(sub_png)
-            else:
-                print("failed (use --no-preview to skip)")
 
 
 if __name__ == "__main__":
