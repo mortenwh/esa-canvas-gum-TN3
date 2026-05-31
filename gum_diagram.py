@@ -84,7 +84,7 @@ import re
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import sympy as sp
 from sympy import latex as sp_latex
@@ -624,8 +624,26 @@ def _parse_latex_expr(
     models refers to the same sympy Symbol.
     """
     sym_str = _latex_to_sympy_str(latex_rhs)
+
+    # Build sympify locals: start from symtable, then override sympy's
+    # built-in single-letter constants (I=ImaginaryUnit, E=Euler's number,
+    # S=singleton, N=numerical evaluator, C=category, O=Order, Q=assumptions)
+    # with plain Symbol objects (or UndefinedFunction when called as f(…))
+    # so that user variables like I(…) or E don't clash.
+    _RESERVED = {"I", "E", "S", "N", "C", "O", "Q"}
+    sym_locals: Dict[str, Any] = dict(symtable)
+    for name in _RESERVED:
+        if name in sym_locals:
+            continue
+        # Check whether the name appears as a function call (name followed by ()
+        if re.search(rf"(?<![A-Za-z_]){re.escape(name)}\s*\(", sym_str):
+            sym_locals[name] = sp.Function(name)
+        elif re.search(rf"(?<![A-Za-z_]){re.escape(name)}(?![A-Za-z_0-9(])",
+                       sym_str):
+            sym_locals[name] = sp.Symbol(name)
+
     try:
-        parsed = sp.sympify(sym_str)
+        parsed = sp.sympify(sym_str, locals=sym_locals)
     except Exception as exc:
         raise ValueError(
             f"Could not parse LaTeX expression.\n"
