@@ -496,10 +496,29 @@ class TestAutoLayout(unittest.TestCase):
                                           apply_min_sector=False)
         all_recs = []
         for ivar, (angle, sector_rad) in zip(model.inputs, root_sectors):
-            d = gd._radial_step(sector_rad)
-            x_d = d * math.cos(angle)
-            y_d = d * math.sin(angle)
+            # Use _V_D0 to match what _auto_layout uses for root-level arm
+            x_d = gd._V_D0 * math.cos(angle)
+            y_d = gd._V_D0 * math.sin(angle)
             all_recs.extend(gd._simulate_branch(model, ivar, x_d, y_d, angle, sector_rad))
+        TOL = 0.05
+        for i, ri in enumerate(all_recs):
+            for rj in all_recs[i + 1:]:
+                if ri.ivar is rj.ivar:
+                    continue
+                ov = gd._aabb_overlap(gd._aabb(ri), gd._aabb(rj))
+                if ov is not None:
+                    self.assertLessEqual(
+                        ov[0], TOL,
+                        f"X-overlap {ov[0]:.3f} > {TOL} between "
+                        f"{ri.ivar.latex_name}({ri.ntype}) and "
+                        f"{rj.ivar.latex_name}({rj.ntype})",
+                    )
+                    self.assertLessEqual(
+                        ov[1], TOL,
+                        f"Y-overlap {ov[1]:.3f} > {TOL} between "
+                        f"{ri.ivar.latex_name}({ri.ntype}) and "
+                        f"{rj.ivar.latex_name}({rj.ntype})",
+                    )
         TOL = 0.05
         for i, ri in enumerate(all_recs):
             for rj in all_recs[i + 1:]:

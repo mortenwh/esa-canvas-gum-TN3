@@ -844,21 +844,21 @@ def _tikz_id(s: str) -> str:
 
 # Layout constants (all in cm)
 _H_LEAF  = 1.2   # horizontal space allocated per leaf node (level 0)
-_V_D0    = 1.8   # root → root-level deriv_node (fixed; no _radial_step at root)
-_V_M0    = 1.1   # deriv_node → sub-model block (starting value; angle-adaptive floor)
-_V_D1    = 1.3   # sub-model block → nested deriv_node (floor; overridden by _radial_step)
-_V_LEAF  = 1.0   # any deriv_node → leaf_node
-_V_EFF   = 0.9   # leaf_node → effect_node
+_V_D0    = 1.5   # root → root-level deriv_node (fixed; no _radial_step at root)
+_V_M0    = 0.0   # legacy (step now fully computed by _v_m0_for_angle)
+_V_D1    = 0.0   # legacy (step now fully computed by _v_child_for_angle/_radial_step)
+_V_LEAF  = 0.0   # legacy
+_V_EFF   = 0.0   # legacy
 _DEPTH_SCALE = 1.00  # multiply V distances by this factor per depth level (1.0 = no shrinkage)
-_H_LEAF_MIN  = 0.8   # minimum horizontal spacing (cm) to prevent box overlap
-# V_M0 is computed adaptively via _v_m0_for_angle(); the values below are fallbacks
-_V_M0_MIN   = 0.8   # absolute floor for deriv→model (angle formula overrides this)
-_V_D1_MIN   = 1.3   # minimum model→child-deriv step
-_V_LEAF_MIN = 1.0   # minimum deriv→leaf distance
+_H_LEAF_MIN  = 0.0   # minimum horizontal spacing (all enforced by _v_between now)
+# All step floors are 0 — _v_between with content-aware bbox handles everything.
+_V_M0_MIN   = 0.0
+_V_D1_MIN   = 0.0
+_V_LEAF_MIN = 0.0
 
 # Sector / radial-step parameters
 _MIN_SECTOR_DEG = 55.0   # minimum angular sector (degrees) per child branch
-_NODE_WIDTH_CM  = 1.3    # deriv node full width used in the chord formula
+_NODE_WIDTH_CM  = 0.9    # deriv node full width estimate in the chord formula
 
 # Center angle for the root-level sector distribution (radians).
 # π (leftward) gives a portrait-friendly layout for ϖ_g: the large ϖ_p
@@ -920,12 +920,12 @@ def _radial_step(sector_rad: float) -> float:
     half = min(sector_rad / 2.0, math.pi / 2.0)
     if half <= 1e-9:
         return 12.0
-    return max(_NODE_WIDTH_CM / (2.0 * math.sin(half)), _V_D1_MIN)
+    return max(_NODE_WIDTH_CM / (2.0 * math.sin(half)), 0.0)
 
 
 def _v_between(src_hw: float, src_hh: float,
                dst_hw: float, dst_hh: float,
-               angle: float, gap: float = 0.15,
+               angle: float, gap: float = 0.08,
                floor: float = 0.0) -> float:
     """Minimum centre-to-centre step between two nodes in direction *angle*.
 
@@ -944,7 +944,7 @@ def _v_m0_for_angle(out_angle: float,
     """Minimum step from a deriv node to its sub-model node."""
     _dhw, _dhh = _BBOX_HALF["deriv"] if dhw is None else (dhw, dhh)
     _mhw, _mhh = _BBOX_HALF["model"] if mhw is None else (mhw, mhh)
-    return _v_between(_dhw, _dhh, _mhw, _mhh, out_angle, gap=0.15, floor=_V_M0_MIN)
+    return _v_between(_dhw, _dhh, _mhw, _mhh, out_angle, gap=0.08, floor=0.0)
 
 
 def _v_child_for_angle(child_angle: float,
@@ -953,7 +953,7 @@ def _v_child_for_angle(child_angle: float,
     """Minimum step from a sub-model node to its child deriv node."""
     _mhw, _mhh = _BBOX_HALF["model"] if mhw is None else (mhw, mhh)
     _dhw, _dhh = _BBOX_HALF["deriv"] if dhw is None else (dhw, dhh)
-    return _v_between(_mhw, _mhh, _dhw, _dhh, child_angle, gap=0.15, floor=_V_D1_MIN)
+    return _v_between(_mhw, _mhh, _dhw, _dhh, child_angle, gap=0.08, floor=0.0)
 
 
 def _v_eff_for_angle(out_angle: float,
@@ -962,7 +962,7 @@ def _v_eff_for_angle(out_angle: float,
     """Minimum step from a leaf node to its effect annotation."""
     _lhw, _lhh = _BBOX_HALF["leaf"] if lhw is None else (lhw, lhh)
     _ehw, _ehh = _BBOX_HALF["effect"] if ehw is None else (ehw, ehh)
-    return _v_between(_lhw, _lhh, _ehw, _ehh, out_angle, gap=0.15, floor=_V_EFF)
+    return _v_between(_lhw, _lhh, _ehw, _ehh, out_angle, gap=0.08, floor=0.0)
 
 
 def _v_leaf_for_angle(out_angle: float,
@@ -971,7 +971,7 @@ def _v_leaf_for_angle(out_angle: float,
     """Minimum step from a deriv node to its leaf node."""
     _dhw, _dhh = _BBOX_HALF["deriv"] if dhw is None else (dhw, dhh)
     _lhw, _lhh = _BBOX_HALF["leaf"] if lhw is None else (lhw, lhh)
-    return _v_between(_dhw, _dhh, _lhw, _lhh, out_angle, gap=0.15, floor=_V_LEAF_MIN)
+    return _v_between(_dhw, _dhh, _lhw, _lhh, out_angle, gap=0.08, floor=0.0)
 
 
 def _aniso_factor(angle: float) -> float:
@@ -1162,35 +1162,34 @@ def _estimate_node_bbox(ntype: str, content_latex: str) -> Tuple[float, float]:
     """
     uni = _latex_to_unicode(content_latex)
     if ntype == "leaf":
-        # Single math line, \footnotesize, auto-width; ~0.13 cm/char + inner_sep
+        # Single math line, \footnotesize; ~0.08 cm/char (subscripts in unicode
+        # inflate char count so factor is conservative) + inner_sep padding
         nchars = max(len(uni), 1)
-        hw = max(nchars * 0.13 + 0.21, 0.45)
-        hh = 0.35
+        hw = max(nchars * 0.08 + 0.14, 0.35)
+        hh = 0.30
         return (hw, hh)
     if ntype == "deriv":
-        # Stacked fraction; use total char count as proxy for max numerator/denom width
+        # Stacked fraction; char count is roughly numerator + "/" + denominator
         nchars = max(len(uni), 1)
-        hw = max(nchars * 0.10 + 0.30, 0.70)
-        hh = 0.55   # typical stacked-fraction height at \footnotesize
+        hw = max(nchars * 0.06 + 0.20, 0.50)
+        hh = 0.45   # typical stacked-fraction height at \footnotesize
         return (hw, hh)
     if ntype == "model":
-        # Single math line (equation), \footnotesize\bfseries, no text width
+        # Single math line, \footnotesize\bfseries; similar factor to deriv
         nchars = max(len(uni), 1)
-        hw = max(nchars * 0.10 + 0.30, 0.80)
-        hh = 0.40   # single footnotesize bfseries line
+        hw = max(nchars * 0.06 + 0.20, 0.60)
+        hh = 0.35
         return (hw, hh)
     if ntype == "effect":
-        # Multi-line plain text; lines separated by \\ in the content string
-        # Split on \\ (with or without surrounding spaces)
+        # Multi-line plain text (\footnotesize\itshape), lines separated by \\
         lines = [l.strip() for l in uni.split("\\\\") if l.strip()]
         if not lines:
-            lines = [uni]
-        # Unicode approximation per line (strip any remaining LaTeX)
+            lines = [uni] if uni.strip() else ["?"]
         uni_lines = [_latex_to_unicode(l) for l in lines]
         max_chars = max(max(len(l) for l in uni_lines), 1)
         n_lines = len(uni_lines)
-        hw = max(max_chars * 0.10 + 0.20, 0.50)
-        hh = n_lines * 0.30 + 0.10   # ~0.30 cm per footnotesize line + padding
+        hw = max(max_chars * 0.06 + 0.12, 0.35)
+        hh = n_lines * 0.22 + 0.08
         return (hw, hh)
     return _BBOX_HALF.get(ntype, (0.80, 0.40))
 
@@ -1324,9 +1323,9 @@ def _auto_layout(model: "MeasurementModel", max_iterations: int = 200,
 
     Returns the number of iterations performed.  Modifies *model* in-place.
     """
-    GAP  = 0.25   # minimum clearance gap added on top of each resolved overlap (cm)
+    GAP  = 0.20   # minimum clearance gap added on top of each resolved overlap (cm)
     DAMP = 0.50   # initial damping factor
-    CONVERGE = 0.02  # stop when total push magnitude falls below this (cm)
+    CONVERGE = 0.005  # stop when total push magnitude falls below this (cm)
 
     arc_rad = _root_sector_rad(model.inputs)
     root_sectors = _sector_angles(model.inputs, root_center_angle, arc_rad,
