@@ -6,74 +6,74 @@
     connection/.style={draw, thick},
     root_block/.style={draw=blue!60!black, very thick, rectangle, fill=blue!8, inner sep=8pt, font=\normalsize\bfseries, align=center},
     model_block/.style={draw, rectangle, inner sep=4pt, font=\footnotesize\bfseries, align=center, text width=2.8cm},
-    deriv_node/.style={draw, rectangle, rounded corners=3pt, inner sep=3pt, font=\footnotesize, align=center, text width=1.8cm},
-    leaf_node/.style={draw, rectangle, inner sep=3pt, font=\footnotesize, align=center, text width=0.9cm},
+    deriv_node/.style={draw, rectangle, rounded corners=3pt, inner sep=4pt, font=\footnotesize, align=center},
+    leaf_node/.style={draw, rectangle, inner sep=4pt, font=\footnotesize, align=center},
     effect_node/.style={draw, dashed, font=\footnotesize\itshape, align=center, text width=1.5cm, inner sep=2pt}
     ]
 		% ROOT: \varpi_{\rm g}
 		\node [root_block] (VARPIRMGROOT) {$\varpi_{\rm g} = f(\varpi_{\rm dc}, \varpi_{\rm p}) + \Delta\varpi_{\rm g}$};
 
 		% ∂\varpi_{\rm g}/∂\Delta\varpi_{\rm g}
-		\node [deriv_node] at ($(VARPIRMGROOT)+(0.38cm,-1.48cm)$) (DDELTAVARPIRMG) {$\frac{\partial \varpi_{\rm g}}{\partial \Delta\varpi_{\rm g}}$};
+		\node [deriv_node] at ($(VARPIRMGROOT)+(-0.36cm,-2.07cm)$) (DDELTAVARPIRMG) {$\frac{\partial \varpi_{\rm g}}{\partial \Delta\varpi_{\rm g}}$};
 		\draw [connection, red] (VARPIRMGROOT) -- (DDELTAVARPIRMG);
-		\node [leaf_node, draw=red, text=red] at ($(VARPIRMGROOT)+(-0.16cm,-3.48cm)$) (UDELTAVARPIRMG) {$u(\Delta\varpi_{\rm g})$};
+		\node [leaf_node, draw=red, text=red] at ($(VARPIRMGROOT)+(-0.93cm,-4.20cm)$) (UDELTAVARPIRMG) {$u(\Delta\varpi_{\rm g})$};
 		\draw [connection, red] (DDELTAVARPIRMG) -- (UDELTAVARPIRMG);
-		\node [effect_node, red] at ($(VARPIRMGROOT)+(-0.71cm,-5.53cm)$) (EFFDELTAVARPIRMG) {Unknown errors \\ Random noise};
+		\node [effect_node, red] at ($(VARPIRMGROOT)+(-1.45cm,-6.13cm)$) (EFFDELTAVARPIRMG) {Unknown errors \\ Random noise};
 		\draw [connection, red, dashed] (EFFDELTAVARPIRMG) -- (UDELTAVARPIRMG);
 
 		% ∂\varpi_{\rm g}/∂\varpi_{\rm dc}
-		\node [deriv_node] at ($(VARPIRMGROOT)+(-1.63cm,-0.70cm)$) (DVARPIRMDC) {$\frac{\partial \varpi_{\rm g}}{\partial \varpi_{\rm dc}}$};
+		\node [deriv_node] at ($(VARPIRMGROOT)+(-1.38cm,-0.94cm)$) (DVARPIRMDC) {$\frac{\partial \varpi_{\rm g}}{\partial \varpi_{\rm dc}}$};
 		\draw [connection, blue!70!black] (VARPIRMGROOT) -- (DVARPIRMDC);
 
 		% sub-model: \varpi_{\rm dc}
-		\node [model_block] at ($(VARPIRMGROOT)+(-3.59cm,-2.66cm)$) (MVARPIRMDC) {$\varpi_{\rm dc} = g(P, \varpi, \mathbf{t}) + \Delta\varpi_{\rm dc}$\\ \footnotesize(see Fig.~\ref{fig:dc_uncertainty_trace})};
+		\node [model_block] at ($(VARPIRMGROOT)+(-3.55cm,-3.11cm)$) (MVARPIRMDC) {$\varpi_{\rm dc} = g(P, \varpi, \mathbf{t}) + \Delta\varpi_{\rm dc}$\\ \footnotesize(see Fig.~\ref{fig:dc_uncertainty_trace})};
 		\draw [connection, blue!70!black] (DVARPIRMDC) -- (MVARPIRMDC);
 
 		% ∂\varpi_{\rm g}/∂\varpi_{\rm p}
-		\node [deriv_node] at ($(VARPIRMGROOT)+(-1.13cm,0.65cm)$) (DVARPIRMP) {$\frac{\partial \varpi_{\rm g}}{\partial \varpi_{\rm p}}$};
+		\node [deriv_node] at ($(VARPIRMGROOT)+(-1.56cm,0.90cm)$) (DVARPIRMP) {$\frac{\partial \varpi_{\rm g}}{\partial \varpi_{\rm p}}$};
 		\draw [connection, purple] (VARPIRMGROOT) -- (DVARPIRMP);
 
 		% sub-model: \varpi_{\rm p}
-		\node [model_block] at ($(VARPIRMGROOT)+(-3.67cm,2.12cm)$) (MVARPIRMP) {$\varpi_{\rm p} = g(\varpi_{\rm geo}, \varpi_{\rm e}) + \Delta\varpi_{\rm p}$};
+		\node [model_block] at ($(VARPIRMGROOT)+(-4.38cm,2.53cm)$) (MVARPIRMP) {$\varpi_{\rm p} = g(\varpi_{\rm geo}, \varpi_{\rm e}) + \Delta\varpi_{\rm p}$};
 		\draw [connection, purple] (DVARPIRMP) -- (MVARPIRMP);
 		% ∂\varpi_{\rm p}/∂\Delta\varpi_{\rm p}
-		\node [deriv_node] at ($(VARPIRMGROOT)+(-6.35cm,0.87cm)$) (DDELTAVARPIRMP) {$\frac{\partial \varpi_{\rm p}}{\partial \Delta\varpi_{\rm p}}$};
+		\node [deriv_node] at ($(VARPIRMGROOT)+(-7.36cm,1.14cm)$) (DDELTAVARPIRMP) {$\frac{\partial \varpi_{\rm p}}{\partial \Delta\varpi_{\rm p}}$};
 		\draw [connection, cyan!80!black] (MVARPIRMP) -- (DDELTAVARPIRMP);
-		\node [leaf_node, draw=cyan!80!black, text=cyan!80!black] at ($(VARPIRMGROOT)+(-8.16cm,0.02cm)$) (UDELTAVARPIRMP) {$u(\Delta\varpi_{\rm p})$};
+		\node [leaf_node, draw=cyan!80!black, text=cyan!80!black] at ($(VARPIRMGROOT)+(-9.84cm,-0.01cm)$) (UDELTAVARPIRMP) {$u(\Delta\varpi_{\rm p})$};
 		\draw [connection, cyan!80!black] (DDELTAVARPIRMP) -- (UDELTAVARPIRMP);
-		\node [effect_node, cyan!80!black] at ($(VARPIRMGROOT)+(-9.83cm,-0.75cm)$) (EFFDELTAVARPIRMP) {Unknown errors \\ Random noise};
+		\node [effect_node, cyan!80!black] at ($(VARPIRMGROOT)+(-11.88cm,-0.96cm)$) (EFFDELTAVARPIRMP) {Unknown errors \\ Random noise};
 		\draw [connection, cyan!80!black, dashed] (EFFDELTAVARPIRMP) -- (UDELTAVARPIRMP);
 
 		% ∂\varpi_{\rm p}/∂\varpi_{\rm e}
-		\node [deriv_node] at ($(VARPIRMGROOT)+(-6.22cm,3.59cm)$) (DVARPIRME) {$\frac{\partial \varpi_{\rm p}}{\partial \varpi_{\rm e}}$};
+		\node [deriv_node] at ($(VARPIRMGROOT)+(-7.31cm,4.16cm)$) (DVARPIRME) {$\frac{\partial \varpi_{\rm p}}{\partial \varpi_{\rm e}}$};
 		\draw [connection, green!60!black] (MVARPIRMP) -- (DVARPIRME);
 
 		% sub-model: \varpi_{\rm e}
-		\node [model_block] at ($(VARPIRMGROOT)+(-8.76cm,5.06cm)$) (MVARPIRME) {$\varpi_{\rm e} = h(\theta_{\rm n}) + \Delta\varpi_{\rm e}$};
+		\node [model_block] at ($(VARPIRMGROOT)+(-10.14cm,5.79cm)$) (MVARPIRME) {$\varpi_{\rm e} = h(\theta_{\rm n}) + \Delta\varpi_{\rm e}$};
 		\draw [connection, green!60!black] (DVARPIRME) -- (MVARPIRME);
 		% ∂\varpi_{\rm e}/∂\Delta\varpi_{\rm e}
-		\node [deriv_node] at ($(VARPIRMGROOT)+(-11.55cm,5.18cm)$) (DDELTAVARPIRME) {$\frac{\partial \varpi_{\rm e}}{\partial \Delta\varpi_{\rm e}}$};
+		\node [deriv_node] at ($(VARPIRMGROOT)+(-13.24cm,5.93cm)$) (DDELTAVARPIRME) {$\frac{\partial \varpi_{\rm e}}{\partial \Delta\varpi_{\rm e}}$};
 		\draw [connection, orange!80!black] (MVARPIRME) -- (DDELTAVARPIRME);
-		\node [leaf_node, draw=orange!80!black, text=orange!80!black] at ($(VARPIRMGROOT)+(-13.40cm,5.26cm)$) (UDELTAVARPIRME) {$u(\Delta\varpi_{\rm e})$};
+		\node [leaf_node, draw=orange!80!black, text=orange!80!black] at ($(VARPIRMGROOT)+(-15.82cm,6.04cm)$) (UDELTAVARPIRME) {$u(\Delta\varpi_{\rm e})$};
 		\draw [connection, orange!80!black] (DDELTAVARPIRME) -- (UDELTAVARPIRME);
-		\node [effect_node, orange!80!black] at ($(VARPIRMGROOT)+(-15.01cm,5.33cm)$) (EFFDELTAVARPIRME) {Unknown errors \\ Random noise};
+		\node [effect_node, orange!80!black] at ($(VARPIRMGROOT)+(-17.86cm,6.13cm)$) (EFFDELTAVARPIRME) {Unknown errors \\ Random noise};
 		\draw [connection, orange!80!black, dashed] (EFFDELTAVARPIRME) -- (UDELTAVARPIRME);
 
 		% ∂\varpi_{\rm e}/∂\theta_{\rm n}
-		\node [deriv_node] at ($(VARPIRMGROOT)+(-10.35cm,7.55cm)$) (DTHETARMN) {$\frac{\partial \varpi_{\rm e}}{\partial \theta_{\rm n}}$};
+		\node [deriv_node] at ($(VARPIRMGROOT)+(-11.77cm,8.35cm)$) (DTHETARMN) {$\frac{\partial \varpi_{\rm e}}{\partial \theta_{\rm n}}$};
 		\draw [connection, magenta!70!black] (MVARPIRME) -- (DTHETARMN);
-		\node [leaf_node, draw=magenta!70!black, text=magenta!70!black] at ($(VARPIRMGROOT)+(-11.48cm,9.32cm)$) (UTHETARMN) {$u(\theta_{\rm n})$};
+		\node [leaf_node, draw=magenta!70!black, text=magenta!70!black] at ($(VARPIRMGROOT)+(-13.13cm,10.48cm)$) (UTHETARMN) {$u(\theta_{\rm n})$};
 		\draw [connection, magenta!70!black] (DTHETARMN) -- (UTHETARMN);
-		\node [effect_node, magenta!70!black] at ($(VARPIRMGROOT)+(-12.59cm,11.06cm)$) (EFFTHETARMN) {Pointing uncertainty};
+		\node [effect_node, magenta!70!black] at ($(VARPIRMGROOT)+(-14.31cm,12.34cm)$) (EFFTHETARMN) {Pointing uncertainty};
 		\draw [connection, magenta!70!black, dashed] (EFFTHETARMN) -- (UTHETARMN);
 
 
 		% ∂\varpi_{\rm p}/∂\varpi_{\rm geo}
-		\node [deriv_node] at ($(VARPIRMGROOT)+(-3.88cm,4.54cm)$) (DVARPIRMGEO) {$\frac{\partial \varpi_{\rm p}}{\partial \varpi_{\rm geo}}$};
+		\node [deriv_node] at ($(VARPIRMGROOT)+(-4.47cm,4.73cm)$) (DVARPIRMGEO) {$\frac{\partial \varpi_{\rm p}}{\partial \varpi_{\rm geo}}$};
 		\draw [connection, orange!80!black] (MVARPIRMP) -- (DVARPIRMGEO);
 
 		% sub-model: \varpi_{\rm geo}
-		\node [model_block] at ($(VARPIRMGROOT)+(-4.09cm,6.97cm)$) (MVARPIRMGEO) {$\varpi_{\rm geo} = I(\varpi_{\rm aux}, \varpi_{\rm fit}, \varpi_{\rm orb}) + \Delta\varpi_{\rm geo}$\\ \footnotesize(see Fig.~\ref{fig:utd_varpi_geo})};
+		\node [model_block] at ($(VARPIRMGROOT)+(-4.66cm,6.92cm)$) (MVARPIRMGEO) {$\varpi_{\rm geo} = I(\varpi_{\rm aux}, \varpi_{\rm fit}, \varpi_{\rm orb}) + \Delta\varpi_{\rm geo}$\\ \footnotesize(see Fig.~\ref{fig:utd_varpi_geo})};
 		\draw [connection, orange!80!black] (DVARPIRMGEO) -- (MVARPIRMGEO);
 
 
