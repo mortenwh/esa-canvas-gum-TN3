@@ -22,10 +22,11 @@ Layout rules (matching the document conventions):
 
 Usage
 -----
-    python gum_diagram.py                      # interactive session
-    python gum_diagram.py --example            # built-in H_s example
-    python gum_diagram.py --example -o fig.tex # write output to file
-    python gum_diagram.py --no-preview         # skip PNG preview
+    python gum_diagram.py                          # interactive session
+    python gum_diagram.py --example                # built-in H_s example
+    python gum_diagram.py --example -o fig.tex     # write output to file
+    python gum_diagram.py --no-preview             # skip PNG preview
+    python gum_diagram.py --from-tex existing.tex  # load & edit existing diagram
 
 Output
 ------
@@ -717,7 +718,8 @@ def collect_model(
     color_pool: List[str],
     depth: int = 0,
     shallow: bool = False,
-) -> MeasurementModel:
+    loaded_model: Optional["MeasurementModel"] = None,
+) -> "MeasurementModel":
     """Recursively collect a measurement model via interactive prompts.
 
     The user types the model equation as a LaTeX RHS.  The expression is
@@ -731,14 +733,20 @@ def collect_model(
         When True (used for separate-figure sub-models) only the equation
         is collected; no further questions are asked about each input.
         All inputs become plain leaves.
+    loaded_model:
+        Optional pre-loaded :class:`MeasurementModel` (e.g. from
+        :func:`parse_utd_tex`).  When present every interactive prompt is
+        pre-filled with the corresponding loaded value; the user may press
+        Enter to accept or type to override.
     """
     ind = "  " * depth
     print(f"\n{ind}── Model for  {latex_name}  ──")
     print(f"{ind}   Enter only the right-hand side in LaTeX.")
     print(rf"{ind}   Example:  \left(\frac{{\lambda_C - b}}{{b}}\right)^2")
 
+    default_rhs = loaded_model.latex_expr if loaded_model else ""
     while True:
-        latex_rhs = _ask(f"{ind}  LaTeX RHS")
+        latex_rhs = _ask(f"{ind}  LaTeX RHS", default_rhs)
         try:
             expr, symtable = _parse_latex_expr(latex_rhs, symtable)
             break
@@ -757,37 +765,62 @@ def collect_model(
     else:
         print(f"{ind}  (No free symbols detected)")
 
-    inputs: List[InputVar] = []
+    # Build a lookup of loaded InputVars by latex_name for default-filling
+    _loaded_iv: Dict[str, "InputVar"] = {}
+    if loaded_model:
+        for iv in loaded_model.inputs:
+            _loaded_iv[iv.latex_name] = iv
+
+    inputs: List["InputVar"] = []
     for sym in free_syms:
         sym_str = str(sym)
         latex = latex_var_map.get(sym_str, sym_str)
         color = color_pool.pop(0) if color_pool else "black"
         ivar = InputVar(latex_name=latex, sym=sym, color=color)
+        loaded_iv = _loaded_iv.get(latex)
 
         if not shallow:
             label = _sym_display(latex)
             print(f"\n{ind}  ─ Input  {label}  ─")
             print(f"{ind}    Assigned colour: {color}")
 
-            if _ask_yn(f"{ind}    Does {label} have a sub-model?"):
-                if _ask_yn(f"{ind}    Trace {label} in a separate figure?"):
+            default_has_submodel = loaded_iv is not None and loaded_iv.submodel is not None
+            if _ask_yn(f"{ind}    Does {label} have a sub-model?",
+                       default=default_has_submodel):
+                default_separate = (loaded_iv is not None and loaded_iv.separate_figure)
+                if _ask_yn(f"{ind}    Trace {label} in a separate figure?",
+                           default=default_separate):
+                    loaded_sub = (loaded_iv.submodel
+                                  if loaded_iv and loaded_iv.separate_figure else None)
                     ivar.submodel = collect_model(
                         latex, dict(symtable), list(color_pool), depth + 1,
-                        shallow=True,
+                        shallow=True, loaded_model=loaded_sub,
                     )
                     ivar.separate_figure = True
-                    default_sep_label = f"utd_{_latex_to_sym_name(latex).lower()}"
+                    default_sep_label = (
+                        loaded_iv.separate_label
+                        if loaded_iv and loaded_iv.separate_label
+                        else f"utd_{_latex_to_sym_name(latex).lower()}"
+                    )
                     ivar.separate_label = _ask(
                         f"{ind}    Separate figure label (without 'fig:')",
                         default_sep_label,
                     )
                 else:
+                    loaded_sub = (loaded_iv.submodel
+                                  if loaded_iv and not loaded_iv.separate_figure else None)
                     ivar.submodel = collect_model(
-                        latex, dict(symtable), list(color_pool), depth + 1
+                        latex, dict(symtable), list(color_pool), depth + 1,
+                        loaded_model=loaded_sub,
                     )
             else:
+                default_effects = (
+                    ", ".join(loaded_iv.effects)
+                    if loaded_iv and loaded_iv.effects else ""
+                )
                 raw = _ask(
-                    f"{ind}    Uncertainty sources (comma-separated, or blank)", ""
+                    f"{ind}    Uncertainty sources (comma-separated, or blank)",
+                    default_effects,
                 )
                 if raw:
                     ivar.effects = [e.strip() for e in raw.split(",")]
@@ -811,17 +844,17 @@ def _tikz_id(s: str) -> str:
 
 # Layout constants (all in cm)
 _H_LEAF  = 1.2   # horizontal space allocated per leaf node (level 0)
-_V_D0    = 1.3   # root → root-level deriv_node (fixed; no _radial_step at root)
+_V_D0    = 1.8   # root → root-level deriv_node (fixed; no _radial_step at root)
 _V_M0    = 1.1   # deriv_node → sub-model block (starting value; angle-adaptive floor)
 _V_D1    = 1.3   # sub-model block → nested deriv_node (floor; overridden by _radial_step)
 _V_LEAF  = 1.0   # any deriv_node → leaf_node
-_V_EFF   = 0.7   # leaf_node → effect_node
-_DEPTH_SCALE = 0.90  # multiply V distances by this factor per depth level
+_V_EFF   = 0.9   # leaf_node → effect_node
+_DEPTH_SCALE = 1.00  # multiply V distances by this factor per depth level (1.0 = no shrinkage)
 _H_LEAF_MIN  = 0.8   # minimum horizontal spacing (cm) to prevent box overlap
 # V_M0 is computed adaptively via _v_m0_for_angle(); the values below are fallbacks
 _V_M0_MIN   = 0.8   # absolute floor for deriv→model (angle formula overrides this)
 _V_D1_MIN   = 1.3   # minimum model→child-deriv step
-_V_LEAF_MIN = 0.8   # minimum deriv→leaf distance
+_V_LEAF_MIN = 1.0   # minimum deriv→leaf distance
 
 # Sector / radial-step parameters
 _MIN_SECTOR_DEG = 55.0   # minimum angular sector (degrees) per child branch
@@ -837,7 +870,7 @@ _ROOT_CENTER_ANGLE = math.pi
 # factor(θ) = 1 + _ANISO_BOOST × max(0, |sin θ| − |cos θ|)
 # → no extra length for near-horizontal branches; up to (1+_ANISO_BOOST)×
 #   for branches pointing straight up/down.
-_ANISO_BOOST = 0.60
+_ANISO_BOOST = 0.30
 
 
 def _leaf_count(ivar: "InputVar") -> int:
@@ -1080,21 +1113,57 @@ class _TikZ:
 
 from collections import namedtuple as _nt
 
-_NodeRecord = _nt("_NodeRecord", ["x", "y", "ntype", "ivar"])
+_NodeRecord = _nt("_NodeRecord", ["x", "y", "ntype", "ivar", "bbox"])
 # ntype values: 'deriv', 'model', 'leaf', 'effect'
 
-# Approximate bounding-box half-sizes per node type (cm).
-# Based on typical rendered sizes in \small/\footnotesize LaTeX fonts.
+# Fixed bounding-box half-sizes (cm) for node types with constrained text width.
+# Used by step-size formulas (_v_m0_for_angle etc.) as conservative bounds.
+# 'leaf' and 'deriv' are content-dependent; see _estimate_node_bbox().
 _BBOX_HALF: Dict[str, Tuple[float, float]] = {
-    "deriv":  (0.95, 0.42),   # \footnotesize fraction; text width=1.8cm + 2×3pt padding
-    "model":  (1.45, 0.60),   # \footnotesize bold; text width=2.8cm + 2×4pt, ~2–3 lines
-    "leaf":   (0.52, 0.33),   # \footnotesize u(x); text width=0.9cm + 2×3pt
-    "effect": (0.80, 0.60),   # \footnotesize italic; text width=1.5cm + 2×2pt, ~2–3 lines
+    "deriv":  (1.25, 0.55),   # fraction node, no fixed text width; upper-bound estimate
+    "model":  (1.45, 0.60),   # text width=2.8cm + 2×4pt, ~2–3 lines
+    "leaf":   (0.95, 0.38),   # auto-sized; upper-bound for collision detection step sizes
+    "effect": (0.80, 0.60),   # text width=1.5cm + 2×2pt, ~2–3 lines
 }
 
 
+def _estimate_node_bbox(ntype: str, content_latex: str) -> Tuple[float, float]:
+    """Estimate rendered bounding-box half-sizes (cm) for a single node.
+
+    For 'model' and 'effect' types (fixed text width in TikZ) the global
+    _BBOX_HALF values are returned unchanged.  For 'leaf' and 'deriv' nodes,
+    which no longer carry a fixed text width, the width is estimated from the
+    Unicode approximation of the content string.
+
+    Parameters
+    ----------
+    ntype:
+        One of 'deriv', 'model', 'leaf', 'effect'.
+    content_latex:
+        The LaTeX math content of the node (without $ delimiters), used to
+        estimate the rendered width.
+    """
+    if ntype in ("model", "effect"):
+        return _BBOX_HALF[ntype]
+    uni = _latex_to_unicode(content_latex)
+    nchars = max(len(uni), 1)
+    if ntype == "leaf":
+        # \footnotesize, auto-width; ~0.13 cm/char + 2×inner_sep (3 pt ≈ 0.106 cm each)
+        hw = max(nchars * 0.13 + 0.21, 0.45)
+        hh = 0.35
+        return (hw, hh)
+    if ntype == "deriv":
+        # Stacked fraction; width is max of num/denom lines.  The fraction
+        # content unicode is roughly "∂A/∂B"; use half of nchars as proxy for
+        # one line.
+        hw = max(nchars * 0.10 + 0.30, 0.70)
+        hh = 0.55   # typical stacked-fraction height at \footnotesize
+        return (hw, hh)
+    return _BBOX_HALF.get(ntype, (0.80, 0.40))
+
+
 def _aabb(rec: "_NodeRecord") -> Tuple[float, float, float, float]:
-    hw, hh = _BBOX_HALF[rec.ntype]
+    hw, hh = rec.bbox
     return rec.x - hw, rec.x + hw, rec.y - hh, rec.y + hh
 
 
@@ -1137,15 +1206,19 @@ def _simulate_branch(
     eff_ox = cum_offset[0] + ivar.branch_offset[0]
     eff_oy = cum_offset[1] + ivar.branch_offset[1]
 
+    deriv_lat = _deriv_label(parent_model.latex_name, ivar.latex_name)
     recs: List["_NodeRecord"] = [
-        _NodeRecord(x_deriv + eff_ox, y_deriv + eff_oy, "deriv", root_ivar)
+        _NodeRecord(x_deriv + eff_ox, y_deriv + eff_oy, "deriv", root_ivar,
+                    _estimate_node_bbox("deriv", deriv_lat))
     ]
 
     if ivar.submodel is not None:
         v_m0 = _v_m0_for_angle(out_angle) * _aniso_factor(out_angle)
         x_model_nat = x_deriv + v_m0 * cos_o
         y_model_nat = y_deriv + v_m0 * sin_o
-        recs.append(_NodeRecord(x_model_nat + eff_ox, y_model_nat + eff_oy, "model", root_ivar))
+        model_content = rf"{ivar.submodel.latex_name} = {ivar.submodel.latex_expr}"
+        recs.append(_NodeRecord(x_model_nat + eff_ox, y_model_nat + eff_oy, "model", root_ivar,
+                                _estimate_node_bbox("model", model_content)))
         if not ivar.separate_figure:
             v_d1 = max(_V_D1, _V_D1_MIN)
             recs.extend(_simulate_inputs(
@@ -1157,13 +1230,17 @@ def _simulate_branch(
         v_leaf = _v_leaf_for_angle(out_angle) * _aniso_factor(out_angle)
         x_leaf_nat = x_deriv + v_leaf * cos_o
         y_leaf_nat = y_deriv + v_leaf * sin_o
-        recs.append(_NodeRecord(x_leaf_nat + eff_ox, y_leaf_nat + eff_oy, "leaf", root_ivar))
+        leaf_content = rf"u({ivar.latex_name})"
+        recs.append(_NodeRecord(x_leaf_nat + eff_ox, y_leaf_nat + eff_oy, "leaf", root_ivar,
+                                _estimate_node_bbox("leaf", leaf_content)))
         if ivar.effects:
             v_eff = _v_eff_for_angle(out_angle) * _aniso_factor(out_angle)
+            eff_content = r" \\ ".join(ivar.effects)
             recs.append(_NodeRecord(
                 x_leaf_nat + v_eff * cos_o + eff_ox,
                 y_leaf_nat + v_eff * sin_o + eff_oy,
                 "effect", root_ivar,
+                _estimate_node_bbox("effect", eff_content),
             ))
     return recs
 
@@ -1204,7 +1281,7 @@ def _simulate_inputs(
     return recs
 
 
-def _auto_layout(model: "MeasurementModel", max_iterations: int = 100) -> int:
+def _auto_layout(model: "MeasurementModel", max_iterations: int = 200) -> int:
     """Iteratively adjust *branch_offset* on each :class:`InputVar` to eliminate
     bounding-box overlaps between nodes from different branches.
 
@@ -1212,6 +1289,7 @@ def _auto_layout(model: "MeasurementModel", max_iterations: int = 100) -> int:
     """
     GAP  = 0.25   # minimum clearance gap added on top of each resolved overlap (cm)
     DAMP = 0.50   # initial damping factor
+    CONVERGE = 0.02  # stop when total push magnitude falls below this (cm)
 
     arc_rad = _root_sector_rad(model.inputs)
     root_sectors = _sector_angles(model.inputs, _ROOT_CENTER_ANGLE, arc_rad,
@@ -1230,7 +1308,7 @@ def _auto_layout(model: "MeasurementModel", max_iterations: int = 100) -> int:
         # ── detect pairwise overlaps ──────────────────────────────────────────
         # Key: id(ivar) → [ivar_ref, push_x, push_y]
         push: Dict[int, List] = {}
-        moved = False
+        total_push = 0.0
         n = len(all_recs)
         for i in range(n):
             for j in range(i + 1, n):
@@ -1250,9 +1328,17 @@ def _auto_layout(model: "MeasurementModel", max_iterations: int = 100) -> int:
                 dy = ri.y - rj.y
                 dist = math.hypot(dx, dy) or 1e-6
 
-                # Push proportional to overlap, damped, in the direction i→j
-                px = damp * (ov_x + GAP) * dx / dist
-                py = damp * (ov_y + GAP) * dy / dist
+                # Resolve along the minimal-overlap axis for stability.
+                # Pushing along the smaller overlap axis is the fastest way
+                # to separate the boxes and avoids cross-axis oscillation.
+                if ov_x <= ov_y:
+                    sign_x = 1.0 if dx >= 0 else -1.0
+                    px = damp * (ov_x + GAP) * sign_x
+                    py = 0.0
+                else:
+                    sign_y = 1.0 if dy >= 0 else -1.0
+                    px = 0.0
+                    py = damp * (ov_y + GAP) * sign_y
 
                 push.setdefault(id(ri.ivar), [ri.ivar, 0.0, 0.0])
                 push.setdefault(id(rj.ivar), [rj.ivar, 0.0, 0.0])
@@ -1260,9 +1346,9 @@ def _auto_layout(model: "MeasurementModel", max_iterations: int = 100) -> int:
                 push[id(ri.ivar)][2] += py / 2
                 push[id(rj.ivar)][1] -= px / 2
                 push[id(rj.ivar)][2] -= py / 2
-                moved = True
+                total_push += math.hypot(px, py)
 
-        if not moved:
+        if total_push < CONVERGE:
             break
 
         for ivar_ref, px, py in push.values():
@@ -1520,9 +1606,9 @@ def build_tikz(root: MeasurementModel, label: str = "",
     t.raw(r"    model_block/.style={draw, rectangle, inner sep=4pt,"
           r" font=\footnotesize\bfseries, align=center, text width=2.8cm},")
     t.raw(r"    deriv_node/.style={draw, rectangle, rounded corners=3pt,"
-          r" inner sep=3pt, font=\footnotesize, align=center, text width=1.8cm},")
-    t.raw(r"    leaf_node/.style={draw, rectangle, inner sep=3pt,"
-          r" font=\footnotesize, align=center, text width=0.9cm},")
+          r" inner sep=4pt, font=\footnotesize, align=center},")
+    t.raw(r"    leaf_node/.style={draw, rectangle, inner sep=4pt,"
+          r" font=\footnotesize, align=center},")
     t.raw(r"    effect_node/.style={draw, dashed, font=\footnotesize\itshape,"
           r" align=center, text width=1.5cm, inner sep=2pt}")
     t.raw(r"    ]")
@@ -1593,7 +1679,257 @@ def _label_to_filename(label: str) -> str:
     return safe.lower() + ".tex"
 
 
-# ── PNG rendering ─────────────────────────────────────────────────────────────
+# ── TeX file parser ───────────────────────────────────────────────────────────
+
+def _extract_node_math(line: str) -> str:
+    """Extract the LaTeX math content from a TikZ \\node line.
+
+    Returns the text between the outermost ``{$`` and ``$}`` (or just ``{``
+    and ``}`` for text nodes).  Falls back to the content of the last
+    ``{…}`` group if no dollar signs are found.
+    """
+    # Try $…$ first
+    m = re.search(r'\{\$(.+?)\$\}', line)
+    if m:
+        return m.group(1)
+    # Fallback: content of the last {…} block (plain text nodes)
+    m = re.search(r'\{([^{}]+)\}(?:\s*;)?$', line.rstrip())
+    if m:
+        return m.group(1)
+    return ""
+
+
+def _extract_node_text(line: str) -> str:
+    """Extract the raw text content of a TikZ \\node line (may include TeX markup)."""
+    # Find the final balanced {…} group
+    # Walk from the end of the line to find the matching braces
+    s = line.rstrip().rstrip(";").rstrip()
+    if not s.endswith("}"):
+        return ""
+    depth, i = 0, len(s) - 1
+    while i >= 0:
+        if s[i] == "}":
+            depth += 1
+        elif s[i] == "{":
+            depth -= 1
+            if depth == 0:
+                return s[i + 1:-1]
+        i -= 1
+    return ""
+
+
+def parse_utd_tex(path: str) -> Dict:
+    """Parse a ``gum_diagram.py``-generated UTD ``.tex`` file.
+
+    Returns a dict with keys:
+
+    ``'model'``
+        A :class:`MeasurementModel` representing the root of the diagram.
+        Sympy expressions are parsed from the loaded LaTeX; failures fall back
+        to a placeholder symbol so the model can still be used as a template.
+
+    ``'label'``
+        The figure label (string after ``fig:`` in ``\\label{fig:…}``).
+
+    ``'caption'``
+        The figure caption text.
+
+    The returned model is primarily useful as input to :func:`collect_model`
+    via the *loaded_model* parameter so that the interactive session is
+    pre-filled with the loaded values.
+    """
+    text = Path(path).read_text()
+    lines = text.splitlines()
+
+    # ── pass 1: collect events ───────────────────────────────────────────────
+    # Events: tuples whose first element is the event type.
+    events: List[tuple] = []
+    label = ""
+    caption = ""
+    last_deriv_parent: str = ""
+    last_deriv_var: str = ""
+    last_deriv_color: str = "black"
+
+    i = 0
+    while i < len(lines):
+        raw = lines[i]
+        line = raw.strip()
+
+        # Figure label
+        m = re.search(r'\\label\{fig:([^}]+)\}', line)
+        if m:
+            label = m.group(1)
+            i += 1
+            continue
+
+        # Figure caption
+        m = re.match(r'\\caption\{(.+)\}', line)
+        if m:
+            caption = m.group(1).rstrip("}")
+            i += 1
+            continue
+
+        # ROOT comment
+        m = re.match(r'%\s+ROOT:\s+(.*\S)', line)
+        if m:
+            root_name = m.group(1).strip()
+            # Scan ahead for root_block node
+            for j in range(i + 1, min(i + 6, len(lines))):
+                if "root_block" in lines[j]:
+                    content = _extract_node_math(lines[j])
+                    eq_idx = content.find("=")
+                    rhs = content[eq_idx + 1:].strip() if eq_idx >= 0 else content
+                    events.append(("ROOT", root_name, rhs))
+                    break
+            i += 1
+            continue
+
+        # DERIV comment  ∂parent/∂var
+        m = re.match(r'%\s+∂(.+)/∂(.+)', line)
+        if m:
+            parent = m.group(1).strip()
+            var = m.group(2).strip()
+            # Scan ahead for colour in next \draw [connection, <colour>]
+            color = "black"
+            for j in range(i + 1, min(i + 8, len(lines))):
+                l2 = lines[j].strip()
+                if l2.startswith(r"\draw") and "connection" in l2:
+                    cm = re.match(r'\\draw\s*\[connection,\s*([^\],]+)', l2)
+                    if cm:
+                        color = cm.group(1).strip()
+                    break
+            events.append(("DERIV", parent, var, color))
+            last_deriv_parent = parent
+            last_deriv_var = var
+            last_deriv_color = color
+            i += 1
+            continue
+
+        # sub-model comment
+        m = re.match(r'%\s+sub-model:\s+(.*\S)', line)
+        if m:
+            sub_name = m.group(1).strip()
+            rhs = ""
+            separate = False
+            sep_label = ""
+            for j in range(i + 1, min(i + 6, len(lines))):
+                l2 = lines[j].strip()
+                if "model_block" in l2 and l2.startswith(r"\node"):
+                    content = _extract_node_text(l2)
+                    separate = r"\footnotesize" in content and r"\ref{" in content
+                    if separate:
+                        lm = re.search(r'\\ref\{fig:([^}]+)\}', content)
+                        if lm:
+                            sep_label = lm.group(1)
+                    # Extract equation: "$name = rhs$" (first $…$ block)
+                    em = re.search(r'\$([^$]+)\$', content)
+                    if em:
+                        eq = em.group(1)
+                        eq_idx = eq.find("=")
+                        rhs = eq[eq_idx + 1:].strip() if eq_idx >= 0 else eq
+                    break
+            events.append(("SUB_MODEL", last_deriv_parent, last_deriv_var,
+                            sub_name, rhs, separate, sep_label))
+            i += 1
+            continue
+
+        # leaf_node
+        if "leaf_node" in line and line.startswith(r"\node"):
+            content = _extract_node_math(line)
+            um = re.match(r'u\s*\((.+)\)', content)
+            if um:
+                leaf_var = um.group(1).strip()
+                cm = re.search(r'draw=([^,\]]+)', line)
+                color = cm.group(1).strip() if cm else last_deriv_color
+                events.append(("LEAF", last_deriv_parent, leaf_var, color))
+                # Update last_deriv_var so the following effect_node is linked here
+                last_deriv_var = leaf_var
+            i += 1
+            continue
+
+        # effect_node
+        if "effect_node" in line and line.startswith(r"\node"):
+            content = _extract_node_text(line)
+            # Split on \\ (TikZ line break), also handle literal backslashes
+            parts = re.split(r'\s*\\\\\s*', content)
+            effects = [p.strip() for p in parts if p.strip()]
+            events.append(("EFFECT", last_deriv_parent, last_deriv_var, effects))
+            i += 1
+            continue
+
+        i += 1
+
+    # ── pass 2: build the model tree ─────────────────────────────────────────
+    # Collect per-model data
+    model_rhs: Dict[str, str] = {}
+    # model_name → ordered list of (var_name, color)
+    model_input_order: Dict[str, List[tuple]] = {}
+    # (parent, var) → InputVar
+    input_vars: Dict[tuple, InputVar] = {}
+    # (parent, var) → sub-model name
+    sub_model_links: Dict[tuple, tuple] = {}  # → (sub_name, separate, sep_label)
+
+    root_name: str = ""
+
+    for evt in events:
+        if evt[0] == "ROOT":
+            _, name, rhs = evt
+            root_name = name
+            model_rhs[name] = rhs
+            model_input_order.setdefault(name, [])
+        elif evt[0] == "DERIV":
+            _, parent, var, color = evt
+            sym = sp.Symbol(_latex_to_sym_name(var))
+            ivar = InputVar(latex_name=var, sym=sym, color=color)
+            model_input_order.setdefault(parent, [])
+            if (parent, var) not in input_vars:
+                model_input_order[parent].append((var, color))
+            input_vars[(parent, var)] = ivar
+        elif evt[0] == "EFFECT":
+            _, parent, var, effects = evt
+            key = (parent, var)
+            if key in input_vars:
+                input_vars[key].effects = effects
+        elif evt[0] == "SUB_MODEL":
+            _, parent, var, sub_name, rhs, separate, sep_label = evt
+            model_rhs.setdefault(sub_name, rhs)
+            model_input_order.setdefault(sub_name, [])
+            sub_model_links[(parent, var)] = (sub_name, separate, sep_label)
+
+    def _build(model_name: str) -> MeasurementModel:
+        rhs = model_rhs.get(model_name, "x")
+        try:
+            expr, _ = _parse_latex_expr(rhs, {})
+        except Exception:
+            expr = sp.Symbol("_")
+        inputs: List[InputVar] = []
+        for var, _color in model_input_order.get(model_name, []):
+            ivar = input_vars.get((model_name, var))
+            if ivar is None:
+                continue
+            link = sub_model_links.get((model_name, var))
+            if link is not None:
+                sub_name, separate, sep_label = link
+                ivar.submodel = _build(sub_name)
+                ivar.separate_figure = separate
+                ivar.separate_label = sep_label
+            inputs.append(ivar)
+        return MeasurementModel(
+            latex_name=model_name,
+            latex_expr=rhs,
+            expr=expr,
+            inputs=inputs,
+        )
+
+    if not root_name:
+        raise ValueError(f"No '% ROOT:' comment found in {path!r}")
+
+    return {
+        "model": _build(root_name),
+        "label": label,
+        "caption": caption,
+    }
+
 
 def _strip_latex_command(text: str, cmd: str) -> str:
     """Remove all occurrences of \\cmd{...} (with balanced braces) from *text*."""
@@ -1747,6 +2083,14 @@ def main() -> None:
         help="Use the built-in H_s example instead of interactive input",
     )
     ap.add_argument(
+        "--from-tex", metavar="FILE", default=None,
+        help=(
+            "Load an existing UTD .tex file as a starting point.  "
+            "All interactive questions are pre-filled with the loaded values; "
+            "press Enter to accept each one or type to override."
+        ),
+    )
+    ap.add_argument(
         "-o", "--output", default=None, metavar="FILE",
         help=(
             "Output .tex file.  Defaults to <label>.tex in the current "
@@ -1767,6 +2111,37 @@ def main() -> None:
         model = _builtin_example()
         label = "swh_utd"
         caption = ""  # use build_tikz default
+    elif args.from_tex:
+        print("╔══════════════════════════════════════════════════════╗")
+        print("║  GUM Uncertainty Tree Diagram Generator              ║")
+        print("╚══════════════════════════════════════════════════════╝")
+        print(f"\n  Loading model from  {args.from_tex} …")
+        try:
+            loaded = parse_utd_tex(args.from_tex)
+        except Exception as exc:
+            print(f"  ✗  Failed to parse {args.from_tex}: {exc}", file=sys.stderr)
+            sys.exit(1)
+        loaded_model = loaded["model"]
+        print(f"  Loaded root: {loaded_model.latex_name}")
+        print()
+        print("Step 1: Measurand")
+        lat_name = _ask(r"  LaTeX name  (e.g.  H_s,  \sigma^0)",
+                        loaded_model.latex_name)
+        default_label = loaded.get("label") or f"utd_{_latex_to_sym_name(lat_name).lower()}"
+        label = _ask(
+            r"  Figure label (\label{fig:<…>}, without 'fig:')",
+            default_label,
+        )
+        loaded_caption = loaded.get("caption", "")
+        default_caption = (loaded_caption or
+                           rf"Uncertainty Tree Diagram for ${lat_name}$.")
+        caption = _ask("  Figure caption", default_caption)
+        print()
+        print("Step 2: Measurement model")
+        symtable: Dict[str, sp.Symbol] = {}
+        color_pool = list(COLORS)
+        model = collect_model(lat_name, symtable, color_pool,
+                              loaded_model=loaded_model)
     else:
         print("╔══════════════════════════════════════════════════════╗")
         print("║  GUM Uncertainty Tree Diagram Generator              ║")

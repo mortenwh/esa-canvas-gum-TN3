@@ -548,5 +548,126 @@ class TestAutoLayout(unittest.TestCase):
         self.assertIn(r"u", latex_names)   # nested input
 
 
+# ── _estimate_node_bbox ───────────────────────────────────────────────────────
+
+class TestEstimateNodeBbox(unittest.TestCase):
+    def test_leaf_grows_with_label_length(self):
+        """Longer leaf labels should produce a wider bbox estimate."""
+        hw_short, _ = gd._estimate_node_bbox("leaf", r"u(P)")
+        hw_long, _ = gd._estimate_node_bbox("leaf", r"u(\Delta\varpi_{\rm e})")
+        self.assertGreater(hw_long, hw_short)
+
+    def test_deriv_grows_with_label_length(self):
+        hw_short, _ = gd._estimate_node_bbox("deriv", r"\frac{\partial y}{\partial a}")
+        hw_long, _ = gd._estimate_node_bbox(
+            "deriv", r"\frac{\partial \varpi_{\rm g}}{\partial \Delta\varpi_{\rm g}}")
+        self.assertGreater(hw_long, hw_short)
+
+    def test_model_fixed_size(self):
+        hw1, hh1 = gd._estimate_node_bbox("model", "x = 1")
+        hw2, hh2 = gd._estimate_node_bbox("model", "x = a + b + c + d + e + f")
+        self.assertEqual((hw1, hh1), (hw2, hh2))
+
+    def test_effect_fixed_size(self):
+        hw1, _ = gd._estimate_node_bbox("effect", "A")
+        hw2, _ = gd._estimate_node_bbox("effect", "A" * 50)
+        self.assertEqual(hw1, hw2)
+
+    def test_minimum_leaf_width(self):
+        hw, _ = gd._estimate_node_bbox("leaf", "x")
+        self.assertGreater(hw, 0.0)
+
+    def test_node_record_carries_bbox(self):
+        """_NodeRecord must carry its own bbox tuple."""
+        model = _simple_model()
+        arc_rad = gd._root_sector_rad(model.inputs)
+        root_sectors = gd._sector_angles(model.inputs, gd._ROOT_CENTER_ANGLE,
+                                          arc_rad, apply_min_sector=False)
+        ivar = model.inputs[0]
+        angle, sector_rad = root_sectors[0]
+        x_d = gd._V_D0 * math.cos(angle)
+        y_d = gd._V_D0 * math.sin(angle)
+        recs = gd._simulate_branch(model, ivar, x_d, y_d, angle, sector_rad)
+        for rec in recs:
+            self.assertIsInstance(rec.bbox, tuple)
+            self.assertEqual(len(rec.bbox), 2)
+            self.assertGreater(rec.bbox[0], 0.0)
+            self.assertGreater(rec.bbox[1], 0.0)
+
+
+# ── parse_utd_tex ─────────────────────────────────────────────────────────────
+
+class TestParseUtdTex(unittest.TestCase):
+    """Round-trip: build a UTD, write .tex, parse it back, check fidelity."""
+
+    @classmethod
+    def setUpClass(cls):
+        import tempfile, os
+        cls.model = _simple_model()   # y = a*x + b
+        cls.label = "test_utd_y"
+        cls.caption = "Test UTD for y."
+        cls.tikz = gd.build_tikz(cls.model, label=cls.label,
+                                  caption=cls.caption, auto_layout=False)
+        cls.tmp = tempfile.NamedTemporaryFile(suffix=".tex", delete=False, mode="w")
+        cls.tmp.write(cls.tikz + "\n")
+        cls.tmp.close()
+        cls.parsed = gd.parse_utd_tex(cls.tmp.name)
+
+    @classmethod
+    def tearDownClass(cls):
+        import os
+        os.unlink(cls.tmp.name)
+
+    def test_root_name_recovered(self):
+        self.assertEqual(self.parsed["model"].latex_name, self.model.latex_name)
+
+    def test_input_count(self):
+        self.assertEqual(len(self.parsed["model"].inputs),
+                         len(self.model.inputs))
+
+    def test_label_recovered(self):
+        self.assertEqual(self.parsed["label"], self.label)
+
+    def test_caption_recovered(self):
+        self.assertIn("Test UTD", self.parsed["caption"])
+
+    def test_effects_recovered(self):
+        """InputVars with effects must have them recovered after round-trip."""
+        parsed_inputs = {iv.latex_name: iv
+                         for iv in self.parsed["model"].inputs}
+        # 'a' has effects=["Calibration"]
+        a_iv = parsed_inputs.get("a")
+        self.assertIsNotNone(a_iv)
+        self.assertIn("Calibration", a_iv.effects)
+
+    def test_input_var_names_match(self):
+        orig_names = {iv.latex_name for iv in self.model.inputs}
+        parsed_names = {iv.latex_name for iv in self.parsed["model"].inputs}
+        self.assertEqual(orig_names, parsed_names)
+
+    def test_roundtrip_nested_model(self):
+        """parse_utd_tex must handle a nested sub-model."""
+        import tempfile, os
+        nested = _nested_model()
+        tikz = gd.build_tikz(nested, label="test_z", auto_layout=False)
+        with tempfile.NamedTemporaryFile(suffix=".tex", delete=False, mode="w") as f:
+            f.write(tikz + "\n")
+            tmp_path = f.name
+        try:
+            parsed = gd.parse_utd_tex(tmp_path)
+            root = parsed["model"]
+            self.assertEqual(root.latex_name, "z")
+            # p has a sub-model; q is a leaf
+            p_iv = next((iv for iv in root.inputs if iv.latex_name == "p"), None)
+            q_iv = next((iv for iv in root.inputs if iv.latex_name == "q"), None)
+            self.assertIsNotNone(p_iv)
+            self.assertIsNotNone(q_iv)
+            self.assertIsNotNone(p_iv.submodel)
+            self.assertIsNone(q_iv.submodel)
+            self.assertEqual(p_iv.submodel.latex_name, "p")
+        finally:
+            os.unlink(tmp_path)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
