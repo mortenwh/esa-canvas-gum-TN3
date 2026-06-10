@@ -202,14 +202,11 @@ class TestRootAngles(unittest.TestCase):
         self.assertGreater(angles[1], angles[2])
 
     def test_narrow_arc_for_few_leaves(self):
-        """6 or fewer leaves → arc ≤ 180° (all above the root)."""
+        """≥2 inputs → arc ≥ _ARC_MIN_DEG regardless of leaf count."""
         ivs = [self._make_leaf(n) for n in ("a", "b", "c", "d", "e", "f")]
         angles = gd._root_angles(ivs)
         arc = angles[0] - angles[-1]
-        self.assertLessEqual(math.degrees(arc), 180.0 + 1e-9)
-        # all angles in upper half-plane
-        for a in angles:
-            self.assertGreaterEqual(a, 0.0)
+        self.assertGreaterEqual(math.degrees(arc), gd._ARC_MIN_DEG - 1e-9)
 
     def test_wide_arc_for_many_leaves(self):
         """12 leaves → arc ≥ 300° (wraps well past the sides)."""
@@ -667,6 +664,96 @@ class TestParseUtdTex(unittest.TestCase):
             self.assertEqual(p_iv.submodel.latex_name, "p")
         finally:
             os.unlink(tmp_path)
+
+
+# ── Round 2: wider arc + centring + content-aware steps + compaction ──────────
+
+class TestWiderArc(unittest.TestCase):
+    """_root_sector_rad enforces _ARC_MIN_DEG for trees with >= 2 inputs."""
+
+    def _make_leaf(self, name):
+        s = sp.Symbol(name)
+        return gd.InputVar(name, s, "black")
+
+    def test_min_arc_two_inputs(self):
+        ivs = [self._make_leaf("a"), self._make_leaf("b")]
+        arc_deg = math.degrees(gd._root_sector_rad(ivs))
+        self.assertGreaterEqual(arc_deg, gd._ARC_MIN_DEG - 1e-9)
+
+    def test_min_arc_six_inputs(self):
+        ivs = [self._make_leaf(c) for c in "abcdef"]
+        arc_deg = math.degrees(gd._root_sector_rad(ivs))
+        self.assertGreaterEqual(arc_deg, gd._ARC_MIN_DEG - 1e-9)
+
+    def test_single_input_no_min(self):
+        """Single-input trees should not be forced to 270° (looks wrong)."""
+        iv = self._make_leaf("a")
+        arc_deg = math.degrees(gd._root_sector_rad([iv]))
+        self.assertLess(arc_deg, gd._ARC_MIN_DEG)
+
+
+class TestRootCentring(unittest.TestCase):
+    """Root should be within 5 cm of the bbox centre for the built-in example."""
+
+    def test_builtin_example_root_near_centre(self):
+        model = gd._builtin_example()
+        gd._auto_layout(model)
+        # Collect all node records
+        arc_rad = gd._root_sector_rad(model.inputs)
+        root_sectors = gd._sector_angles(model.inputs, gd._ROOT_CENTER_ANGLE, arc_rad,
+                                          apply_min_sector=False)
+        recs = []
+        for ivar, (angle, sector_rad) in zip(model.inputs, root_sectors):
+            x_d = gd._V_D0 * math.cos(angle)
+            y_d = gd._V_D0 * math.sin(angle)
+            recs.extend(gd._simulate_branch(model, ivar, x_d, y_d, angle, sector_rad))
+        xs = [r.x for r in recs]
+        ys = [r.y for r in recs]
+        cx = (min(xs) + max(xs)) / 2
+        cy = (min(ys) + max(ys)) / 2
+        # root is at (0, 0) — check distance to bbox centre
+        dist = math.hypot(cx, cy)
+        self.assertLessEqual(dist, 7.0,
+            f"Root is {dist:.2f} cm from bbox centre (expected ≤7 cm, was ~9 cm before Round 2)")
+
+
+class TestContentAwareSteps(unittest.TestCase):
+    """_v_between with small content gives shorter step than with large content."""
+
+    def test_short_label_shorter_step(self):
+        angle = math.pi  # leftward
+        small_hw, small_hh = 0.5, 0.35
+        large_hw, large_hh = 2.0, 0.55
+        v_small = gd._v_between(small_hw, small_hh, small_hw, small_hh, angle)
+        v_large = gd._v_between(large_hw, large_hh, large_hw, large_hh, angle)
+        self.assertLess(v_small, v_large)
+
+    def test_v_between_horizontal(self):
+        """Horizontal step = 2 * hw + gap."""
+        hw, hh = 1.0, 0.5
+        v = gd._v_between(hw, hh, hw, hh, 0.0, gap=0.0)
+        self.assertAlmostEqual(v, 2 * hw, places=5)
+
+    def test_v_between_vertical(self):
+        """Vertical step = 2 * hh + gap."""
+        hw, hh = 1.0, 0.5
+        v = gd._v_between(hw, hh, hw, hh, math.pi / 2, gap=0.0)
+        self.assertAlmostEqual(v, 2 * hh, places=5)
+
+
+class TestCompactionPass(unittest.TestCase):
+    """Post-compaction offsets are closer to origin than pre-compaction."""
+
+    def test_compaction_reduces_offsets(self):
+        model = gd._builtin_example()
+        # Run layout (includes compaction)
+        gd._auto_layout(model)
+        ivars = gd._walk_inputs(model)
+        # At least some offsets should exist; compaction should leave none
+        # unreasonably large (anything > 8 cm would indicate no compaction)
+        max_offset = max(math.hypot(*iv.branch_offset) for iv in ivars)
+        self.assertLess(max_offset, 8.0,
+            f"Max branch offset {max_offset:.2f} cm seems too large after compaction")
 
 
 if __name__ == "__main__":

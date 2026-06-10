@@ -870,7 +870,7 @@ _ROOT_CENTER_ANGLE = math.pi
 # factor(θ) = 1 + _ANISO_BOOST × max(0, |sin θ| − |cos θ|)
 # → no extra length for near-horizontal branches; up to (1+_ANISO_BOOST)×
 #   for branches pointing straight up/down.
-_ANISO_BOOST = 0.30
+_ANISO_BOOST = 0.0
 
 
 def _leaf_count(ivar: "InputVar") -> int:
@@ -900,9 +900,10 @@ def _child_offsets(inputs: "List[InputVar]",
 
 
 # Degrees of arc allocated per leaf node when distributing root branches.
-# 30° per leaf → 6 leaves fill 180°, 12 leaves fill 360° (capped at 330°).
-_ARC_PER_LEAF = 30.0
+# 55° per leaf → 6 leaves fill 330° (near full circle, root near centre).
+_ARC_PER_LEAF = 55.0
 _ARC_CAP_DEG  = 330.0
+_ARC_MIN_DEG  = 270.0   # minimum arc for trees with ≥ 2 inputs (ensures near-centred root)
 
 
 def _radial_step(sector_rad: float) -> float:
@@ -922,48 +923,55 @@ def _radial_step(sector_rad: float) -> float:
     return max(_NODE_WIDTH_CM / (2.0 * math.sin(half)), _V_D1_MIN)
 
 
-def _v_m0_for_angle(out_angle: float) -> float:
-    """Angle-adaptive minimum step from deriv node to its sub-model node.
+def _v_between(src_hw: float, src_hh: float,
+               dst_hw: float, dst_hh: float,
+               angle: float, gap: float = 0.15,
+               floor: float = 0.0) -> float:
+    """Minimum centre-to-centre step between two nodes in direction *angle*.
 
-    Projects both bounding boxes onto the arm direction and sums the
-    half-extents with a small gap, so vertical arms get a short step
-    (~1.5 cm) while horizontal arms get a longer one (~3.5 cm).
+    Projects both bounding boxes onto the arm direction and sums their
+    half-extents plus a clearance *gap*.  The result is floored at *floor*
+    (defaults to 0; callers pass the relevant ``_V_*_MIN`` constant).
     """
-    c = abs(math.cos(out_angle))
-    s = abs(math.sin(out_angle))
-    dhw, dhh = _BBOX_HALF["deriv"]
-    mhw, mhh = _BBOX_HALF["model"]
-    return max(c * (dhw + mhw) + s * (dhh + mhh) + 0.35, _V_M0_MIN)
+    c = abs(math.cos(angle))
+    s = abs(math.sin(angle))
+    return max(c * (src_hw + dst_hw) + s * (src_hh + dst_hh) + gap, floor)
 
 
-def _v_child_for_angle(child_angle: float) -> float:
-    """Angle-adaptive minimum step from a sub-model node to its child deriv node.
-
-    Ensures the child deriv doesn't visually overlap with the parent model box.
-    """
-    c = abs(math.cos(child_angle))
-    s = abs(math.sin(child_angle))
-    mhw, mhh = _BBOX_HALF["model"]
-    dhw, dhh = _BBOX_HALF["deriv"]
-    return max(c * (mhw + dhw) + s * (mhh + dhh) + 0.35, _V_D1_MIN)
+def _v_m0_for_angle(out_angle: float,
+                    dhw: Optional[float] = None, dhh: Optional[float] = None,
+                    mhw: Optional[float] = None, mhh: Optional[float] = None) -> float:
+    """Minimum step from a deriv node to its sub-model node."""
+    _dhw, _dhh = _BBOX_HALF["deriv"] if dhw is None else (dhw, dhh)
+    _mhw, _mhh = _BBOX_HALF["model"] if mhw is None else (mhw, mhh)
+    return _v_between(_dhw, _dhh, _mhw, _mhh, out_angle, gap=0.15, floor=_V_M0_MIN)
 
 
-def _v_eff_for_angle(out_angle: float) -> float:
-    """Angle-adaptive minimum step from a leaf node to its effect annotation."""
-    c = abs(math.cos(out_angle))
-    s = abs(math.sin(out_angle))
-    lhw, lhh = _BBOX_HALF["leaf"]
-    ehw, ehh = _BBOX_HALF["effect"]
-    return max(c * (lhw + ehw) + s * (lhh + ehh) + 0.25, _V_EFF)
+def _v_child_for_angle(child_angle: float,
+                       mhw: Optional[float] = None, mhh: Optional[float] = None,
+                       dhw: Optional[float] = None, dhh: Optional[float] = None) -> float:
+    """Minimum step from a sub-model node to its child deriv node."""
+    _mhw, _mhh = _BBOX_HALF["model"] if mhw is None else (mhw, mhh)
+    _dhw, _dhh = _BBOX_HALF["deriv"] if dhw is None else (dhw, dhh)
+    return _v_between(_mhw, _mhh, _dhw, _dhh, child_angle, gap=0.15, floor=_V_D1_MIN)
 
 
-def _v_leaf_for_angle(out_angle: float) -> float:
-    """Angle-adaptive minimum step from a deriv node to its leaf node."""
-    c = abs(math.cos(out_angle))
-    s = abs(math.sin(out_angle))
-    dhw, dhh = _BBOX_HALF["deriv"]
-    lhw, lhh = _BBOX_HALF["leaf"]
-    return max(c * (dhw + lhw) + s * (dhh + lhh) + 0.35, _V_LEAF_MIN)
+def _v_eff_for_angle(out_angle: float,
+                     lhw: Optional[float] = None, lhh: Optional[float] = None,
+                     ehw: Optional[float] = None, ehh: Optional[float] = None) -> float:
+    """Minimum step from a leaf node to its effect annotation."""
+    _lhw, _lhh = _BBOX_HALF["leaf"] if lhw is None else (lhw, lhh)
+    _ehw, _ehh = _BBOX_HALF["effect"] if ehw is None else (ehw, ehh)
+    return _v_between(_lhw, _lhh, _ehw, _ehh, out_angle, gap=0.15, floor=_V_EFF)
+
+
+def _v_leaf_for_angle(out_angle: float,
+                      dhw: Optional[float] = None, dhh: Optional[float] = None,
+                      lhw: Optional[float] = None, lhh: Optional[float] = None) -> float:
+    """Minimum step from a deriv node to its leaf node."""
+    _dhw, _dhh = _BBOX_HALF["deriv"] if dhw is None else (dhw, dhh)
+    _lhw, _lhh = _BBOX_HALF["leaf"] if lhw is None else (lhw, lhh)
+    return _v_between(_dhw, _dhh, _lhw, _lhh, out_angle, gap=0.15, floor=_V_LEAF_MIN)
 
 
 def _aniso_factor(angle: float) -> float:
@@ -1033,17 +1041,27 @@ def _sector_angles(
 
 
 def _root_sector_rad(inputs: "List[InputVar]") -> float:
-    """Total arc (radians) for the root-level fan."""
+    """Total arc (radians) for the root-level fan.
+
+    With ``_ARC_PER_LEAF = 55°``, 6-leaf trees already reach the 330° cap,
+    placing the root near the visual centre of the figure.  The
+    ``_ARC_MIN_DEG`` floor (270°) ensures the root stays near-centred even
+    for smaller trees with ≥ 2 inputs.
+    """
     total_leaves = sum(_leaf_count(iv) for iv in inputs)
-    return math.radians(min(_ARC_CAP_DEG, total_leaves * _ARC_PER_LEAF))
+    arc_deg = min(_ARC_CAP_DEG, total_leaves * _ARC_PER_LEAF)
+    if len(inputs) >= 2:
+        arc_deg = max(arc_deg, _ARC_MIN_DEG)
+    return math.radians(arc_deg)
 
 
-def _root_angles(inputs: "List[InputVar]") -> "List[float]":
+def _root_angles(inputs: "List[InputVar]",
+                 root_center_angle: float = _ROOT_CENTER_ANGLE) -> "List[float]":
     """Backward-compatible: return just the centre angles for root inputs."""
     if not inputs:
         return []
     arc = _root_sector_rad(inputs)
-    return [a for a, _ in _sector_angles(inputs, _ROOT_CENTER_ANGLE, arc,
+    return [a for a, _ in _sector_angles(inputs, root_center_angle, arc,
                                           apply_min_sector=False)]
 
 
@@ -1207,18 +1225,19 @@ def _simulate_branch(
     eff_oy = cum_offset[1] + ivar.branch_offset[1]
 
     deriv_lat = _deriv_label(parent_model.latex_name, ivar.latex_name)
+    d_bbox = _estimate_node_bbox("deriv", deriv_lat)
     recs: List["_NodeRecord"] = [
-        _NodeRecord(x_deriv + eff_ox, y_deriv + eff_oy, "deriv", root_ivar,
-                    _estimate_node_bbox("deriv", deriv_lat))
+        _NodeRecord(x_deriv + eff_ox, y_deriv + eff_oy, "deriv", root_ivar, d_bbox)
     ]
 
     if ivar.submodel is not None:
-        v_m0 = _v_m0_for_angle(out_angle) * _aniso_factor(out_angle)
+        model_content = rf"{ivar.submodel.latex_name} = {ivar.submodel.latex_expr}"
+        m_bbox = _estimate_node_bbox("model", model_content)
+        v_m0 = _v_m0_for_angle(out_angle, *d_bbox, *m_bbox) * _aniso_factor(out_angle)
         x_model_nat = x_deriv + v_m0 * cos_o
         y_model_nat = y_deriv + v_m0 * sin_o
-        model_content = rf"{ivar.submodel.latex_name} = {ivar.submodel.latex_expr}"
         recs.append(_NodeRecord(x_model_nat + eff_ox, y_model_nat + eff_oy, "model", root_ivar,
-                                _estimate_node_bbox("model", model_content)))
+                                m_bbox))
         if not ivar.separate_figure:
             v_d1 = max(_V_D1, _V_D1_MIN)
             recs.extend(_simulate_inputs(
@@ -1227,20 +1246,22 @@ def _simulate_branch(
                 root_ivar=root_ivar,
             ))
     else:
-        v_leaf = _v_leaf_for_angle(out_angle) * _aniso_factor(out_angle)
+        leaf_content = rf"u({ivar.latex_name})"
+        l_bbox = _estimate_node_bbox("leaf", leaf_content)
+        v_leaf = _v_leaf_for_angle(out_angle, *d_bbox, *l_bbox) * _aniso_factor(out_angle)
         x_leaf_nat = x_deriv + v_leaf * cos_o
         y_leaf_nat = y_deriv + v_leaf * sin_o
-        leaf_content = rf"u({ivar.latex_name})"
         recs.append(_NodeRecord(x_leaf_nat + eff_ox, y_leaf_nat + eff_oy, "leaf", root_ivar,
-                                _estimate_node_bbox("leaf", leaf_content)))
+                                l_bbox))
         if ivar.effects:
-            v_eff = _v_eff_for_angle(out_angle) * _aniso_factor(out_angle)
             eff_content = r" \\ ".join(ivar.effects)
+            e_bbox = _estimate_node_bbox("effect", eff_content)
+            v_eff = _v_eff_for_angle(out_angle, *l_bbox, *e_bbox) * _aniso_factor(out_angle)
             recs.append(_NodeRecord(
                 x_leaf_nat + v_eff * cos_o + eff_ox,
                 y_leaf_nat + v_eff * sin_o + eff_oy,
                 "effect", root_ivar,
-                _estimate_node_bbox("effect", eff_content),
+                e_bbox,
             ))
     return recs
 
@@ -1281,7 +1302,8 @@ def _simulate_inputs(
     return recs
 
 
-def _auto_layout(model: "MeasurementModel", max_iterations: int = 200) -> int:
+def _auto_layout(model: "MeasurementModel", max_iterations: int = 200,
+                 root_center_angle: float = _ROOT_CENTER_ANGLE) -> int:
     """Iteratively adjust *branch_offset* on each :class:`InputVar` to eliminate
     bounding-box overlaps between nodes from different branches.
 
@@ -1292,7 +1314,7 @@ def _auto_layout(model: "MeasurementModel", max_iterations: int = 200) -> int:
     CONVERGE = 0.02  # stop when total push magnitude falls below this (cm)
 
     arc_rad = _root_sector_rad(model.inputs)
-    root_sectors = _sector_angles(model.inputs, _ROOT_CENTER_ANGLE, arc_rad,
+    root_sectors = _sector_angles(model.inputs, root_center_angle, arc_rad,
                                    apply_min_sector=False)
 
     for iteration in range(max_iterations):
@@ -1357,6 +1379,49 @@ def _auto_layout(model: "MeasurementModel", max_iterations: int = 200) -> int:
                 ivar_ref.branch_offset[1] + py,
             )
 
+    # ── compaction pass ───────────────────────────────────────────────────────
+    # After the push phase has removed all overlaps, try pulling each
+    # branch_offset back toward (0, 0) as far as possible without introducing
+    # new overlaps.  This recovers whitespace that the push phase leaves behind.
+    all_ivars = _walk_inputs(model)
+    for _ in range(50):
+        any_compact = False
+        for ivar in sorted(all_ivars,
+                           key=lambda iv: math.hypot(*iv.branch_offset),
+                           reverse=True):
+            ox, oy = ivar.branch_offset
+            if math.hypot(ox, oy) < 0.05:
+                continue
+            # Try pulling 10 % toward origin
+            candidate = (ox * 0.9, oy * 0.9)
+            ivar.branch_offset = candidate
+            # Re-simulate and check for overlaps
+            test_recs: List["_NodeRecord"] = []
+            for iv2, (ang2, sec2) in zip(model.inputs, root_sectors):
+                x2 = _V_D0 * math.cos(ang2)
+                y2 = _V_D0 * math.sin(ang2)
+                test_recs.extend(_simulate_branch(model, iv2, x2, y2, ang2, sec2))
+            overlap_found = False
+            n2 = len(test_recs)
+            for i2 in range(n2):
+                for j2 in range(i2 + 1, n2):
+                    ri2, rj2 = test_recs[i2], test_recs[j2]
+                    if ri2.ivar is rj2.ivar:
+                        continue
+                    if ri2.ntype == "effect" or rj2.ntype == "effect":
+                        continue
+                    if _aabb_overlap(_aabb(ri2), _aabb(rj2)) is not None:
+                        overlap_found = True
+                        break
+                if overlap_found:
+                    break
+            if overlap_found:
+                ivar.branch_offset = (ox, oy)  # revert
+            else:
+                any_compact = True
+        if not any_compact:
+            break
+
     return iteration + 1
 
 
@@ -1381,7 +1446,8 @@ class _Emitter:
 
     # ── root ─────────────────────────────────────────────────────────────────
 
-    def emit_root(self, model: MeasurementModel, root_id: str) -> None:
+    def emit_root(self, model: MeasurementModel, root_id: str,
+                  root_center_angle: float = _ROOT_CENTER_ANGLE) -> None:
         """Emit the root block then radiate all branches at their angles."""
         self.t.comment(f"ROOT: {model.latex_name}")
         self.t.math_node(root_id, "root_block",
@@ -1389,7 +1455,7 @@ class _Emitter:
         self.t.blank()
         arc_rad = _root_sector_rad(model.inputs)
         for ivar, (angle, sector_rad) in zip(
-            model.inputs, _sector_angles(model.inputs, _ROOT_CENTER_ANGLE, arc_rad,
+            model.inputs, _sector_angles(model.inputs, root_center_angle, arc_rad,
                                           apply_min_sector=False)
         ):
             x_d = _V_D0 * math.cos(angle)   # fixed root arm
@@ -1430,10 +1496,13 @@ class _Emitter:
         self.t.abs_math_node(d_id, "deriv_node", deriv_lat,
                              ref=root_id, dx=x_deriv + eff_ox, dy=y_deriv + eff_oy)
         self.t.edge(parent_id, d_id, f"connection, {color}")
+        d_bbox = _estimate_node_bbox("deriv", deriv_lat)
 
         if ivar.submodel is not None:
             m_id = self._uid(f"M{_tikz_id(ivar.latex_name)}")
-            v_m0 = _v_m0_for_angle(out_angle) * _aniso_factor(out_angle)
+            model_content = rf"{ivar.submodel.latex_name} = {ivar.submodel.latex_expr}"
+            m_bbox = _estimate_node_bbox("model", model_content)
+            v_m0 = _v_m0_for_angle(out_angle, *d_bbox, *m_bbox) * _aniso_factor(out_angle)
             x_model_nat = x_deriv + v_m0 * cos_o
             y_model_nat = y_deriv + v_m0 * sin_o
             self.t.blank()
@@ -1461,11 +1530,13 @@ class _Emitter:
                                   depth=depth + 1, cum_offset=(eff_ox, eff_oy))
         else:
             leaf_id = self._uid(f"U{_tikz_id(ivar.latex_name)}")
-            v_leaf = _v_leaf_for_angle(out_angle) * _aniso_factor(out_angle)
+            leaf_content = rf"u({ivar.latex_name})"
+            l_bbox = _estimate_node_bbox("leaf", leaf_content)
+            v_leaf = _v_leaf_for_angle(out_angle, *d_bbox, *l_bbox) * _aniso_factor(out_angle)
             x_leaf_nat = x_deriv + v_leaf * cos_o
             y_leaf_nat = y_deriv + v_leaf * sin_o
             self.t.abs_math_node(
-                leaf_id, "leaf_node", rf"u({ivar.latex_name})",
+                leaf_id, "leaf_node", leaf_content,
                 ref=root_id, dx=x_leaf_nat + eff_ox, dy=y_leaf_nat + eff_oy,
                 extra=f"draw={color}, text={color}",
             )
@@ -1474,7 +1545,8 @@ class _Emitter:
                                root_id=root_id,
                                dx=x_leaf_nat + eff_ox, dy=y_leaf_nat + eff_oy,
                                out_angle=out_angle,
-                               scale=1.0)
+                               d_bbox=d_bbox,
+                               l_bbox=l_bbox)
         self.t.blank()
 
     # ── sub-model children ───────────────────────────────────────────────────
@@ -1513,14 +1585,19 @@ class _Emitter:
 
     def _emit_effects(self, ivar: InputVar, leaf_id: str,
                       root_id: str, dx: float, dy: float,
-                      out_angle: float, scale: float = 1.0) -> None:
+                      out_angle: float,
+                      d_bbox: Tuple[float, float] = (_BBOX_HALF["deriv"][0], _BBOX_HALF["deriv"][1]),
+                      l_bbox: Tuple[float, float] = (_BBOX_HALF["leaf"][0], _BBOX_HALF["leaf"][1]),
+                      ) -> None:
         """Emit uncertainty-source nodes further outward from the leaf."""
         if not ivar.effects:
             return
         eff_id = self._uid(f"EFF{_tikz_id(ivar.latex_name)}")
         eff_text = r" \\ ".join(ivar.effects)
-        x_eff = dx + _v_eff_for_angle(out_angle) * _aniso_factor(out_angle) * math.cos(out_angle)
-        y_eff = dy + _v_eff_for_angle(out_angle) * _aniso_factor(out_angle) * math.sin(out_angle)
+        e_bbox = _estimate_node_bbox("effect", eff_text)
+        v_eff = _v_eff_for_angle(out_angle, *l_bbox, *e_bbox) * _aniso_factor(out_angle)
+        x_eff = dx + v_eff * math.cos(out_angle)
+        y_eff = dy + v_eff * math.sin(out_angle)
         self.t.abs_text_node(eff_id, "effect_node", eff_text,
                              ref=root_id, dx=x_eff, dy=y_eff,
                              extra=ivar.color)
@@ -1560,7 +1637,8 @@ def _walk_inputs(model: "MeasurementModel") -> "List[InputVar]":
 
 def build_tikz(root: MeasurementModel, label: str = "",
                caption: str = "",
-               auto_layout: bool = True) -> str:
+               auto_layout: bool = True,
+               root_center_angle: float = _ROOT_CENTER_ANGLE) -> str:
     """Return a complete LaTeX figure environment with the TikZ UTD.
 
     Parameters
@@ -1579,7 +1657,7 @@ def build_tikz(root: MeasurementModel, label: str = "",
         Set to False in tests or when branch_offsets are already hand-tuned.
     """
     if auto_layout:
-        iters = _auto_layout(root)
+        iters = _auto_layout(root, root_center_angle=root_center_angle)
         adjusted = [iv for iv in _walk_inputs(root) if iv.branch_offset != (0.0, 0.0)]
         if adjusted:
             names = ", ".join(iv.latex_name for iv in adjusted)
@@ -1615,7 +1693,7 @@ def build_tikz(root: MeasurementModel, label: str = "",
 
     root_id = _tikz_id(root.latex_name) + "ROOT"
     emitter = _Emitter(t)
-    emitter.emit_root(root, root_id)
+    emitter.emit_root(root, root_id, root_center_angle=root_center_angle)
 
     t.raw(r"  \end{tikzpicture}")
     t.raw(r"  \end{adjustbox}")
@@ -2098,6 +2176,14 @@ def main() -> None:
         ),
     )
     ap.add_argument(
+        "--center-angle", type=float, default=None, metavar="DEG",
+        help=(
+            "Direction (degrees) toward which the root branches radiate.  "
+            "180 = leftward (default); 90 = upward; 0 = rightward.  "
+            "Adjust for asymmetric trees to centre the root in the figure."
+        ),
+    )
+    ap.add_argument(
         "--no-preview", action="store_true",
         help="Skip PNG rendering and display (just write the .tex file)",
     )
@@ -2111,6 +2197,9 @@ def main() -> None:
         model = _builtin_example()
         label = "swh_utd"
         caption = ""  # use build_tikz default
+        root_center_angle = (math.radians(args.center_angle)
+                             if args.center_angle is not None
+                             else _ROOT_CENTER_ANGLE)
     elif args.from_tex:
         print("╔══════════════════════════════════════════════════════╗")
         print("║  GUM Uncertainty Tree Diagram Generator              ║")
@@ -2162,7 +2251,19 @@ def main() -> None:
         color_pool = list(COLORS)
         model = collect_model(lat_name, symtable, color_pool)
 
-    tikz_code = build_tikz(model, label=label, caption=caption)
+    # ── root centre-angle ────────────────────────────────────────────────────
+    if not args.example:
+        if args.center_angle is not None:
+            root_center_angle = math.radians(args.center_angle)
+        else:
+            deg_str = _ask(
+                "  Root branch direction (degrees; 180=left, 90=up, 0=right)",
+                "180",
+            )
+            root_center_angle = math.radians(float(deg_str))
+
+    tikz_code = build_tikz(model, label=label, caption=caption,
+                           root_center_angle=root_center_angle)
 
     out_path = args.output if args.output else _label_to_filename(label)
     with open(out_path, "w") as fh:
