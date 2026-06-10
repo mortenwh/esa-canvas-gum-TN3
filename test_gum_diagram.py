@@ -561,14 +561,17 @@ class TestEstimateNodeBbox(unittest.TestCase):
         self.assertGreater(hw_long, hw_short)
 
     def test_model_fixed_size(self):
-        hw1, hh1 = gd._estimate_node_bbox("model", "x = 1")
-        hw2, hh2 = gd._estimate_node_bbox("model", "x = a + b + c + d + e + f")
-        self.assertEqual((hw1, hh1), (hw2, hh2))
+        """model bbox is now content-aware: longer equation → wider box."""
+        hw1, _ = gd._estimate_node_bbox("model", "x = 1")
+        hw2, _ = gd._estimate_node_bbox("model", r"x = a + b + c + d + e + f + g + h")
+        self.assertGreater(hw2, hw1)
 
     def test_effect_fixed_size(self):
-        hw1, _ = gd._estimate_node_bbox("effect", "A")
-        hw2, _ = gd._estimate_node_bbox("effect", "A" * 50)
-        self.assertEqual(hw1, hw2)
+        """effect bbox is now content-aware: more/longer items → wider/taller box."""
+        hw1, hh1 = gd._estimate_node_bbox("effect", "A")
+        hw2, hh2 = gd._estimate_node_bbox("effect", r"Long item one \\ Long item two \\ Long item three")
+        self.assertGreater(hw2, hw1)
+        self.assertGreater(hh2, hh1)  # more lines → taller box
 
     def test_minimum_leaf_width(self):
         hw, _ = gd._estimate_node_bbox("leaf", "x")

@@ -1134,48 +1134,63 @@ from collections import namedtuple as _nt
 _NodeRecord = _nt("_NodeRecord", ["x", "y", "ntype", "ivar", "bbox"])
 # ntype values: 'deriv', 'model', 'leaf', 'effect'
 
-# Fixed bounding-box half-sizes (cm) for node types with constrained text width.
-# Used by step-size formulas (_v_m0_for_angle etc.) as conservative bounds.
-# 'leaf' and 'deriv' are content-dependent; see _estimate_node_bbox().
+# Fixed bounding-box half-sizes (cm) — fallback for unknown node types only.
+# All known types ('leaf', 'deriv', 'model', 'effect') are content-aware;
+# see _estimate_node_bbox().
 _BBOX_HALF: Dict[str, Tuple[float, float]] = {
-    "deriv":  (1.25, 0.55),   # fraction node, no fixed text width; upper-bound estimate
-    "model":  (1.45, 0.60),   # text width=2.8cm + 2×4pt, ~2–3 lines
-    "leaf":   (0.95, 0.38),   # auto-sized; upper-bound for collision detection step sizes
-    "effect": (0.80, 0.60),   # text width=1.5cm + 2×2pt, ~2–3 lines
+    "deriv":  (1.25, 0.55),   # fallback only
+    "model":  (1.45, 0.60),   # fallback only
+    "leaf":   (0.95, 0.38),   # fallback only
+    "effect": (0.80, 0.60),   # fallback only
 }
 
 
 def _estimate_node_bbox(ntype: str, content_latex: str) -> Tuple[float, float]:
     """Estimate rendered bounding-box half-sizes (cm) for a single node.
 
-    For 'model' and 'effect' types (fixed text width in TikZ) the global
-    _BBOX_HALF values are returned unchanged.  For 'leaf' and 'deriv' nodes,
-    which no longer carry a fixed text width, the width is estimated from the
-    Unicode approximation of the content string.
+    All node types now auto-size to content (no fixed text width in TikZ).
+    Width and height are estimated from the Unicode approximation of the
+    content string, using per-type scaling factors calibrated to
+    ``\\footnotesize`` text.
 
     Parameters
     ----------
     ntype:
         One of 'deriv', 'model', 'leaf', 'effect'.
     content_latex:
-        The LaTeX math content of the node (without $ delimiters), used to
-        estimate the rendered width.
+        The LaTeX content of the node (without $ delimiters for math types).
     """
-    if ntype in ("model", "effect"):
-        return _BBOX_HALF[ntype]
     uni = _latex_to_unicode(content_latex)
-    nchars = max(len(uni), 1)
     if ntype == "leaf":
-        # \footnotesize, auto-width; ~0.13 cm/char + 2×inner_sep (3 pt ≈ 0.106 cm each)
+        # Single math line, \footnotesize, auto-width; ~0.13 cm/char + inner_sep
+        nchars = max(len(uni), 1)
         hw = max(nchars * 0.13 + 0.21, 0.45)
         hh = 0.35
         return (hw, hh)
     if ntype == "deriv":
-        # Stacked fraction; width is max of num/denom lines.  The fraction
-        # content unicode is roughly "∂A/∂B"; use half of nchars as proxy for
-        # one line.
+        # Stacked fraction; use total char count as proxy for max numerator/denom width
+        nchars = max(len(uni), 1)
         hw = max(nchars * 0.10 + 0.30, 0.70)
         hh = 0.55   # typical stacked-fraction height at \footnotesize
+        return (hw, hh)
+    if ntype == "model":
+        # Single math line (equation), \footnotesize\bfseries, no text width
+        nchars = max(len(uni), 1)
+        hw = max(nchars * 0.10 + 0.30, 0.80)
+        hh = 0.40   # single footnotesize bfseries line
+        return (hw, hh)
+    if ntype == "effect":
+        # Multi-line plain text; lines separated by \\ in the content string
+        # Split on \\ (with or without surrounding spaces)
+        lines = [l.strip() for l in uni.split("\\\\") if l.strip()]
+        if not lines:
+            lines = [uni]
+        # Unicode approximation per line (strip any remaining LaTeX)
+        uni_lines = [_latex_to_unicode(l) for l in lines]
+        max_chars = max(max(len(l) for l in uni_lines), 1)
+        n_lines = len(uni_lines)
+        hw = max(max_chars * 0.10 + 0.20, 0.50)
+        hh = n_lines * 0.30 + 0.10   # ~0.30 cm per footnotesize line + padding
         return (hw, hh)
     return _BBOX_HALF.get(ntype, (0.80, 0.40))
 
@@ -1682,13 +1697,13 @@ def build_tikz(root: MeasurementModel, label: str = "",
     t.raw(r"    root_block/.style={draw=blue!60!black, very thick, rectangle,"
           r" fill=blue!8, inner sep=8pt, font=\normalsize\bfseries, align=center},")
     t.raw(r"    model_block/.style={draw, rectangle, inner sep=4pt,"
-          r" font=\footnotesize\bfseries, align=center, text width=2.8cm},")
+          r" font=\footnotesize\bfseries, align=center},")
     t.raw(r"    deriv_node/.style={draw, rectangle, rounded corners=3pt,"
           r" inner sep=4pt, font=\footnotesize, align=center},")
     t.raw(r"    leaf_node/.style={draw, rectangle, inner sep=4pt,"
           r" font=\footnotesize, align=center},")
     t.raw(r"    effect_node/.style={draw, dashed, font=\footnotesize\itshape,"
-          r" align=center, text width=1.5cm, inner sep=2pt}")
+          r" align=center, inner sep=2pt}")
     t.raw(r"    ]")
 
     root_id = _tikz_id(root.latex_name) + "ROOT"
