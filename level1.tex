@@ -1,4 +1,5 @@
 \section{Uncertainty Estimation for SAR Level-1 Products} \label{sec:level1}
+
 This section applies the principles of the \ac{GUM} to \ac{SAR} Level-1
 products by taking the \emph{product}---rather than an individual calibration
 activity---as the measurand-oriented starting point. This is consistent with
@@ -7,7 +8,8 @@ quantity, define its measurement model, identify all relevant input quantities,
 and then propagate the corresponding uncertainties to the final product
 statement \cite{JCGMGUM,QA4EO3}. For Level-1 \ac{SAR}, this means that the
 uncertainty analysis should be organized around the calibrated single-look complex (SLC), the
-polarimetric single-look complex (SLC), the interferometric product, and the geophysical
+polarimetric single-look complex, the interferometric product, geocoded Analysis Ready Data
+such as Normalised Radar Backscatter, and the geophysical
 Doppler product.
 
 Radiometric, geometric, and polarimetric calibration are therefore treated here
@@ -18,7 +20,9 @@ noise corrections, geometric timing and orbit knowledge, processor
 approximations, and, where relevant, polarimetric channel corrections. In the
 same way, an interferometric product inherits uncertainties from the two input
 single-look complex (SLC) products, their co-registration, the baseline knowledge, and the
-statistics of the interferometric estimator.
+statistics of the interferometric estimator. An NRB/ARD product inherits the uncertainty of the
+source SAR acquisition and adds uncertainty from radiometric terrain correction, DEM and ancillary
+data, geocoding, resampling, masks, and map-grid definition.
 
 The following product-based structure is adopted:
 \begin{itemize}
@@ -29,6 +33,8 @@ The following product-based structure is adopted:
   principal measurand;
   \item an interferometric product, whose principal observables are coherence,
   phase, and related quality indicators;
+  \item a geocoded ARD/NRB product, for which the measurand is terrain-normalised
+  backscatter on a defined map grid;
   \item the geophysical Doppler product, treated as a detailed worked example.
 \end{itemize}
 
@@ -76,6 +82,44 @@ to the following categories:
   and target-background contrast;
   \item auxiliary-data terms, such as orbit, attitude, digital elevation model (DEM), and surveyed reference-target uncertainties.
 \end{itemize}
+
+
+The uncertainty budget shall also include the Cal/Val reference and the
+measurement tool used to estimate the product quality indicator. For point
+target IRF, geolocation, and radiometric checks, this includes target survey
+uncertainty, target calibration uncertainty, signal-to-clutter ratio,
+background estimation, atmospheric and ionospheric propagation at the time of
+acquisition, and the implementation uncertainty of the analysis software. For
+distributed-targets, it includes the spatial and
+temporal collocation thresholds, representativeness error, model assumptions,
+and the covariance between the satellite product, reference data, and any
+background or model field.
+
+Auxiliary data files are part of the measurement model. Orbit and attitude products, DEMs, meteorological fields, ionospheric maps,
+antenna patterns, calibration look-up tables, masks, and processor annotation
+files shall therefore be assigned uncertainty terms, validity domains, and
+correlation scales. Atmospheric propagation terms include atmospheric
+path delay and attenuation; ionospheric terms include dispersive group delay, and Faraday rotation. These
+terms can affect SLC, and interferometric products and are
+not limited to geocoded products.
+
+Per-pixel uncertainty reporting is required where the product provides a
+spatially varying measurand. A per-pixel uncertainty layer should contain the
+local random component of the standard uncertainty, while product-level
+metadata should document common-mode and spatially correlated terms that cannot
+be interpreted as independent pixel noise. The recommended reporting structure
+is therefore: per-pixel random uncertainty, local-window uncertainty for
+estimator or multilooking effects, swath-scale or burst-scale uncertainty for
+calibration and processing terms, and product-wide uncertainty for reference,
+orbit, processor-version.
+
+For consistency in the traceability diagrams used below, $u(x)$ denotes the
+standard uncertainty of input quantity $x$, $\Delta x$ denotes a residual or
+model error term, $\partial y/\partial x$ denotes a sensitivity coefficient,
+$\mathbf{U}$ denotes a covariance matrix, $\mathbf{J}$ denotes a Jacobian, and
+arrows indicate propagation from an input quantity or uncertainty contribution
+to the measurand.
+
 
 This product-based organization places the role of radiometric,
 geometric, or polarimetric calibration inside the measurement model of the final product.
@@ -141,7 +185,204 @@ contribute to three derived observable families:
 The figure is intentionally analogous to the uncertainty tree
 diagrams used elsewhere in TN3: the calibrated sample is the central product,
 while the radiometric, geometric, and phase observables are treated as three
-derived measurands with partially shared inputs.
+derived measurands with partially shared inputs. Atmospheric and ionospheric
+propagation terms are shown explicitly where they affect amplitude, timing, or
+phase.
+
+% \begin{figure}[H]
+%   \centering
+%   \resizebox{0.92\textwidth}{!}{%
+%   \begin{tikzpicture}[node distance=1.15cm and 1.15cm, every node/.style={font=\scriptsize}]
+%     \node[draw,
+%           text width=3.0cm,
+%           align=center,
+%           minimum height=0.9cm] (raw)
+%           {$s_{\rm raw}$};
+
+%     \node[draw,
+%           right=1.8cm of raw,
+%           text width=2.8cm,
+%           align=center,
+%           minimum height=0.9cm] (crad)
+%           {$C_{\rm rad}$};
+
+%     \node[draw,
+%           right=1.8cm of crad,
+%           text width=3.2cm,
+%           align=center,
+%           minimum height=0.9cm] (cgeo)
+%           {$C_{\rm geo},\phi_{\rm corr}$};
+
+%     \node[draw,
+%           below=1.8cm of crad,
+%           text width=6.6cm,
+%           align=center,
+%           minimum height=1.1cm] (slc)
+%           {$s_{\rm c}=f(s_{\rm raw},C_{\rm rad},C_{\rm geo},n,\phi_{\rm corr})+\Delta s$};
+
+%     \node[draw,
+%           below=2.0cm of slc,
+%           text width=5.6cm,
+%           align=center,
+%           minimum height=1.1cm] (rad)
+%           {$z_{\rm rad}=g_{\rm rad}(s_{\rm c},K_{\rm rad},G,\theta)+\Delta z_{\rm rad}$};
+
+%     \node[draw,
+%           below=2.7cm of rad,
+%           text width=6.4cm,
+%           align=center,
+%           minimum height=1.1cm] (geo)
+%           {$\mathbf{g}=g_{\rm geo}(p_{\rm img},t_{\rm rg},t_{\rm az},\mathbf{p}_{\rm orb},\mathbf{p}_{\rm att})+\Delta\mathbf{g}$};
+
+%     \node[draw,
+%           below=2.7cm of geo,
+%           text width=5.6cm,
+%           align=center,
+%           minimum height=1.1cm] (pha)
+%           {$\phi_{\rm L1}=g_{\rm ph}(\arg(s_{\rm c}),\phi_{\rm corr})+\Delta\phi$};
+
+%     \node[draw,
+%           left=3.3cm of rad,
+%           text width=1.9cm,
+%           align=center,
+%           minimum height=0.85cm] (dradsc)
+%           {$\frac{\partial z_{\rm rad}}{\partial s_{\rm c}}$};
+
+%     \node[draw,
+%           right=3.3cm of rad,
+%           text width=2.1cm,
+%           align=center,
+%           minimum height=0.85cm] (dradcrad)
+%           {$\frac{\partial z_{\rm rad}}{\partial C_{\rm rad}}$};
+
+%     \node[draw,
+%           below left=1.2cm and 2.6cm of rad,
+%           text width=1.8cm,
+%           align=center,
+%           minimum height=0.85cm] (dradn)
+%           {$\frac{\partial z_{\rm rad}}{\partial n}$};
+
+%     \node[left=1.6cm of dradsc,
+%           text width=2.4cm,
+%           align=center] (uradsc)
+%           {$u(s_{\rm c})$\\focused\\sample};
+
+%     \node[right=1.6cm of dradcrad,
+%           text width=2.4cm,
+%           align=center] (ucradleaf)
+%           {$u(C_{\rm rad})$\\gain drift};
+
+%     \node[left=1.5cm of dradn,
+%           text width=2.4cm,
+%           align=center] (unleaf)
+%           {$u(n)$\\thermal noise};
+
+%     \node[draw,
+%           left=3.4cm of geo,
+%           text width=2.0cm,
+%           align=center,
+%           minimum height=0.85cm] (dgeosc)
+%           {$\frac{\partial \mathbf{g}}{\partial s_{\rm c}}$};
+
+%     \node[draw,
+%           right=3.4cm of geo,
+%           text width=1.9cm,
+%           align=center,
+%           minimum height=0.85cm] (dgeotrg)
+%           {$\frac{\partial \mathbf{g}}{\partial t_{\rm rg}}$};
+
+%     \node[draw,
+%           below right=1.2cm and 2.7cm of geo,
+%           text width=2.3cm,
+%           align=center,
+%           minimum height=0.85cm] (dgeoorb)
+%           {$\frac{\partial \mathbf{g}}{\partial \mathbf{p}_{\rm orb}}$};
+
+%     \node[left=1.5cm of dgeosc,
+%           text width=2.4cm,
+%           align=center] (ugeosc)
+%           {$u(s_{\rm c})$\\target\\position};
+
+%     \node[right=1.5cm of dgeotrg,
+%           text width=2.1cm,
+%           align=center] (utrgleaf)
+%           {$u(t_{\rm rg})$\\timing};
+
+%     \node[right=1.4cm of dgeoorb,
+%           text width=2.4cm,
+%           align=center] (uorbleaf)
+%           {$u(\mathbf{p}_{\rm orb})$\\orbit state};
+
+%     \node[draw,
+%           left=3.3cm of pha,
+%           text width=1.9cm,
+%           align=center,
+%           minimum height=0.85cm] (dphisc)
+%           {$\frac{\partial \phi_{\rm L1}}{\partial s_{\rm c}}$};
+
+%     \node[draw,
+%           right=3.3cm of pha,
+%           text width=2.2cm,
+%           align=center,
+%           minimum height=0.85cm] (dphicorr)
+%           {$\frac{\partial \phi_{\rm L1}}{\partial \phi_{\rm corr}}$};
+
+%     \node[draw,
+%           below left=1.2cm and 2.6cm of pha,
+%           text width=1.8cm,
+%           align=center,
+%           minimum height=0.85cm] (dphan)
+%           {$\frac{\partial \phi_{\rm L1}}{\partial n}$};
+
+%     \node[left=1.6cm of dphisc,
+%           text width=2.4cm,
+%           align=center] (uphasc)
+%           {$u(s_{\rm c})$\\phase\\sample};
+
+%     \node[right=1.5cm of dphicorr,
+%           text width=2.5cm,
+%           align=center] (uphicorrleaf)
+%           {$u(\phi_{\rm corr})$\\phase correction};
+
+%     \node[left=1.5cm of dphan,
+%           text width=2.4cm,
+%           align=center] (uphanleaf)
+%           {$u(n)$\\noise floor};
+
+%     \draw[-latex] (raw) -- (slc);
+%     \draw[-latex] (crad) -- (slc);
+%     \draw[-latex] (cgeo) -- (slc);
+
+%     \draw[-latex] (slc) -- (rad);
+%     \draw[-latex] (slc) -- (geo);
+%     \draw[-latex] (slc) -- (pha);
+
+%     \draw[-latex] (dradsc) -- (rad);
+%     \draw[-latex] (dradcrad) -- (rad);
+%     \draw[-latex] (dradn) -- (rad);
+%     \draw[-latex] (uradsc) -- (dradsc);
+%     \draw[-latex] (ucradleaf) -- (dradcrad);
+%     \draw[-latex] (unleaf) -- (dradn);
+
+%     \draw[-latex] (dgeosc) -- (geo);
+%     \draw[-latex] (dgeotrg) -- (geo);
+%     \draw[-latex] (dgeoorb) -- (geo);
+%     \draw[-latex] (ugeosc) -- (dgeosc);
+%     \draw[-latex] (utrgleaf) -- (dgeotrg);
+%     \draw[-latex] (uorbleaf) -- (dgeoorb);
+
+%     \draw[-latex] (dphisc) -- (pha);
+%     \draw[-latex] (dphicorr) -- (pha);
+%     \draw[-latex] (dphan) -- (pha);
+%     \draw[-latex] (uphasc) -- (dphisc);
+%     \draw[-latex] (uphicorrleaf) -- (dphicorr);
+%     \draw[-latex] (uphanleaf) -- (dphan);
+%   \end{tikzpicture}%
+%   }
+%   \caption{Traceability diagram for a calibrated single-look complex product and the three main families of derived Level-1 observables: radiometric, geometric, and phase observables.}
+%   \label{fig:slc_traceability}
+% \end{figure}
+
 
 \begin{figure}[H]
   \centering
@@ -166,6 +407,13 @@ derived measurands with partially shared inputs.
           align=center,
           minimum height=0.9cm] (cgeo)
           {$C_{\rm geo},\phi_{\rm corr}$};
+
+    \node[draw,
+          above=1.1cm of cgeo,
+          text width=3.4cm,
+          align=center,
+          minimum height=0.9cm] (prop)
+          {$\Delta_{\rm trop},\Delta_{\rm iono}$\\path delay, attenuation, Faraday};
 
     \node[draw,
           below=1.8cm of crad,
@@ -252,6 +500,13 @@ derived measurands with partially shared inputs.
           minimum height=0.85cm] (dgeoorb)
           {$\frac{\partial \mathbf{g}}{\partial \mathbf{p}_{\rm orb}}$};
 
+    \node[draw,
+          above right=1.2cm and 2.7cm of geo,
+          text width=2.3cm,
+          align=center,
+          minimum height=0.85cm] (dgeoprop)
+          {$\frac{\partial \mathbf{g}}{\partial \Delta_{\rm prop}}$};
+
     \node[left=1.5cm of dgeosc,
           text width=2.4cm,
           align=center] (ugeosc)
@@ -266,6 +521,11 @@ derived measurands with partially shared inputs.
           text width=2.4cm,
           align=center] (uorbleaf)
           {$u(\mathbf{p}_{\rm orb})$\\orbit state};
+
+    \node[right=1.4cm of dgeoprop,
+          text width=2.7cm,
+          align=center] (upropgeo)
+          {$u(\Delta_{\rm prop})$\\tropo/iono delay};
 
     \node[draw,
           left=3.3cm of pha,
@@ -288,6 +548,13 @@ derived measurands with partially shared inputs.
           minimum height=0.85cm] (dphan)
           {$\frac{\partial \phi_{\rm L1}}{\partial n}$};
 
+    \node[draw,
+          below right=1.2cm and 2.6cm of pha,
+          text width=2.1cm,
+          align=center,
+          minimum height=0.85cm] (dphiprop)
+          {$\frac{\partial \phi_{\rm L1}}{\partial \Delta_{\rm iono}}$};
+
     \node[left=1.6cm of dphisc,
           text width=2.4cm,
           align=center] (uphasc)
@@ -303,9 +570,15 @@ derived measurands with partially shared inputs.
           align=center] (uphanleaf)
           {$u(n)$\\noise floor};
 
+    \node[right=1.5cm of dphiprop,
+          text width=2.6cm,
+          align=center] (uphiprop)
+          {ionospheric phase\\Faraday rotation};
+
     \draw[-latex] (raw) -- (slc);
     \draw[-latex] (crad) -- (slc);
     \draw[-latex] (cgeo) -- (slc);
+    \draw[-latex] (prop) -- (cgeo);
 
     \draw[-latex] (slc) -- (rad);
     \draw[-latex] (slc) -- (geo);
@@ -321,16 +594,20 @@ derived measurands with partially shared inputs.
     \draw[-latex] (dgeosc) -- (geo);
     \draw[-latex] (dgeotrg) -- (geo);
     \draw[-latex] (dgeoorb) -- (geo);
+    \draw[-latex] (dgeoprop) -- (geo);
     \draw[-latex] (ugeosc) -- (dgeosc);
     \draw[-latex] (utrgleaf) -- (dgeotrg);
     \draw[-latex] (uorbleaf) -- (dgeoorb);
+    \draw[-latex] (upropgeo) -- (dgeoprop);
 
     \draw[-latex] (dphisc) -- (pha);
     \draw[-latex] (dphicorr) -- (pha);
     \draw[-latex] (dphan) -- (pha);
+    \draw[-latex] (dphiprop) -- (pha);
     \draw[-latex] (uphasc) -- (dphisc);
     \draw[-latex] (uphicorrleaf) -- (dphicorr);
     \draw[-latex] (uphanleaf) -- (dphan);
+    \draw[-latex] (uphiprop) -- (dphiprop);
   \end{tikzpicture}%
   }
   \caption{Traceability diagram for a calibrated single-look complex product and the three main families of derived Level-1 observables: radiometric, geometric, and phase observables.}
@@ -426,11 +703,15 @@ delivered with either dedicated quality layers or documentation that separates:
 This separation mirrors the way users actually exploit Level-1 data and makes
 the uncertainty statement much more actionable for downstream applications.
 
-\subsection{Polarimetric Level-1 SLC product}
+\subsection{Polarimetric Level-1 product}
 
 For a polarimetric Level-1 product, the measurand is no longer a single complex
 sample but the calibrated scattering matrix, or equivalently the covariance or
-coherency representation derived from it.
+coherency representation derived from it. All single-channel SLC uncertainty effects still
+apply to every polarimetric channel. The additional polarimetric information
+allows some channel imbalance, cross-talk, co-polar phase, and Faraday-rotation
+effects to be estimated or compensated, but it also introduces covariance
+between channels that must be retained in the uncertainty budget.
 
 \subsubsection{Step 1: Definition of measurand and measurement model}
 
@@ -467,6 +748,59 @@ measurand, while channel imbalance, cross-talk, and co-polar phase observables
 are treated as derived quantities supported by reference targets and channel
 statistics.
 
+% \begin{figure}[H]
+%   \centering
+%   \resizebox{0.96\textwidth}{!}{%
+%   \begin{tikzpicture}[node distance=1.25cm and 1.2cm, every node/.style={font=\small}]
+%     \node[draw,text width=2.8cm,align=center,minimum height=0.9cm] (sm)
+%       {$\mathbf{S}_{\rm m}$};
+%     \node[draw,right=1.9cm of sm,text width=2.3cm,align=center,minimum height=0.9cm] (mr)
+%       {$\mathbf{M}_{\rm r}$};
+%     \node[draw,right=1.9cm of mr,text width=2.3cm,align=center,minimum height=0.9cm] (mt)
+%       {$\mathbf{M}_{\rm t}$};
+
+%     \node[draw,below=1.6cm of mr,text width=6.8cm,align=center,minimum height=1.05cm] (sc)
+%       {$\mathbf{S}_{\rm c}=\mathbf{M}_{\rm r}^{-1}\mathbf{S}_{\rm m}\mathbf{M}_{\rm t}^{-1}+\Delta\mathbf{S}$};
+
+%     \node[draw,below=2.0cm of sc,text width=4.8cm,align=center,minimum height=1.0cm] (imb)
+%       {$q_{\rm imb}=g_{\rm imb}(\mathbf{S}_{\rm c})+\Delta q_{\rm imb}$};
+%     \node[draw,below=2.4cm of imb,text width=4.8cm,align=center,minimum height=1.0cm] (xt)
+%       {$q_{\rm xt}=g_{\rm xt}(\mathbf{S}_{\rm c})+\Delta q_{\rm xt}$};
+%     \node[draw,below=2.4cm of xt,text width=4.8cm,align=center,minimum height=1.0cm] (phb)
+%       {$q_{\phi}=g_{\phi}(\mathbf{S}_{\rm c})+\Delta q_{\phi}$};
+
+%     \node[draw,left=3.0cm of imb,text width=1.9cm,align=center,minimum height=0.85cm] (dimb)
+%       {$\frac{\partial q_{\rm imb}}{\partial \mathbf{S}_{\rm c}}$};
+%     \node[left=1.3cm of dimb,text width=2.2cm,align=center] (uimb)
+%       {$u(\mathbf{M}_{\rm r,t})$\\channel imbalance};
+
+%     \node[draw,left=3.0cm of xt,text width=1.9cm,align=center,minimum height=0.85cm] (dxt)
+%       {$\frac{\partial q_{\rm xt}}{\partial \mathbf{S}_{\rm c}}$};
+%     \node[left=1.3cm of dxt,text width=2.0cm,align=center] (uxt)
+%       {$u(\mathrm{XT})$\\cross-talk};
+
+%     \node[draw,right=3.0cm of phb,text width=1.9cm,align=center,minimum height=0.85cm] (dphb)
+%       {$\frac{\partial q_{\phi}}{\partial \mathbf{S}_{\rm c}}$};
+%     \node[right=1.3cm of dphb,text width=2.2cm,align=center] (uphb)
+%       {$u(\Delta\phi_{\rm co})$\\co-pol phase offset};
+
+%     \draw[-latex] (sm) -- (sc);
+%     \draw[-latex] (mr) -- (sc);
+%     \draw[-latex] (mt) -- (sc);
+%     \draw[-latex] (sc) -- (imb);
+%     \draw[-latex] (sc) -- (xt);
+%     \draw[-latex] (sc) -- (phb);
+%     \draw[-latex] (dimb) -- (imb);
+%     \draw[-latex] (uimb) -- (dimb);
+%     \draw[-latex] (dxt) -- (xt);
+%     \draw[-latex] (uxt) -- (dxt);
+%     \draw[-latex] (dphb) -- (phb);
+%     \draw[-latex] (uphb) -- (dphb);
+%   \end{tikzpicture}%
+%   }
+%   \caption{Traceability diagram for the polarimetric Level-1 product and the main observables related to channel imbalance, cross-talk, and co-polar phase bias.}
+%   \label{fig:pol_traceability}
+% \end{figure}
 \begin{figure}[H]
   \centering
   \resizebox{0.96\textwidth}{!}{%
@@ -503,6 +837,11 @@ statistics.
     \node[right=1.3cm of dphb,text width=2.2cm,align=center] (uphb)
       {$u(\Delta\phi_{\rm co})$\\co-pol phase offset};
 
+    \node[draw,left=3.0cm of phb,text width=2.0cm,align=center,minimum height=0.85cm] (dpoliono)
+      {$\frac{\partial q_{\phi}}{\partial F_{\rm iono}}$};
+    \node[left=1.3cm of dpoliono,text width=2.4cm,align=center] (uiono)
+      {$u(F_{\rm iono})$\\Faraday rotation};
+
     \draw[-latex] (sm) -- (sc);
     \draw[-latex] (mr) -- (sc);
     \draw[-latex] (mt) -- (sc);
@@ -515,6 +854,8 @@ statistics.
     \draw[-latex] (uxt) -- (dxt);
     \draw[-latex] (dphb) -- (phb);
     \draw[-latex] (uphb) -- (dphb);
+    \draw[-latex] (dpoliono) -- (phb);
+    \draw[-latex] (uiono) -- (dpoliono);
   \end{tikzpicture}%
   }
   \caption{Traceability diagram for the polarimetric Level-1 product and the main observables related to channel imbalance, cross-talk, and co-polar phase bias.}
@@ -522,6 +863,7 @@ statistics.
 \end{figure}
 
 \subsubsection{Step 3: Uncertainty effects table for the polarimetric product}
+This is provided in Table \ref{tab:pol_effects_table}.
 
 \begin{table*}[ht]
   \scriptsize
@@ -597,6 +939,16 @@ The uncertainty budget of the interferometric product contains:
   \item optional unwrapping uncertainty if unwrapped phase is analysed.
 \end{itemize}
 
+When coherence or phase is estimated after flattening or topographic
+demodulation, the demodulation phase is itself an input quantity. The
+uncertainty of the external DEM, geoid or height reference, baseline, and orbit
+therefore propagates into the residual phase and, in steep or heterogeneous
+terrain, can also affect coherence through imperfect phase removal within the
+estimation window. For many low-relief coherence applications this DEM-driven
+term may be negligible, but it shall be documented as an auxiliary-data
+contribution rather than omitted by assumption.
+
+
 Figure~\ref{fig:insar_traceability} shows the uncertainty tree for the
 interferometric product. The two calibrated input single-look complex products
 feed the interferogram, from which phase and coherence are estimated as the
@@ -629,6 +981,11 @@ main Level-1 observables.
     \node[right=1.3cm of diph,text width=2.6cm,align=center] (uiph)
       {$u(\mathbf{b})$\\baseline/orbit};
 
+    \node[draw,left=2.8cm of iph,text width=2.0cm,align=center,minimum height=0.85cm] (dinsprop)
+      {$\frac{\partial \hat{\phi}}{\partial \Delta L_{\rm prop}}$};
+    \node[left=1.3cm of dinsprop,text width=2.7cm,align=center] (uinsprop)
+      {tropospheric and\\ionospheric delay};
+
     \node[draw,left=2.8cm of igram,text width=1.8cm,align=center,minimum height=0.85cm] (dig)
       {$\frac{\partial I}{\partial s_{1,2}}$};
     \node[left=1.3cm of dig,text width=2.3cm,align=center] (uslc)
@@ -644,6 +1001,8 @@ main Level-1 observables.
     \draw[-latex] (ucoh) -- (dcoh);
     \draw[-latex] (diph) -- (iph);
     \draw[-latex] (uiph) -- (diph);
+    \draw[-latex] (dinsprop) -- (iph);
+    \draw[-latex] (uinsprop) -- (dinsprop);
   \end{tikzpicture}%
   }
   \caption{Traceability diagram for the interferometric Level-1 product and its principal observables: coherence and interferometric phase.}
@@ -651,7 +1010,7 @@ main Level-1 observables.
 \end{figure}
 
 \subsubsection{Step 3: Uncertainty effects table for the interferometric product}
-
+This is reported in Table \ref{tab:insar_effects_table}
 \begin{table*}[ht]
   \scriptsize
   \centering
@@ -688,5 +1047,179 @@ to the acquisition pair, the estimator window, and the scene class. In this
 way, the reported uncertainty remains a property of the product that the user
 actually interprets, rather than a generic statement about one element of the
 processing chain.
+
+
+
+\subsection{Geocoded ARD/NRB Level-1 product}
+\label{sec:l1_nrb_uncertainty}
+
+Normalised Radar Backscatter (NRB) is a Level-1 Analysis Ready Data product in which the calibrated SAR measurement is terrain-corrected, radiometrically normalised, resampled, and delivered on a defined map grid. The CEOS NRB Product Family Specification therefore extends the uncertainty problem beyond the source SLC or detected product: the final measurand is not only a calibrated backscatter value, but a terrain-normalised backscatter value assigned to a specific projected pixel with associated metadata, masks, and ancillary-data lineage \cite{NRB_PFS}.
+
+\subsubsection{Step 1: Definition of measurand and measurement model}
+
+For an NRB pixel, a generic measurand can be written as
+\begin{equation}
+  y_{\rm NRB}(\mathbf{p}) =
+  T_{\rm rad}\!\left(z_{\rm src}, \theta_{\rm loc}, \mathbf{d}_{\rm DEM}, \mathbf{m}\right)
+  + \Delta y_{\rm NRB},
+  \label{eq:nrb_model}
+\end{equation}
+where $\mathbf{p}$ is the output map-grid pixel, $z_{\rm src}$ is the calibrated source-product backscatter or intensity quantity, $T_{\rm rad}$ is the radiometric terrain-normalisation and geocoding operator, $\theta_{\rm loc}$ is the local incidence-angle information, $\mathbf{d}_{\rm DEM}$ denotes DEM and terrain variables, $\mathbf{m}$ denotes product masks and validity flags, and $\Delta y_{\rm NRB}$ represents residual modelling and implementation effects. The corresponding geometric measurand is the map location of the output pixel,
+\begin{equation}
+  \mathbf{g}_{\rm NRB} = G\!\left(\mathbf{g}_{\rm src}, \mathbf{x}_{\rm orb}, \mathbf{d}_{\rm DEM}, \mathbf{x}_{\rm CRS}, \mathbf{x}_{\rm resamp}\right) + \Delta \mathbf{g}_{\rm NRB},
+  \label{eq:nrb_geometric_model}
+\end{equation}
+where $G$ is the geocoding operator, $\mathbf{g}_{\rm src}$ is the source-product geometric information, $\mathbf{x}_{\rm orb}$ represents orbit and attitude information, $\mathbf{x}_{\rm CRS}$ defines the coordinate reference system and map-grid convention, and $\mathbf{x}_{\rm resamp}$ represents interpolation and resampling choices.
+
+\subsubsection{Step 2: Traceability diagram for the NRB product}
+
+The NRB uncertainty budget should be organized into inherited and product-generation terms:
+\begin{itemize}
+  \item \textbf{Inherited source-product terms:} absolute radiometric calibration, antenna-pattern correction, noise subtraction, timing, orbit, attitude, and any source-product processor approximations.
+  \item \textbf{Radiometric terrain-normalisation terms:} DEM height uncertainty, slope/aspect uncertainty, local incidence-angle estimation, scattering-area model, terrain-flattening convention, and residual layover or shadow contamination.
+  \item \textbf{Geometric and map-grid terms:} coordinate reference system definition, pixel coordinate convention, grid origin, pixel spacing, orthorectification model, DEM-induced geolocation error, and reference-image or GCP uncertainty used for validation.
+  \item \textbf{Resampling and aggregation terms:} interpolation kernel, multilooking or averaging, correlated neighbouring pixels, edge effects, and changes in speckle statistics caused by reprojection.
+  \item \textbf{Mask and metadata terms:} valid-data mask, layover/shadow mask, water or no-data masks where applicable, metadata machine readability, ancillary-data versioning, and temporal validity of the source and reference data.
+\end{itemize}
+
+Figure~\ref{fig:nrb_traceability} shows the uncertainty tree for a geocoded
+ARD/NRB Level-1 product. The diagram separates the inherited source-product
+branch from the product-generation branches introduced by terrain
+normalisation, geocoding, resampling, masking, and ancillary-data lineage. This
+is important because an NRB pixel is not only a calibrated backscatter value;
+it is a terrain-normalised value assigned to a defined map-grid pixel and
+qualified by masks and metadata.
+
+\begin{figure}[H]
+  \centering
+  \resizebox{\textwidth}{!}{%
+  \begin{tikzpicture}[node distance=1.35cm and 1.55cm, every node/.style={font=\small}]
+    \node[draw,text width=3.2cm,align=center,minimum height=0.9cm] (src)
+      {$z_{\rm src}$\\source radiometry};
+    \node[draw,right=1.8cm of src,text width=3.4cm,align=center,minimum height=0.9cm] (dem)
+      {$\mathbf{d}_{\rm DEM},\theta_{\rm loc}$\\terrain geometry};
+    \node[draw,right=1.8cm of dem,text width=3.2cm,align=center,minimum height=0.9cm] (geo)
+      {$\mathbf{x}_{\rm orb},\mathbf{x}_{\rm CRS}$\\geocoding};
+    \node[draw,above=1.45cm of geo,text width=3.8cm,align=center,minimum height=0.9cm] (atm)
+      {$\mathbf{x}_{\rm atm},\mathbf{x}_{\rm iono}$\\attenuation, delay};
+
+    \node[draw,below=2.0cm of dem,text width=7.8cm,align=center,minimum height=1.0cm] (trad)
+      {$T_{\rm rad}(z_{\rm src},\theta_{\rm loc},\mathbf{d}_{\rm DEM},\mathbf{m})+\Delta y_{\rm NRB}$};
+
+    \node[draw,below=2.0cm of trad,text width=7.3cm,align=center,minimum height=1.0cm] (grid)
+      {$y_{\rm NRB}(\mathbf{p}),\;\mathbf{g}_{\rm NRB}=G(\mathbf{g}_{\rm src},\mathbf{x}_{\rm orb},\mathbf{d}_{\rm DEM},\mathbf{x}_{\rm CRS},\mathbf{x}_{\rm resamp})+\Delta\mathbf{g}_{\rm NRB}$};
+
+    \node[draw,left=3.0cm of trad,text width=1.7cm,align=center,minimum height=0.85cm] (dsrc)
+      {$\frac{\partial y}{\partial z_{\rm src}}$};
+    \node[left=1.45cm of dsrc,text width=2.6cm,align=center] (usrc)
+      {$u(z_{\rm src})$\\calibration, noise, speckle};
+
+    \node[draw,above=1.55cm of trad,text width=1.9cm,align=center,minimum height=0.85cm] (ddem)
+      {$\frac{\partial y}{\partial \mathbf{d}_{\rm DEM}}$};
+    \node[above=1.25cm of ddem,text width=3.0cm,align=center] (udem)
+      {$u(\mathbf{d}_{\rm DEM}),u(\theta_{\rm loc})$\\height, slope, aspect};
+
+    \node[draw,right=3.0cm of trad,text width=1.8cm,align=center,minimum height=0.85cm] (dgeo)
+      {$\frac{\partial \mathbf{g}}{\partial \mathbf{x}_{\rm geo}}$};
+    \node[right=1.45cm of dgeo,text width=2.8cm,align=center] (ugeo)
+      {$u(\mathbf{x}_{\rm orb}),u(\mathbf{x}_{\rm CRS})$\\orbit, grid, CRS};
+
+    \node[draw,above right=2.05cm and 2.35cm of trad,text width=2.0cm,align=center,minimum height=0.85cm] (datm)
+      {$\frac{\partial y,\mathbf{g}}{\partial \mathbf{x}_{\rm prop}}$};
+    \node[right=1.35cm of datm,text width=2.8cm,align=center] (uatm)
+      {$u(\mathbf{x}_{\rm atm}),u(\mathbf{x}_{\rm iono})$\\meteo, TEC maps};
+
+    \node[draw,left=3.0cm of grid,text width=1.9cm,align=center,minimum height=0.85cm] (dres)
+      {$\frac{\partial y}{\partial \mathbf{x}_{\rm resamp}}$};
+    \node[left=1.45cm of dres,text width=2.8cm,align=center] (ures)
+      {$u(\mathbf{x}_{\rm resamp})$\\kernel, aggregation};
+
+    \node[draw,right=3.0cm of grid,text width=1.8cm,align=center,minimum height=0.85cm] (dmask)
+      {$u_{\rm mask}$};
+    \node[right=1.45cm of dmask,text width=2.7cm,align=center] (umask)
+      {layover, shadow, no-data, validity flags};
+
+    \draw[-latex] (src) -- (trad);
+    \draw[-latex] (dem) -- (trad);
+    \draw[-latex] (geo) -- (trad);
+    \draw[-latex] (atm) -- (trad);
+    \draw[-latex] (trad) -- (grid);
+    \draw[-latex] (usrc) -- (dsrc);
+    \draw[-latex] (dsrc) -- (trad);
+    \draw[-latex] (udem) -- (ddem);
+    \draw[-latex] (ddem) -- (trad);
+    \draw[-latex] (ugeo) -- (dgeo);
+    \draw[-latex] (dgeo) -- (trad);
+    \draw[-latex] (uatm) -- (datm);
+    \draw[-latex] (datm) -- (trad);
+    \draw[-latex] (datm) -- (grid);
+    \draw[-latex] (ures) -- (dres);
+    \draw[-latex] (dres) -- (grid);
+    \draw[-latex] (umask) -- (dmask);
+    \draw[-latex] (dmask) -- (grid);
+  \end{tikzpicture}%
+  }
+  \caption{Traceability diagram for a geocoded ARD/NRB Level-1 product. The final measurands are the terrain-normalised backscatter value $y_{\rm NRB}(\mathbf{p})$ and its associated map-grid location $\mathbf{g}_{\rm NRB}$.}
+  \label{fig:nrb_traceability}
+\end{figure}
+
+\subsubsection{Step 4: Uncertainty effects table for the NRB product}
+
+Table~\ref{tab:nrb_effects_table} summarizes the main uncertainty effects for
+NRB/ARD products. The table distinguishes radiometric uncertainty, geometric
+uncertainty, and mask/metadata validity because these components have different
+correlation structures and are used differently by downstream users.
+
+\begin{table*}[ht]
+  \scriptsize
+  \centering
+  \caption{Uncertainty effects table for the geocoded NRB Level-1 product.}
+  \resizebox{\textwidth}{!}{%
+  \begin{tabular}{|p{3.2cm}|c|c|c|c|p{3.3cm}|p{3.2cm}|}
+    \hline
+    \textbf{Name of effect} & \textbf{Radiometric} & \textbf{Geometric} & \textbf{Mask / metadata} & \textbf{Maturity} & \textbf{Correlation type / scale} & \textbf{Typical uncertainty form} \\ \hline
+    Inherited source-product calibration & Yes & weak & No & 2--3 & structured / swath-product & multiplicative backscatter bias \\ \hline
+    Source-product noise, speckle, and finite looks & Yes & weak & No & 2--3 & random to local-window & variance term reduced by averaging \\ \hline
+    DEM height, slope, and aspect & Yes & Yes & weak & 2--3 & spatially correlated / terrain tile & local-incidence and geolocation covariance \\ \hline
+    Local incidence-angle estimation & Yes & weak & No & 2--3 & structured / terrain facet & terrain-normalisation sensitivity term \\ \hline
+    Terrain-flattening and scattering-area model & Yes & weak & No & 1--2 & structured / scene class & model-convention bias \\ \hline
+    Orbit, attitude, and timing inherited by geocoding & weak & Yes & No & 2--3 & structured / acquisition & map-location covariance term \\ \hline
+    CRS, grid origin, pixel spacing, and coordinate convention & No & Yes & Yes & 2--3 & product-wide systematic & map-grid convention and metadata term \\ \hline
+    Resampling, interpolation, and aggregation & Yes & Yes & weak & 1--2 & local-window / kernel footprint & smoothing, covariance, and edge effects \\ \hline
+    Layover, shadow, water, no-data, and validity masks & weak & weak & Yes & 1--2 & object/local-region & classification or flagging uncertainty \\ \hline
+    Ancillary-data lineage and processor version & Yes & Yes & Yes & 1--2 & product-wide / processing baseline & traceability and reproducibility term \\ \hline
+    Reference image or GCP validation data & weak & Yes & weak & 2 & local to scene-wide & validation-reference covariance \\ \hline
+  \end{tabular}
+  }
+  \label{tab:nrb_effects_table}
+\end{table*}
+
+\subsubsection{Step 5: Propagation and covariance structure}
+
+For NRB, uncertainty propagation should account for both radiometric and geometric covariance. In compact form,
+\begin{equation}
+  u^2\!\left(y_{\rm NRB}\right) \approx
+  \mathbf{J}_{T}\,\mathbf{U}_{\rm src}\,\mathbf{J}_{T}^{\mathsf{T}}
+  + \mathbf{J}_{a}\,\mathbf{U}_{\rm aux}\,\mathbf{J}_{a}^{\mathsf{T}}
+  + \mathbf{J}_{p}\,\mathbf{U}_{\rm proc}\,\mathbf{J}_{p}^{\mathsf{T}}
+  + u^2_{\rm mask},
+  \label{eq:nrb_uncertainty}
+\end{equation}
+where $\mathbf{U}_{\rm src}$ contains inherited source-product covariance, $\mathbf{U}_{\rm aux}$ contains DEM, orbit, incidence-angle, and other ancillary-data covariance, $\mathbf{U}_{\rm proc}$ contains geocoding and resampling implementation terms, and $u_{\rm mask}$ represents uncertainty associated with validity classification. These terms are often spatially correlated: for example, a DEM bias or orbit error can affect many neighbouring pixels coherently, whereas speckle and feature-identification errors may be more local. A GUM-compliant NRB uncertainty statement should therefore avoid treating all terms as independent per-pixel random noise.
+
+\subsubsection{Step 6: Product-level reporting}
+
+For CANVAS, the uncertainty statement for NRB/ARD products should report at least:
+\begin{itemize}
+  \item inherited source-product radiometric and geometric uncertainty;
+  \item uncertainty associated with DEM, local incidence angle, terrain correction, and terrain-normalisation convention;
+  \item map-grid/geolocation uncertainty, including CRS, pixel coordinate convention, pixel spacing, and resampling method;
+  \item mask-related uncertainty or quality flags for layover, shadow, no-data, and invalid pixels;
+  \item correlation assumptions, including whether uncertainty terms are per-pixel, local-window, swath-scale, or product-wide;
+  \item the traceability of ancillary data and processing versions used to generate the NRB product.
+\end{itemize}
+
+This subsection complements the SLC-focused uncertainty analysis above. It makes explicit that NRB/ARD procedures inherit source-acquisition uncertainty but also require a separate product-generation uncertainty budget for terrain correction, geocoding, masking, and metadata lineage.
+
 
 
