@@ -21,7 +21,7 @@ approximations, and, where relevant, polarimetric channel corrections. In the
 same way, an interferometric product inherits uncertainties from the two input
 \ac{SLC} products, their co-registration, the baseline knowledge, and the
 statistics of the interferometric estimator. An \ac{NRB}/\ac{ARD} product inherits the uncertainty of the
-source SAR acquisition and adds uncertainty from radiometric terrain correction, \ac{DEM} and ancillary
+source \ac{SAR} acquisition and adds uncertainty from radiometric terrain correction, \ac{DEM} and ancillary
 data, geocoding, resampling, masks, and map-grid definition.
 
 The following product-based structure is adopted:
@@ -632,9 +632,9 @@ processing chain.
 \subsection{Geocoded ARD/NRB Level-1 product}
 \label{sec:l1_nrb_uncertainty}
 
-\acro{NRB} is a Level-1 Analysis Ready Data product in which the calibrated SAR
+\ac{NRB} is a Level-1 \ac{ARD} product in which the calibrated \ac{SAR}
 measurement is terrain-corrected, radiometrically normalised, resampled, and
-delivered on a defined map grid. The CEOS \ac{NRB} Product Family Specification
+delivered on a defined map grid. The \ac{CEOS} \ac{NRB} product family specification
 therefore extends the uncertainty problem beyond the source \ac{SLC} or detected
 product: the final measurand is not only a calibrated backscatter value, but a
 terrain-normalised backscatter value assigned to a specific projected pixel
