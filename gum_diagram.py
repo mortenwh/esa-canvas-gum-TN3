@@ -938,6 +938,22 @@ def _v_between(src_hw: float, src_hh: float,
     return max(c * (src_hw + dst_hw) + s * (src_hh + dst_hh) + gap, floor)
 
 
+def _v_root_for_angle(out_angle: float,
+                      rhw: Optional[float] = None, rhh: Optional[float] = None,
+                      dhw: Optional[float] = None, dhh: Optional[float] = None) -> float:
+    """Minimum step from the root_block to a root-level deriv_node.
+
+    Mirrors :func:`_v_m0_for_angle`/`_v_child_for_angle`: uses `_v_between`
+    so the root's own (content-dependent) bounding box is respected, instead
+    of the old fixed ``_V_D0`` arm which ignored root box size entirely and
+    let long root expressions overlap their first-ring deriv/leaf/model
+    nodes.  Floored at ``_V_D0`` so short-root diagrams keep today's spacing.
+    """
+    _rhw, _rhh = _BBOX_HALF["root"] if rhw is None else (rhw, rhh)
+    _dhw, _dhh = _BBOX_HALF["deriv"] if dhw is None else (dhw, dhh)
+    return _v_between(_rhw, _rhh, _dhw, _dhh, out_angle, gap=0.08, floor=_V_D0)
+
+
 def _v_m0_for_angle(out_angle: float,
                     dhw: Optional[float] = None, dhh: Optional[float] = None,
                     mhw: Optional[float] = None, mhh: Optional[float] = None) -> float:
@@ -1142,6 +1158,7 @@ _BBOX_HALF: Dict[str, Tuple[float, float]] = {
     "model":  (1.45, 0.60),   # fallback only
     "leaf":   (0.95, 0.38),   # fallback only
     "effect": (0.80, 0.60),   # fallback only
+    "root":   (1.80, 0.50),   # fallback only
 }
 
 
@@ -1190,6 +1207,20 @@ def _estimate_node_bbox(ntype: str, content_latex: str) -> Tuple[float, float]:
         n_lines = len(uni_lines)
         hw = max(max_chars * 0.06 + 0.12, 0.35)
         hh = n_lines * 0.22 + 0.08
+        return (hw, hh)
+    if ntype == "root":
+        # root_block: \normalsize\bfseries (bigger than model_block's
+        # \footnotesize) and inner sep=8pt (vs. model_block's 4pt), so use a
+        # larger per-char factor and padding than "model". May be multi-line
+        # (measurement equations are occasionally split with \\).
+        lines = [l.strip() for l in uni.split("\\\\") if l.strip()]
+        if not lines:
+            lines = [uni] if uni.strip() else ["?"]
+        uni_lines = [_latex_to_unicode(l) for l in lines]
+        max_chars = max(max(len(l) for l in uni_lines), 1)
+        n_lines = len(uni_lines)
+        hw = max(max_chars * 0.072 + 0.32, 0.90)
+        hh = n_lines * 0.30 + 0.20
         return (hw, hh)
     return _BBOX_HALF.get(ntype, (0.80, 0.40))
 
@@ -1330,6 +1361,12 @@ def _auto_layout(model: "MeasurementModel", max_iterations: int = 200,
     arc_rad = _root_sector_rad(model.inputs)
     root_sectors = _sector_angles(model.inputs, root_center_angle, arc_rad,
                                    apply_min_sector=False)
+    r_bbox = _estimate_node_bbox("root", rf"{model.latex_name} = {model.latex_expr}")
+
+    def _root_arm_xy(ivar: "InputVar", angle: float) -> Tuple[float, float]:
+        d_bbox = _estimate_node_bbox("deriv", _deriv_label(model.latex_name, ivar.latex_name))
+        v_root = _v_root_for_angle(angle, *r_bbox, *d_bbox)
+        return v_root * math.cos(angle), v_root * math.sin(angle)
 
     for iteration in range(max_iterations):
         # Cooling schedule: reduce damping over time to dampen oscillation
@@ -1337,8 +1374,7 @@ def _auto_layout(model: "MeasurementModel", max_iterations: int = 200,
         # ── simulate current layout ───────────────────────────────────────────
         all_recs: List["_NodeRecord"] = []
         for ivar, (angle, sector_rad) in zip(model.inputs, root_sectors):
-            x_d = _V_D0 * math.cos(angle)   # fixed root arm (same as emit_root)
-            y_d = _V_D0 * math.sin(angle)
+            x_d, y_d = _root_arm_xy(ivar, angle)   # content-aware root arm
             all_recs.extend(_simulate_branch(model, ivar, x_d, y_d, angle, sector_rad))
 
         # ── detect pairwise overlaps ──────────────────────────────────────────
@@ -1412,8 +1448,7 @@ def _auto_layout(model: "MeasurementModel", max_iterations: int = 200,
             # Re-simulate and check for overlaps
             test_recs: List["_NodeRecord"] = []
             for iv2, (ang2, sec2) in zip(model.inputs, root_sectors):
-                x2 = _V_D0 * math.cos(ang2)
-                y2 = _V_D0 * math.sin(ang2)
+                x2, y2 = _root_arm_xy(iv2, ang2)
                 test_recs.extend(_simulate_branch(model, iv2, x2, y2, ang2, sec2))
             overlap_found = False
             n2 = len(test_recs)
@@ -1464,16 +1499,20 @@ class _Emitter:
                   root_center_angle: float = _ROOT_CENTER_ANGLE) -> None:
         """Emit the root block then radiate all branches at their angles."""
         self.t.comment(f"ROOT: {model.latex_name}")
-        self.t.math_node(root_id, "root_block",
-                         rf"{model.latex_name} = {model.latex_expr}")
+        root_content = rf"{model.latex_name} = {model.latex_expr}"
+        self.t.math_node(root_id, "root_block", root_content)
         self.t.blank()
+        r_bbox = _estimate_node_bbox("root", root_content)
         arc_rad = _root_sector_rad(model.inputs)
         for ivar, (angle, sector_rad) in zip(
             model.inputs, _sector_angles(model.inputs, root_center_angle, arc_rad,
                                           apply_min_sector=False)
         ):
-            x_d = _V_D0 * math.cos(angle)   # fixed root arm
-            y_d = _V_D0 * math.sin(angle)
+            deriv_lat = _deriv_label(model.latex_name, ivar.latex_name)
+            d_bbox = _estimate_node_bbox("deriv", deriv_lat)
+            v_root = _v_root_for_angle(angle, *r_bbox, *d_bbox)
+            x_d = v_root * math.cos(angle)   # content-aware root arm
+            y_d = v_root * math.sin(angle)
             self._emit_branch(model, root_id, ivar,
                                x_d, y_d, root_id, angle, sector_rad, depth=0,
                                cum_offset=(0.0, 0.0))

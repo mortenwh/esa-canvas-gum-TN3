@@ -614,6 +614,120 @@ class TestEstimateNodeBbox(unittest.TestCase):
             self.assertGreater(rec.bbox[1], 0.0)
 
 
+# ── root_block bbox / content-aware root arm (overlap fix) ──────────────────
+
+class TestRootBboxAndArm(unittest.TestCase):
+    """root_block was previously placed at a fixed 1.5cm arm regardless of
+    its own box size, causing long root expressions to overlap their
+    first-ring deriv/leaf/model nodes (see dgeo.tex). These tests cover the
+    content-aware root bbox estimate and the resulting arm-length helper."""
+
+    def test_root_bbox_grows_with_content_length(self):
+        hw_short, _ = gd._estimate_node_bbox("root", r"y = a")
+        hw_long, _ = gd._estimate_node_bbox(
+            "root", r"\varpi_{\rm g} = f(\varpi_{\rm dc}, \varpi_{\rm p}) + \Delta\varpi_{\rm g}")
+        self.assertGreater(hw_long, hw_short)
+
+    def test_root_bbox_has_sane_minimum(self):
+        hw, hh = gd._estimate_node_bbox("root", "x")
+        self.assertGreater(hw, 0.0)
+        self.assertGreater(hh, 0.0)
+
+    def test_root_arm_floor_matches_v_d0_for_short_root(self):
+        """A short root box should not force the arm beyond the existing
+        _V_D0 spacing (keeps today's look for already-fine diagrams)."""
+        r_bbox = gd._estimate_node_bbox("root", "x")
+        d_bbox = gd._BBOX_HALF["deriv"]
+        for angle_deg in (0, 45, 90, 135, 180):
+            v = gd._v_root_for_angle(math.radians(angle_deg), *r_bbox, *d_bbox)
+            self.assertGreaterEqual(v, gd._V_D0)
+
+    def test_root_arm_grows_for_long_root_along_wide_axis(self):
+        """A wide root box must push the horizontal arm out beyond _V_D0."""
+        r_bbox = gd._estimate_node_bbox(
+            "root", r"\varpi_{\rm g} = f(\varpi_{\rm dc}, \varpi_{\rm p}) + \Delta\varpi_{\rm g}")
+        d_bbox = gd._BBOX_HALF["deriv"]
+        v_horizontal = gd._v_root_for_angle(0.0, *r_bbox, *d_bbox)
+        self.assertGreater(v_horizontal, gd._V_D0)
+
+    def test_root_vs_deriv_no_overlap_for_long_root(self):
+        """The computed arm length must keep the root AABB and the first
+        deriv_node AABB from overlapping, for a long root expression."""
+        root_content = (r"\varpi_{\rm g} = f(\varpi_{\rm dc}, \varpi_{\rm p}) "
+                         r"+ \Delta\varpi_{\rm g}")
+        r_bbox = gd._estimate_node_bbox("root", root_content)
+        deriv_lat = gd._deriv_label(r"\varpi_{\rm g}", r"\varpi_{\rm dc}")
+        d_bbox = gd._estimate_node_bbox("deriv", deriv_lat)
+        for angle_deg in (0, 45, 90, 135, 180, 270):
+            angle = math.radians(angle_deg)
+            v = gd._v_root_for_angle(angle, *r_bbox, *d_bbox)
+            root_rec = gd._NodeRecord(0.0, 0.0, "root", None, r_bbox)
+            deriv_rec = gd._NodeRecord(
+                v * math.cos(angle), v * math.sin(angle), "deriv", None, d_bbox)
+            ov = gd._aabb_overlap(gd._aabb(root_rec), gd._aabb(deriv_rec))
+            self.assertIsNone(
+                ov, f"root/deriv AABBs overlap at angle={angle_deg}deg: {ov}")
+
+    def test_dgeo_shape_no_root_overlap_end_to_end(self):
+        """Regression test reproducing dgeo.tex's shape: a long root
+        expression with one plain leaf input and two sub-model inputs.
+        After emitting via _Emitter, no first-ring node (deriv/leaf/model/
+        effect) should overlap the root_block."""
+        delta_expr, _ = gd._parse_latex_expr(r"\Delta\varpi_{\rm g}", {})
+        dc_expr, _ = gd._parse_latex_expr(r"\varpi_{\rm dc}", {})
+        p_expr, _ = gd._parse_latex_expr(r"\varpi_{\rm p}", {})
+        root_expr, st = gd._parse_latex_expr(
+            r"f(\varpi_{\rm dc}, \varpi_{\rm p}) + \Delta\varpi_{\rm g}", {})
+        syms = {str(s): s for s in root_expr.free_symbols}
+
+        dc_model = gd.MeasurementModel(
+            latex_name=r"\varpi_{\rm dc}", latex_expr=r"g(P, \varpi, \mathbf{t}) + \Delta\varpi_{\rm dc}",
+            expr=dc_expr, inputs=[])
+        p_model = gd.MeasurementModel(
+            latex_name=r"\varpi_{\rm p}", latex_expr=r"g(\varpi_{\rm geo}, \varpi_{\rm a}) + \Delta\varpi_{\rm p}",
+            expr=p_expr, inputs=[])
+
+        delta_iv = gd.InputVar(r"\Delta\varpi_{\rm g}", syms[gd._latex_to_sym_name(r"\Delta\varpi_{\rm g}")],
+                                "red", effects=["Unmodelled effects"])
+        dc_iv = gd.InputVar(r"\varpi_{\rm dc}", syms[gd._latex_to_sym_name(r"\varpi_{\rm dc}")],
+                             "blue!70!black", submodel=dc_model)
+        p_iv = gd.InputVar(r"\varpi_{\rm p}", syms[gd._latex_to_sym_name(r"\varpi_{\rm p}")],
+                            "purple", submodel=p_model)
+
+        model = gd.MeasurementModel(
+            latex_name=r"\varpi_{\rm g}",
+            latex_expr=r"f(\varpi_{\rm dc}, \varpi_{\rm p}) + \Delta\varpi_{\rm g}",
+            expr=root_expr,
+            inputs=[delta_iv, dc_iv, p_iv],
+        )
+
+        gd._auto_layout(model)
+
+        # Reproduce emit_root()'s per-branch root-arm placement, then reuse
+        # _simulate_branch (the same content-aware bbox source _auto_layout
+        # relies on) to get every downstream node's true position/bbox.
+        root_content = rf"{model.latex_name} = {model.latex_expr}"
+        r_bbox = gd._estimate_node_bbox("root", root_content)
+        root_rec = gd._NodeRecord(0.0, 0.0, "root", None, r_bbox)
+
+        arc_rad = gd._root_sector_rad(model.inputs)
+        root_sectors = gd._sector_angles(model.inputs, gd._ROOT_CENTER_ANGLE,
+                                          arc_rad, apply_min_sector=False)
+        all_recs = []
+        for ivar, (angle, sector_rad) in zip(model.inputs, root_sectors):
+            deriv_lat = gd._deriv_label(model.latex_name, ivar.latex_name)
+            d_bbox = gd._estimate_node_bbox("deriv", deriv_lat)
+            v_root = gd._v_root_for_angle(angle, *r_bbox, *d_bbox)
+            x_d, y_d = v_root * math.cos(angle), v_root * math.sin(angle)
+            all_recs.extend(gd._simulate_branch(model, ivar, x_d, y_d, angle, sector_rad))
+
+        self.assertGreater(len(all_recs), 0, "no first-ring nodes found to check")
+        for rec in all_recs:
+            ov = gd._aabb_overlap(gd._aabb(root_rec), gd._aabb(rec))
+            self.assertIsNone(
+                ov, f"root_block overlaps {rec.ntype} at ({rec.x},{rec.y}): {ov}")
+
+
 # ── parse_utd_tex ─────────────────────────────────────────────────────────────
 
 class TestParseUtdTex(unittest.TestCase):
