@@ -13,11 +13,11 @@ shift, i.e., the measurand, is given by
 $\varpi_p$ is the Doppler shift predicted from an estimate of the antenna
 pointing, and $\Delta\varpi_g$ is the residual uncertainty. The mathematical
 model for the predicted Doppler shift is $\varpi_p = \varpi_{\rm geo} +
-\varpi_{\rm e} + \Delta\varpi_p$, where $\varpi_{\rm geo}$ is a geometric term
+\varpi_{\rm a} + \Delta\varpi_p$, where $\varpi_{\rm geo}$ is a geometric term
 related to the antenna pointing via the satellite's orbit and attitude,
-$\varpi_{\rm e}$ is an electronic term resulting from antenna mis-pointing, and
-$\Delta\varpi_p$ is the uncertainty of the pointing calibration. The estimate of each term comes with uncertainty as
-described in the following sub-sections.
+$\varpi_{\rm a}$ is a term resulting from the antenna elevation pattern, and
+$\Delta\varpi_p$ is the uncertainty of the pointing calibration. The estimate
+of each term comes with uncertainty as described in the following sub-sections.
 
 \subsubsection{Step 2: Traceability Diagram}
 
@@ -27,9 +27,13 @@ Doppler shift, $f_{\rm g}$, is calculated from the difference between the
 estimated and the predicted \ac{DC} shifts after pointing calibration. The
 upper part of the tree shows the uncertainty trace for the calibration of the
 predicted Doppler shift, $\varpi_{\rm p}$, using function notations. The
-uncertainties are caused by missing attitude data, uncertainties of restituted
-attitude estimates, uncertainties in the satellite position given by \ac{DORIS}
-measurements, interpolation/fitting uncertainties and random noise.
+uncertainties are caused by missing attitude data, attitude uncertainties,
+satellite position and velocity uncertainties, interpolation/fitting
+uncertainties and random noise.
+
+\input{dgeo}
+\input{dc_uncertainty_trace}
+\clearpage
 
 \begin{figure*}
   \centering
@@ -38,7 +42,7 @@ measurements, interpolation/fitting uncertainties and random noise.
           text width = 5cm,
           align = center,
           minimum width=2cm,
-          minimum height=1cm] (pred) {$\varpi_{\rm p} = g(\varpi_{\rm geo}, \varpi_{\rm e}) + \Delta\varpi_{\rm p}$};
+          minimum height=1cm] (pred) {$\varpi_{\rm p} = g(\varpi_{\rm geo}, \varpi_{\rm a}) + \Delta\varpi_{\rm p}$};
  
     \node[draw,
           left = of pred,
@@ -158,14 +162,14 @@ measurements, interpolation/fitting uncertainties and random noise.
           text width = 0.7cm,
           align = center,
           minimum width=.8cm,
-          minimum height=1cm] (dpreddelec) {$\frac{\partial\varpi_{\rm p}}{\partial\varpi_{\rm e}}$};
+          minimum height=1cm] (dpreddelec) {$\frac{\partial\varpi_{\rm p}}{\partial\varpi_{\rm a}}$};
 
     \node[draw,
           above = of dpreddelec,
           text width = 4cm,
           align = center,
           minimum width=0.8cm,
-          minimum height=1cm] (elec) {$\varpi_{\rm e} = h(\theta_{\rm n}) + \Delta\varpi_{\rm e}$};
+          minimum height=1cm] (elec) {$\varpi_{\rm a} = h(\theta_{\rm n}) + \Delta\varpi_{\rm a}$};
 
     \node[draw,
           right = of dpreddelec,
@@ -250,8 +254,6 @@ Figure~\ref{fig:dc_uncertainty_trace} is a \ac{UTD} for the \ac{DC},
 $\Delta\varpi_{\rm dc}$. \textcolor{red}{This relates to the diagrams coming from
 other level-1 sections. Wait for their completion by NORCE.}
 
-\input{dc_uncertainty_trace}
-\clearpage
 %\FloatBarrier
 
 \subsubsection{Step 3: Evaluation of Uncertainties}
@@ -336,7 +338,7 @@ Table~\ref{tab:doppler_effects_table} is defined as
 \clearpage
 %\FloatBarrier
 
-\subsubsection{Step 4: Quantity, Uncertainties and Covariances}
+\subsubsection{Step 4: Calculate the Geophysical Doppler shift and its uncertainty}
 
 % USE PDF PLOTS
 Once the geophysical Doppler shift, $\varpi_{\rm g}$, i.e., the measurand, has
