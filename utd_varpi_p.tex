@@ -1,0 +1,50 @@
+\begin{figure}[p]
+  \centering
+  % Scale to fit page: preserves aspect ratio within textwidth × 0.88 textheight
+  \begin{adjustbox}{max width=\textwidth, max totalheight=\textheight, keepaspectratio}
+  \begin{tikzpicture}[
+    connection/.style={draw, thick},
+    root_block/.style={draw=blue!60!black, very thick, rectangle, fill=blue!8, inner sep=8pt, font=\normalsize\bfseries, align=center},
+    model_block/.style={draw, rectangle, inner sep=4pt, font=\footnotesize\bfseries, align=center},
+    deriv_node/.style={draw, rectangle, rounded corners=3pt, inner sep=4pt, font=\footnotesize, align=center},
+    leaf_node/.style={draw, rectangle, inner sep=4pt, font=\footnotesize, align=center},
+    effect_node/.style={draw, dashed, font=\footnotesize\itshape, align=center, inner sep=2pt}
+    ]
+		% ROOT: \varpi_{\rm p}
+		\node [root_block] (VARPIRMPROOT) {$\varpi_{\rm p} = g(\varpi_{\rm geo}, \varpi_{\rm e}) + \Delta\varpi_{\rm p}$};
+
+		% ∂\varpi_{\rm p}/∂\Delta\varpi_{\rm p}
+		\node [deriv_node] at ($(VARPIRMPROOT)+(-0.00cm,-1.50cm)$) (DDELTAVARPIRMP) {$\frac{\partial \varpi_{\rm p}}{\partial \Delta\varpi_{\rm p}}$};
+		\draw [connection, red] (VARPIRMPROOT) -- (DDELTAVARPIRMP);
+		\node [leaf_node, draw=red, text=red] at ($(VARPIRMPROOT)+(-0.00cm,-2.55cm)$) (UDELTAVARPIRMP) {$u(\Delta\varpi_{\rm p})$};
+		\draw [connection, red] (DDELTAVARPIRMP) -- (UDELTAVARPIRMP);
+		\node [effect_node, red] at ($(VARPIRMPROOT)+(-0.00cm,-3.45cm)$) (EFFDELTAVARPIRMP) {Unmodelled effects};
+		\draw [connection, red, dashed] (EFFDELTAVARPIRMP) -- (UDELTAVARPIRMP);
+
+		% ∂\varpi_{\rm p}/∂\varpi_{\rm e}
+		\node [deriv_node] at ($(VARPIRMPROOT)+(-3.29cm,0.00cm)$) (DVARPIRMA) {$\frac{\partial \varpi_{\rm p}}{\partial \varpi_{\rm e}}$};
+		\draw [connection, blue!70!black] (VARPIRMPROOT) -- (DVARPIRMA);
+
+		% sub-model: \varpi_{\rm e}
+		\node [model_block] at ($(VARPIRMPROOT)+(-6.15cm,0.00cm)$) (MVARPIRMA) {$\varpi_{\rm e} = h(\theta_{\rm n}) + \Delta\varpi_{\rm e}$\\ \footnotesize(see Fig.~\ref{fig:utd_varpi_a})};
+		\draw [connection, blue!70!black] (DVARPIRMA) -- (MVARPIRMA);
+
+		% ∂\varpi_{\rm p}/∂\varpi_{\rm geo}
+		\node [deriv_node] at ($(VARPIRMPROOT)+(-0.00cm,1.50cm)$) (DVARPIRMGEO) {$\frac{\partial \varpi_{\rm p}}{\partial \varpi_{\rm geo}}$};
+		\draw [connection, purple] (VARPIRMPROOT) -- (DVARPIRMGEO);
+
+		% sub-model: \varpi_{\rm geo}
+		\node [model_block] at ($(VARPIRMPROOT)+(-0.00cm,2.95cm)$) (MVARPIRMGEO) {$\varpi_{\rm geo} = I(\varpi_{\rm oa}, \varpi_{\rm fit}, \varpi_{\rm orb}) + \Delta\varpi_{\rm geo}$\\ \footnotesize(see Fig.~\ref{fig:utd_varpi_geo})};
+		\draw [connection, purple] (DVARPIRMGEO) -- (MVARPIRMGEO);
+
+  \end{tikzpicture}
+  \end{adjustbox}
+
+  \caption{Uncertainty tree diagram for the predicted Doppler frequency shift,
+  $\varpi_{\rm p}$. Here, $\varpi_{\rm geo}$ and $\varpi_{\rm e}$ are a
+  geometric term related to the antenna pointing via the satellite’s orbit and
+  attitude, and a term resulting from the antenna elevation pattern,
+  respectively.}
+
+  \label{fig:utd_varpi_p}
+\end{figure}

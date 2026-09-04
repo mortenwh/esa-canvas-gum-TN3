@@ -2,9 +2,9 @@
   - @gum_diagram.py
   - @test_gum_diagram.py
 - gum_diagram.py is used to create uncertainty tree diagrams
-- use only the existing file dgeo.tex to investigate figures
 - never overwrite a tex file
-- you can create new .tex-files using @gum_diagram.py
+- you can create new .tex-files
+- you can only create new .tex-files by running @gum_diagram.py
 - never commit .tex-files created by @gum_diagram.py to git
 - there should be a distance of at least 3mm between edges
 - Connecting lines should go from edge to edge

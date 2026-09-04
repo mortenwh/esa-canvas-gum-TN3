@@ -1,0 +1,50 @@
+\begin{figure}[p]
+  \centering
+  % Scale to fit page: preserves aspect ratio within textwidth × 0.88 textheight
+  \begin{adjustbox}{max width=\textwidth, max totalheight=\textheight, keepaspectratio}
+  \begin{tikzpicture}[
+    connection/.style={draw, thick},
+    root_block/.style={draw=blue!60!black, very thick, rectangle, fill=blue!8, inner sep=8pt, font=\normalsize\bfseries, align=center},
+    model_block/.style={draw, rectangle, inner sep=4pt, font=\footnotesize\bfseries, align=center},
+    deriv_node/.style={draw, rectangle, rounded corners=3pt, inner sep=4pt, font=\footnotesize, align=center},
+    leaf_node/.style={draw, rectangle, inner sep=4pt, font=\footnotesize, align=center},
+    effect_node/.style={draw, dashed, font=\footnotesize\itshape, align=center, inner sep=2pt}
+    ]
+		% ROOT: \varpi_{\Delta}
+		\node [root_block] (VARPIRMFITROOT) {$\varpi_{\Delta} = K(\Delta \gamma, \Delta \psi, \Delta \phi) + \Delta\varpi_{\Delta}$};
+
+		% ∂\varpi_{\Delta}/∂\Delta\gamma
+		\node [deriv_node] at ($(VARPIRMFITROOT)+(0.38cm,-1.89cm)$) (DDELTAGAMMA) {$\frac{\partial \varpi_{\Delta}}{\partial \Delta\gamma}$};
+		\draw [connection, red] (VARPIRMFITROOT) -- (DDELTAGAMMA);
+		\node [leaf_node, draw=red, text=red] at ($(VARPIRMFITROOT)+(0.63cm,-3.17cm)$) (UDELTAGAMMA) {$u(\Delta\gamma)$};
+		\draw [connection, red] (DDELTAGAMMA) -- (UDELTAGAMMA);
+		\node [effect_node, red] at ($(VARPIRMFITROOT)+(0.87cm,-4.35cm)$) (EFFDELTAGAMMA) {Fitting mismatch};
+		\draw [connection, red, dashed] (EFFDELTAGAMMA) -- (UDELTAGAMMA);
+
+		% ∂\varpi_{\Delta}/∂\Delta\phi
+		\node [deriv_node] at ($(VARPIRMFITROOT)+(-3.15cm,-2.10cm)$) (DDELTAPHI) {$\frac{\partial \varpi_{\Delta}}{\partial \Delta\phi}$};
+		\draw [connection, blue!70!black] (VARPIRMFITROOT) -- (DDELTAPHI);
+		\node [leaf_node, draw=blue!70!black, text=blue!70!black] at ($(VARPIRMFITROOT)+(-4.71cm,-3.15cm)$) (UDELTAPHI) {$u(\Delta\phi)$};
+		\draw [connection, blue!70!black] (DDELTAPHI) -- (UDELTAPHI);
+		\node [effect_node, blue!70!black] at ($(VARPIRMFITROOT)+(-6.36cm,-4.25cm)$) (EFFDELTAPHI) {Fitting mismatch};
+		\draw [connection, blue!70!black, dashed] (EFFDELTAPHI) -- (UDELTAPHI);
+
+		% ∂\varpi_{\Delta}/∂\Delta\psi
+		\node [deriv_node] at ($(VARPIRMFITROOT)+(-3.15cm,2.10cm)$) (DDELTAPSI) {$\frac{\partial \varpi_{\Delta}}{\partial \Delta\psi}$};
+		\draw [connection, purple] (VARPIRMFITROOT) -- (DDELTAPSI);
+		\node [leaf_node, draw=purple, text=purple] at ($(VARPIRMFITROOT)+(-4.71cm,3.15cm)$) (UDELTAPSI) {$u(\Delta\psi)$};
+		\draw [connection, purple] (DDELTAPSI) -- (UDELTAPSI);
+		\node [effect_node, purple] at ($(VARPIRMFITROOT)+(-6.36cm,4.25cm)$) (EFFDELTAPSI) {Fitting mismatch};
+		\draw [connection, purple, dashed] (EFFDELTAPSI) -- (UDELTAPSI);
+
+		% ∂\varpi_{\Delta}/∂\Delta\varpi_{\Delta}
+		\node [deriv_node] at ($(VARPIRMFITROOT)+(0.38cm,1.93cm)$) (DDELTAVARPIRMFIT) {$\frac{\partial \varpi_{\Delta}}{\partial \Delta\varpi_{\Delta}}$};
+		\draw [connection, cyan!80!black] (VARPIRMFITROOT) -- (DDELTAVARPIRMFIT);
+		\node [leaf_node, draw=cyan!80!black, text=cyan!80!black] at ($(VARPIRMFITROOT)+(0.66cm,3.33cm)$) (UDELTAVARPIRMFIT) {$u(\Delta\varpi_{\Delta})$};
+		\draw [connection, cyan!80!black] (DDELTAVARPIRMFIT) -- (UDELTAVARPIRMFIT);
+
+  \end{tikzpicture}
+  \end{adjustbox}
+  \caption{Uncertainty Tree Diagram for $\varpi_{\Delta}$.}
+  \label{fig:utd_varpi_fit}
+\end{figure}

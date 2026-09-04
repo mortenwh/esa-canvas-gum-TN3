@@ -1,0 +1,52 @@
+\begin{figure}[p]
+  \centering
+  % Scale to fit page: preserves aspect ratio within textwidth × 0.88 textheight
+  \begin{adjustbox}{max width=\textwidth, max totalheight=\textheight, keepaspectratio}
+  \begin{tikzpicture}[
+    connection/.style={draw, thick},
+    root_block/.style={draw=blue!60!black, very thick, rectangle, fill=blue!8, inner sep=8pt, font=\normalsize\bfseries, align=center},
+    model_block/.style={draw, rectangle, inner sep=4pt, font=\footnotesize\bfseries, align=center},
+    deriv_node/.style={draw, rectangle, rounded corners=3pt, inner sep=4pt, font=\footnotesize, align=center},
+    leaf_node/.style={draw, rectangle, inner sep=4pt, font=\footnotesize, align=center},
+    effect_node/.style={draw, dashed, font=\footnotesize\itshape, align=center, inner sep=2pt}
+    ]
+		% ROOT: \varpi_{\rm geo}
+		\node [root_block] (VARPIRMGEOROOT) {$\varpi_{\rm geo} = I(\varpi_{\rm oa}, \varpi_{\rm fit}, \varpi_{\rm orb}) + \Delta\varpi_{\rm geo}$};
+
+		% ∂\varpi_{\rm geo}/∂\Delta\varpi_{\rm geo}
+		\node [deriv_node] at ($(VARPIRMGEOROOT)+(0.40cm,-2.02cm)$) (DDELTAVARPIRMGEO) {$\frac{\partial \varpi_{\rm geo}}{\partial \Delta\varpi_{\rm geo}}$};
+		\draw [connection, red] (VARPIRMGEOROOT) -- (DDELTAVARPIRMGEO);
+		\node [leaf_node, draw=red, text=red] at ($(VARPIRMGEOROOT)+(0.68cm,-3.41cm)$) (UDELTAVARPIRMGEO) {$u(\Delta\varpi_{\rm geo})$};
+		\draw [connection, red] (DDELTAVARPIRMGEO) -- (UDELTAVARPIRMGEO);
+		\node [effect_node, red] at ($(VARPIRMGEOROOT)+(0.92cm,-4.60cm)$) (EFFDELTAVARPIRMGEO) {Random noise};
+		\draw [connection, red, dashed] (EFFDELTAVARPIRMGEO) -- (UDELTAVARPIRMGEO);
+
+		% ∂\varpi_{\rm geo}/∂\varpi_{\rm oa}
+		\node [deriv_node] at ($(VARPIRMGEOROOT)+(-3.57cm,-2.39cm)$) (DVARPIRMAUX) {$\frac{\partial \varpi_{\rm geo}}{\partial \varpi_{\rm oa}}$};
+		\draw [connection, blue!70!black] (VARPIRMGEOROOT) -- (DVARPIRMAUX);
+
+		% sub-model: \varpi_{\rm oa}
+		\node [model_block] at ($(VARPIRMGEOROOT)+(-6.37cm,-4.26cm)$) (MVARPIRMAUX) {$\varpi_{\rm oa} = J(\vec{P},\vec{V},\alpha)+ \Delta\varpi_{\rm oa}$\\ \footnotesize(see Fig.~\ref{fig:utd_varpi_oa})};
+		\draw [connection, blue!70!black] (DVARPIRMAUX) -- (MVARPIRMAUX);
+
+		% ∂\varpi_{\rm geo}/∂\varpi_{\rm fit}
+		\node [deriv_node] at ($(VARPIRMGEOROOT)+(-3.57cm,2.39cm)$) (DVARPIRMFIT) {$\frac{\partial \varpi_{\rm geo}}{\partial \varpi_{\rm fit}}$};
+		\draw [connection, purple] (VARPIRMGEOROOT) -- (DVARPIRMFIT);
+
+		% sub-model: \varpi_{\rm fit}
+		\node [model_block] at ($(VARPIRMGEOROOT)+(-6.45cm,4.31cm)$) (MVARPIRMFIT) {$\varpi_{\rm fit} = K(\Delta\gamma, \Delta\psi, \Delta\phi) + \Delta\varpi_{\rm fit}$\\ \footnotesize(see Fig.~\ref{fig:utd_varpi_fit})};
+		\draw [connection, purple] (DVARPIRMFIT) -- (MVARPIRMFIT);
+
+		% ∂\varpi_{\rm geo}/∂\varpi_{\rm orb}
+		\node [deriv_node] at ($(VARPIRMGEOROOT)+(0.40cm,2.01cm)$) (DVARPIRMORB) {$\frac{\partial \varpi_{\rm geo}}{\partial \varpi_{\rm orb}}$};
+		\draw [connection, cyan!80!black] (VARPIRMGEOROOT) -- (DVARPIRMORB);
+
+		% sub-model: \varpi_{\rm orb}
+		\node [model_block] at ($(VARPIRMGEOROOT)+(0.79cm,3.96cm)$) (MVARPIRMORB) {$\varpi_{\rm orb} = L(\gamma_h) + \Delta\varpi_{\rm orb}$\\ \footnotesize(see Fig.~\ref{fig:utd_varpi_orb})};
+		\draw [connection, cyan!80!black] (DVARPIRMORB) -- (MVARPIRMORB);
+
+  \end{tikzpicture}
+  \end{adjustbox}
+  \caption{Uncertainty Tree Diagram for $\varpi_{\rm geo}$.}
+  \label{fig:utd_varpi_geo}
+\end{figure}

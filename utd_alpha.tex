@@ -1,0 +1,44 @@
+\begin{figure}[p]
+  \centering
+  % Scale to fit page: preserves aspect ratio within textwidth × 0.88 textheight
+  \begin{adjustbox}{max width=\textwidth, max totalheight=\textheight, keepaspectratio}
+  \begin{tikzpicture}[
+    connection/.style={draw, thick},
+    root_block/.style={draw=blue!60!black, very thick, rectangle, fill=blue!8, inner sep=8pt, font=\normalsize\bfseries, align=center},
+    model_block/.style={draw, rectangle, inner sep=4pt, font=\footnotesize\bfseries, align=center},
+    deriv_node/.style={draw, rectangle, rounded corners=3pt, inner sep=4pt, font=\footnotesize, align=center},
+    leaf_node/.style={draw, rectangle, inner sep=4pt, font=\footnotesize, align=center},
+    effect_node/.style={draw, dashed, font=\footnotesize\itshape, align=center, inner sep=2pt}
+    ]
+		% ROOT: \alpha
+		\node [root_block] (ALPHAROOT) {$\alpha = A(\psi,\gamma,\phi)$};
+
+		% ∂\alpha/∂\gamma
+		\node [deriv_node] at ($(ALPHAROOT)+(-0.00cm,-1.50cm)$) (DGAMMA) {$\frac{\partial \alpha}{\partial \gamma}$};
+		\draw [connection, red] (ALPHAROOT) -- (DGAMMA);
+		\node [leaf_node, draw=red, text=red] at ($(ALPHAROOT)+(-0.00cm,-2.55cm)$) (UGAMMA) {$u(\gamma)$};
+		\draw [connection, red] (DGAMMA) -- (UGAMMA);
+		\node [effect_node, red] at ($(ALPHAROOT)+(-0.00cm,-3.45cm)$) (EFFGAMMA) {Roll angle uncertainty};
+		\draw [connection, red, dashed] (EFFGAMMA) -- (UGAMMA);
+
+		% ∂\alpha/∂\phi
+		\node [deriv_node] at ($(ALPHAROOT)+(-2.04cm,0.00cm)$) (DPHI) {$\frac{\partial \alpha}{\partial \phi}$};
+		\draw [connection, blue!70!black] (ALPHAROOT) -- (DPHI);
+		\node [leaf_node, draw=blue!70!black, text=blue!70!black] at ($(ALPHAROOT)+(-3.36cm,0.00cm)$) (UPHI) {$u(\phi)$};
+		\draw [connection, blue!70!black] (DPHI) -- (UPHI);
+		\node [effect_node, blue!70!black] at ($(ALPHAROOT)+(-5.90cm,0.00cm)$) (EFFPHI) {Yaw angle uncertainty};
+		\draw [connection, blue!70!black, dashed] (EFFPHI) -- (UPHI);
+
+		% ∂\alpha/∂\psi
+		\node [deriv_node] at ($(ALPHAROOT)+(-0.00cm,1.50cm)$) (DPSI) {$\frac{\partial \alpha}{\partial \psi}$};
+		\draw [connection, purple] (ALPHAROOT) -- (DPSI);
+		\node [leaf_node, draw=purple, text=purple] at ($(ALPHAROOT)+(-0.00cm,2.55cm)$) (UPSI) {$u(\psi)$};
+		\draw [connection, purple] (DPSI) -- (UPSI);
+		\node [effect_node, purple] at ($(ALPHAROOT)+(-0.00cm,3.45cm)$) (EFFPSI) {Pitch angle uncertainty};
+		\draw [connection, purple, dashed] (EFFPSI) -- (UPSI);
+
+  \end{tikzpicture}
+  \end{adjustbox}
+  \caption{Uncertainty Tree Diagram for $\alpha$.}
+  \label{fig:utd_alpha}
+\end{figure}

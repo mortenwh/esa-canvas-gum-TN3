@@ -1,0 +1,36 @@
+\begin{figure}[p]
+  \centering
+  % Scale to fit page: preserves aspect ratio within textwidth × 0.88 textheight
+  \begin{adjustbox}{max width=\textwidth, max totalheight=\textheight, keepaspectratio}
+  \begin{tikzpicture}[
+    connection/.style={draw, thick},
+    root_block/.style={draw=blue!60!black, very thick, rectangle, fill=blue!8, inner sep=8pt, font=\normalsize\bfseries, align=center},
+    model_block/.style={draw, rectangle, inner sep=4pt, font=\footnotesize\bfseries, align=center},
+    deriv_node/.style={draw, rectangle, rounded corners=3pt, inner sep=4pt, font=\footnotesize, align=center},
+    leaf_node/.style={draw, rectangle, inner sep=4pt, font=\footnotesize, align=center},
+    effect_node/.style={draw, dashed, font=\footnotesize\itshape, align=center, inner sep=2pt}
+    ]
+		% ROOT: \varpi_{\rm orb}
+		\node [root_block] (VARPIRMORBROOT) {$\varpi_{\rm orb} = L(\gamma_h) + \Delta \varpi_{\rm orb}$};
+
+		% ∂\varpi_{\rm orb}/∂\Delta\varpi_{\rm orb}
+		\node [deriv_node] at ($(VARPIRMORBROOT)+(-0.91cm,-2.20cm)$) (DDELTAVARPIRMORB) {$\frac{\partial \varpi_{\rm orb}}{\partial \Delta\varpi_{\rm orb}}$};
+		\draw [connection, red] (VARPIRMORBROOT) -- (DDELTAVARPIRMORB);
+		\node [leaf_node, draw=red, text=red] at ($(VARPIRMORBROOT)+(-1.58cm,-3.81cm)$) (UDELTAVARPIRMORB) {$u(\Delta\varpi_{\rm orb})$};
+		\draw [connection, red] (DDELTAVARPIRMORB) -- (UDELTAVARPIRMORB);
+		\node [effect_node, red] at ($(VARPIRMORBROOT)+(-2.15cm,-5.20cm)$) (EFFDELTAVARPIRMORB) {Random noise};
+		\draw [connection, red, dashed] (EFFDELTAVARPIRMORB) -- (UDELTAVARPIRMORB);
+
+		% ∂\varpi_{\rm orb}/∂\gamma_h
+		\node [deriv_node] at ($(VARPIRMORBROOT)+(-0.89cm,2.14cm)$) (DGAMMAH) {$\frac{\partial \varpi_{\rm orb}}{\partial \gamma_h}$};
+		\draw [connection, blue!70!black] (VARPIRMORBROOT) -- (DGAMMAH);
+		\node [leaf_node, draw=blue!70!black, text=blue!70!black] at ($(VARPIRMORBROOT)+(-1.49cm,3.60cm)$) (UGAMMAH) {$u(\gamma_h)$};
+		\draw [connection, blue!70!black] (DGAMMAH) -- (UGAMMAH);
+		\node [effect_node, blue!70!black] at ($(VARPIRMORBROOT)+(-2.38cm,5.75cm)$) (EFFGAMMAH) {Fitting mismatch \\ Antenna thermo-elastic distortions \\ Electronics};
+		\draw [connection, blue!70!black, dashed] (EFFGAMMAH) -- (UGAMMAH);
+
+  \end{tikzpicture}
+  \end{adjustbox}
+  \caption{Uncertainty Tree Diagram for $\varpi_{\rm orb}$.}
+  \label{fig:utd_varpi_orb}
+\end{figure}

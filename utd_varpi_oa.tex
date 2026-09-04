@@ -1,0 +1,52 @@
+\begin{figure}[p]
+  \centering
+  % Scale to fit page: preserves aspect ratio within textwidth × 0.88 textheight
+  \begin{adjustbox}{max width=\textwidth, max totalheight=\textheight, keepaspectratio}
+  \begin{tikzpicture}[
+    connection/.style={draw, thick},
+    root_block/.style={draw=blue!60!black, very thick, rectangle, fill=blue!8, inner sep=8pt, font=\normalsize\bfseries, align=center},
+    model_block/.style={draw, rectangle, inner sep=4pt, font=\footnotesize\bfseries, align=center},
+    deriv_node/.style={draw, rectangle, rounded corners=3pt, inner sep=4pt, font=\footnotesize, align=center},
+    leaf_node/.style={draw, rectangle, inner sep=4pt, font=\footnotesize, align=center},
+    effect_node/.style={draw, dashed, font=\footnotesize\itshape, align=center, inner sep=2pt}
+    ]
+		% ROOT: \varpi_{\rm oa}
+		\node [root_block] (VARPIRMAUXROOT) {$\varpi_{\rm oa} = J(\vec{P},\vec{V},\alpha)+ \Delta\varpi_{\rm oa}$};
+
+		% ∂\varpi_{\rm oa}/∂\Delta\varpi_{\rm oa}
+		\node [deriv_node] at ($(VARPIRMAUXROOT)+(0.36cm,-1.81cm)$) (DDELTAVARPIRMAUX) {$\frac{\partial \varpi_{\rm oa}}{\partial \Delta\varpi_{\rm oa}}$};
+		\draw [connection, red] (VARPIRMAUXROOT) -- (DDELTAVARPIRMAUX);
+		\node [leaf_node, draw=red, text=red] at ($(VARPIRMAUXROOT)+(0.64cm,-3.20cm)$) (UDELTAVARPIRMAUX) {$u(\Delta\varpi_{\rm oa})$};
+		\draw [connection, red] (DDELTAVARPIRMAUX) -- (UDELTAVARPIRMAUX);
+		\node [effect_node, red] at ($(VARPIRMAUXROOT)+(0.87cm,-4.40cm)$) (EFFDELTAVARPIRMAUX) {Random noise};
+		\draw [connection, red, dashed] (EFFDELTAVARPIRMAUX) -- (UDELTAVARPIRMAUX);
+
+		% ∂\varpi_{\rm oa}/∂P
+		\node [deriv_node] at ($(VARPIRMAUXROOT)+(-2.66cm,-1.78cm)$) (DP) {$\frac{\partial \varpi_{\rm oa}}{\partial P}$};
+		\draw [connection, blue!70!black] (VARPIRMAUXROOT) -- (DP);
+		\node [leaf_node, draw=blue!70!black, text=blue!70!black] at ($(VARPIRMAUXROOT)+(-4.12cm,-2.76cm)$) (UP) {$u(P)$};
+		\draw [connection, blue!70!black] (DP) -- (UP);
+		\node [effect_node, blue!70!black] at ($(VARPIRMAUXROOT)+(-5.88cm,-3.93cm)$) (EFFP) {Position uncertainty};
+		\draw [connection, blue!70!black, dashed] (EFFP) -- (UP);
+
+		% ∂\varpi_{\rm oa}/∂V
+		\node [deriv_node] at ($(VARPIRMAUXROOT)+(-2.66cm,1.78cm)$) (DV) {$\frac{\partial \varpi_{\rm oa}}{\partial V}$};
+		\draw [connection, purple] (VARPIRMAUXROOT) -- (DV);
+		\node [leaf_node, draw=purple, text=purple] at ($(VARPIRMAUXROOT)+(-4.12cm,2.76cm)$) (UV) {$u(V)$};
+		\draw [connection, purple] (DV) -- (UV);
+		\node [effect_node, purple] at ($(VARPIRMAUXROOT)+(-5.88cm,3.93cm)$) (EFFV) {Velocity uncertainty};
+		\draw [connection, purple, dashed] (EFFV) -- (UV);
+
+		% ∂\varpi_{\rm oa}/∂\alpha
+		\node [deriv_node] at ($(VARPIRMAUXROOT)+(0.35cm,1.75cm)$) (DALPHA) {$\frac{\partial \varpi_{\rm oa}}{\partial \alpha}$};
+		\draw [connection, cyan!80!black] (VARPIRMAUXROOT) -- (DALPHA);
+
+		% sub-model: \alpha
+		\node [model_block] at ($(VARPIRMAUXROOT)+(0.72cm,3.62cm)$) (MALPHA) {$\alpha = A(\psi,\gamma,\phi)$\\ \footnotesize(see Fig.~\ref{fig:utd_alpha})};
+		\draw [connection, cyan!80!black] (DALPHA) -- (MALPHA);
+
+  \end{tikzpicture}
+  \end{adjustbox}
+  \caption{Uncertainty Tree Diagram for $\varpi_{\rm oa}$.}
+  \label{fig:utd_varpi_oa}
+\end{figure}
