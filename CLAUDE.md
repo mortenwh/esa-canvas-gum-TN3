@@ -1,5 +1,5 @@
 - Only edit the python scripts
-  - gum_diagram.py
-  - test_gum_diagram.py
+  - @gum_diagram.py
+  - @test_gum_diagram.py
 - gum_diagram.py is used to create uncertainty tree diagrams
 - Boxes and lines shall not overlap
