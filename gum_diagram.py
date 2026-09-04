@@ -671,6 +671,38 @@ def _deriv_label(of_lat: str, wrt_lat: str) -> str:
     return rf"\frac{{\partial {of_lat}}}{{\partial {wrt_lat}}}"
 
 
+def _model_node_lines(ivar: "InputVar") -> Tuple[str, Optional[str]]:
+    """Return the (equation_line, cross_ref_line) pair for a sub-model node.
+
+    Single source of truth for a sub-model's ``model_block`` node text, used
+    by BOTH the bbox estimate (``_simulate_branch`` / ``_auto_layout``) and
+    the actual emitted node (``_emit_branch``) so the two can never drift
+    apart. Drift previously caused real overlaps: the ``separate_figure``
+    case renders a second line with a cross-reference note, but the bbox
+    estimate only ever measured the bare equation.
+
+    ``cross_ref_line`` is ``None`` for embedded (non-separate) sub-models,
+    and the ``\\footnotesize(see Fig.~\\ref{...})`` note when the sub-model
+    is traced in a separate figure.
+    """
+    eq_line = rf"{ivar.submodel.latex_name} = {ivar.submodel.latex_expr}"
+    if not ivar.separate_figure:
+        return eq_line, None
+    ref_line = rf"\footnotesize(see Fig.~\ref{{fig:{ivar.separate_label}}})"
+    return eq_line, ref_line
+
+
+def _model_node_display(ivar: "InputVar") -> str:
+    """Return the exact text content used to estimate *ivar*'s model_block bbox.
+
+    Joins the two lines from :func:`_model_node_lines` with ``\\\\`` exactly
+    as TikZ line breaks appear in the emitted node, so multi-line
+    (separate-figure) nodes are measured as multi-line content.
+    """
+    eq_line, ref_line = _model_node_lines(ivar)
+    return eq_line if ref_line is None else eq_line + r" \\ " + ref_line
+
+
 def _render_deriv(model: MeasurementModel, ivar: InputVar) -> str:
     """Compute ∂model/∂ivar symbolically and render to LaTeX.
 
@@ -860,6 +892,13 @@ _V_LEAF_MIN = 0.0
 _MIN_SECTOR_DEG = 55.0   # minimum angular sector (degrees) per child branch
 _NODE_WIDTH_CM  = 0.9    # deriv node full width estimate in the chord formula
 
+# Minimum clearance (cm) required between the edges of any two node
+# bounding boxes (project requirement: at least 3 mm between edges).
+# Used as the default gap in _v_between (arm-length placement) and as the
+# GAP in _auto_layout (post-hoc overlap resolution) so both the initial
+# placement and the collision-avoidance pass enforce the same minimum.
+_MIN_CLEARANCE_CM = 0.3
+
 # Center angle for the root-level sector distribution (radians).
 # π (leftward) gives a portrait-friendly layout for ϖ_g: the large ϖ_p
 # sub-tree fans from upper-left to lower-left, exploiting vertical space.
@@ -925,7 +964,7 @@ def _radial_step(sector_rad: float) -> float:
 
 def _v_between(src_hw: float, src_hh: float,
                dst_hw: float, dst_hh: float,
-               angle: float, gap: float = 0.08,
+               angle: float, gap: float = _MIN_CLEARANCE_CM,
                floor: float = 0.0) -> float:
     """Minimum centre-to-centre step between two nodes in direction *angle*.
 
@@ -951,7 +990,7 @@ def _v_root_for_angle(out_angle: float,
     """
     _rhw, _rhh = _BBOX_HALF["root"] if rhw is None else (rhw, rhh)
     _dhw, _dhh = _BBOX_HALF["deriv"] if dhw is None else (dhw, dhh)
-    return _v_between(_rhw, _rhh, _dhw, _dhh, out_angle, gap=0.08, floor=_V_D0)
+    return _v_between(_rhw, _rhh, _dhw, _dhh, out_angle, gap=_MIN_CLEARANCE_CM, floor=_V_D0)
 
 
 def _v_m0_for_angle(out_angle: float,
@@ -960,7 +999,7 @@ def _v_m0_for_angle(out_angle: float,
     """Minimum step from a deriv node to its sub-model node."""
     _dhw, _dhh = _BBOX_HALF["deriv"] if dhw is None else (dhw, dhh)
     _mhw, _mhh = _BBOX_HALF["model"] if mhw is None else (mhw, mhh)
-    return _v_between(_dhw, _dhh, _mhw, _mhh, out_angle, gap=0.08, floor=0.0)
+    return _v_between(_dhw, _dhh, _mhw, _mhh, out_angle, gap=_MIN_CLEARANCE_CM, floor=0.0)
 
 
 def _v_child_for_angle(child_angle: float,
@@ -969,7 +1008,7 @@ def _v_child_for_angle(child_angle: float,
     """Minimum step from a sub-model node to its child deriv node."""
     _mhw, _mhh = _BBOX_HALF["model"] if mhw is None else (mhw, mhh)
     _dhw, _dhh = _BBOX_HALF["deriv"] if dhw is None else (dhw, dhh)
-    return _v_between(_mhw, _mhh, _dhw, _dhh, child_angle, gap=0.08, floor=0.0)
+    return _v_between(_mhw, _mhh, _dhw, _dhh, child_angle, gap=_MIN_CLEARANCE_CM, floor=0.0)
 
 
 def _v_eff_for_angle(out_angle: float,
@@ -978,7 +1017,7 @@ def _v_eff_for_angle(out_angle: float,
     """Minimum step from a leaf node to its effect annotation."""
     _lhw, _lhh = _BBOX_HALF["leaf"] if lhw is None else (lhw, lhh)
     _ehw, _ehh = _BBOX_HALF["effect"] if ehw is None else (ehw, ehh)
-    return _v_between(_lhw, _lhh, _ehw, _ehh, out_angle, gap=0.08, floor=0.0)
+    return _v_between(_lhw, _lhh, _ehw, _ehh, out_angle, gap=_MIN_CLEARANCE_CM, floor=0.0)
 
 
 def _v_leaf_for_angle(out_angle: float,
@@ -987,7 +1026,7 @@ def _v_leaf_for_angle(out_angle: float,
     """Minimum step from a deriv node to its leaf node."""
     _dhw, _dhh = _BBOX_HALF["deriv"] if dhw is None else (dhw, dhh)
     _lhw, _lhh = _BBOX_HALF["leaf"] if lhw is None else (lhw, lhh)
-    return _v_between(_dhw, _dhh, _lhw, _lhh, out_angle, gap=0.08, floor=0.0)
+    return _v_between(_dhw, _dhh, _lhw, _lhh, out_angle, gap=_MIN_CLEARANCE_CM, floor=0.0)
 
 
 def _aniso_factor(angle: float) -> float:
@@ -1192,10 +1231,19 @@ def _estimate_node_bbox(ntype: str, content_latex: str) -> Tuple[float, float]:
         hh = 0.45   # typical stacked-fraction height at \footnotesize
         return (hw, hh)
     if ntype == "model":
-        # Single math line, \footnotesize\bfseries; similar factor to deriv
-        nchars = max(len(uni), 1)
-        hw = max(nchars * 0.06 + 0.20, 0.60)
-        hh = 0.35
+        # Usually a single \footnotesize\bfseries math line, but a
+        # separate-figure sub-model node has a second, plain-text
+        # cross-reference line joined with TikZ's "\\" line break (see
+        # _model_node_lines). Measure per-line like "effect" so a two-line
+        # node is never underestimated as if it were one line.
+        lines = [l.strip() for l in uni.split("\\\\") if l.strip()]
+        if not lines:
+            lines = [uni] if uni.strip() else ["?"]
+        uni_lines = [_latex_to_unicode(l) for l in lines]
+        max_chars = max(max(len(l) for l in uni_lines), 1)
+        n_lines = len(uni_lines)
+        hw = max(max_chars * 0.06 + 0.20, 0.60)
+        hh = n_lines * 0.35
         return (hw, hh)
     if ntype == "effect":
         # Multi-line plain text (\footnotesize\itshape), lines separated by \\
@@ -1228,6 +1276,17 @@ def _estimate_node_bbox(ntype: str, content_latex: str) -> Tuple[float, float]:
 def _aabb(rec: "_NodeRecord") -> Tuple[float, float, float, float]:
     hw, hh = rec.bbox
     return rec.x - hw, rec.x + hw, rec.y - hh, rec.y + hh
+
+
+def _aabb_inflated(rec: "_NodeRecord", margin: float) -> Tuple[float, float, float, float]:
+    """Return *rec*'s AABB expanded by *margin* on every side.
+
+    Used to check for clearance violations (not just literal overlap): two
+    nodes whose inflated-by-``margin/2``-each AABBs overlap have less than
+    ``margin`` of clearance between their edges.
+    """
+    x0, x1, y0, y1 = _aabb(rec)
+    return x0 - margin, x1 + margin, y0 - margin, y1 + margin
 
 
 def _aabb_overlap(
@@ -1276,7 +1335,7 @@ def _simulate_branch(
     ]
 
     if ivar.submodel is not None:
-        model_content = rf"{ivar.submodel.latex_name} = {ivar.submodel.latex_expr}"
+        model_content = _model_node_display(ivar)
         m_bbox = _estimate_node_bbox("model", model_content)
         v_m0 = _v_m0_for_angle(out_angle, *d_bbox, *m_bbox) * _aniso_factor(out_angle)
         x_model_nat = x_deriv + v_m0 * cos_o
@@ -1354,7 +1413,7 @@ def _auto_layout(model: "MeasurementModel", max_iterations: int = 200,
 
     Returns the number of iterations performed.  Modifies *model* in-place.
     """
-    GAP  = 0.20   # minimum clearance gap added on top of each resolved overlap (cm)
+    GAP  = _MIN_CLEARANCE_CM  # minimum clearance gap added on top of each resolved overlap (cm)
     DAMP = 0.50   # initial damping factor
     CONVERGE = 0.005  # stop when total push magnitude falls below this (cm)
 
@@ -1459,7 +1518,8 @@ def _auto_layout(model: "MeasurementModel", max_iterations: int = 200,
                         continue
                     if ri2.ntype == "effect" or rj2.ntype == "effect":
                         continue
-                    if _aabb_overlap(_aabb(ri2), _aabb(rj2)) is not None:
+                    if _aabb_overlap(_aabb_inflated(ri2, GAP / 2),
+                                     _aabb_inflated(rj2, GAP / 2)) is not None:
                         overlap_found = True
                         break
                 if overlap_found:
@@ -1553,8 +1613,8 @@ class _Emitter:
 
         if ivar.submodel is not None:
             m_id = self._uid(f"M{_tikz_id(ivar.latex_name)}")
-            model_content = rf"{ivar.submodel.latex_name} = {ivar.submodel.latex_expr}"
-            m_bbox = _estimate_node_bbox("model", model_content)
+            eq_line, ref_line = _model_node_lines(ivar)
+            m_bbox = _estimate_node_bbox("model", _model_node_display(ivar))
             v_m0 = _v_m0_for_angle(out_angle, *d_bbox, *m_bbox) * _aniso_factor(out_angle)
             x_model_nat = x_deriv + v_m0 * cos_o
             y_model_nat = y_deriv + v_m0 * sin_o
@@ -1562,8 +1622,7 @@ class _Emitter:
             self.t.comment(f"sub-model: {ivar.submodel.latex_name}")
             if ivar.separate_figure:
                 # Show model equation + cross-ref only — no u(x) leaf needed.
-                ref_note = (rf"${ivar.submodel.latex_name} = {ivar.submodel.latex_expr}$"
-                            rf"\\ \footnotesize(see Fig.~\ref{{fig:{ivar.separate_label}}})")
+                ref_note = rf"${eq_line}$" rf"\\ {ref_line}"
                 self.t.abs_text_node(
                     m_id, "model_block",
                     ref_note,
@@ -1573,7 +1632,7 @@ class _Emitter:
             else:
                 self.t.abs_math_node(
                     m_id, "model_block",
-                    rf"{ivar.submodel.latex_name} = {ivar.submodel.latex_expr}",
+                    eq_line,
                     ref=root_id, dx=x_model_nat + eff_ox, dy=y_model_nat + eff_oy,
                 )
                 self.t.edge(d_id, m_id, f"connection, {color}")
