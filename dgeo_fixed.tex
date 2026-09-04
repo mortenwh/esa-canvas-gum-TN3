@@ -1,0 +1,44 @@
+\begin{figure}[p]
+  \centering
+  % Scale to fit page: preserves aspect ratio within textwidth × 0.88 textheight
+  \begin{adjustbox}{max width=\textwidth, max totalheight=\textheight, keepaspectratio}
+  \begin{tikzpicture}[
+    connection/.style={draw, thick},
+    root_block/.style={draw=blue!60!black, very thick, rectangle, fill=blue!8, inner sep=8pt, font=\normalsize\bfseries, align=center},
+    model_block/.style={draw, rectangle, inner sep=4pt, font=\footnotesize\bfseries, align=center},
+    deriv_node/.style={draw, rectangle, rounded corners=3pt, inner sep=4pt, font=\footnotesize, align=center},
+    leaf_node/.style={draw, rectangle, inner sep=4pt, font=\footnotesize, align=center},
+    effect_node/.style={draw, dashed, font=\footnotesize\itshape, align=center, inner sep=2pt}
+    ]
+		% ROOT: \varpi_{\rm g}
+		\node [root_block] (VARPIRMGROOT) {$\varpi_{\rm g} = f(\varpi_{\rm dc}, \varpi_{\rm p}) + \Delta\varpi_{\rm g}$};
+
+		% ∂\varpi_{\rm g}/∂\Delta\varpi_{\rm g}
+		\node [deriv_node] at ($(VARPIRMGROOT)+(-0.00cm,-1.50cm)$) (DDELTAVARPIRMG) {$\frac{\partial \varpi_{\rm g}}{\partial \Delta\varpi_{\rm g}}$};
+		\draw [connection, red] (VARPIRMGROOT) -- (DDELTAVARPIRMG);
+		\node [leaf_node, draw=red, text=red] at ($(VARPIRMGROOT)+(-0.00cm,-2.55cm)$) (UDELTAVARPIRMG) {$u(\Delta\varpi_{\rm g})$};
+		\draw [connection, red] (DDELTAVARPIRMG) -- (UDELTAVARPIRMG);
+		\node [effect_node, red] at ($(VARPIRMGROOT)+(-0.00cm,-3.45cm)$) (EFFDELTAVARPIRMG) {Unmodelled effects};
+		\draw [connection, red, dashed] (EFFDELTAVARPIRMG) -- (UDELTAVARPIRMG);
+
+		% ∂\varpi_{\rm g}/∂\varpi_{\rm dc}
+		\node [deriv_node] at ($(VARPIRMGROOT)+(-3.28cm,0.00cm)$) (DVARPIRMDC) {$\frac{\partial \varpi_{\rm g}}{\partial \varpi_{\rm dc}}$};
+		\draw [connection, blue!70!black] (VARPIRMGROOT) -- (DVARPIRMDC);
+
+		% sub-model: \varpi_{\rm dc}
+		\node [model_block] at ($(VARPIRMGROOT)+(-6.74cm,0.00cm)$) (MVARPIRMDC) {$\varpi_{\rm dc} = g(P, \varpi, \mathbf{t}) + \Delta\varpi_{\rm dc}$\\ \footnotesize(see Fig.~\ref{fig:dc_uncertainty_trace})};
+		\draw [connection, blue!70!black] (DVARPIRMDC) -- (MVARPIRMDC);
+
+		% ∂\varpi_{\rm g}/∂\varpi_{\rm p}
+		\node [deriv_node] at ($(VARPIRMGROOT)+(-0.00cm,1.50cm)$) (DVARPIRMP) {$\frac{\partial \varpi_{\rm g}}{\partial \varpi_{\rm p}}$};
+		\draw [connection, purple] (VARPIRMGROOT) -- (DVARPIRMP);
+
+		% sub-model: \varpi_{\rm p}
+		\node [model_block] at ($(VARPIRMGROOT)+(-0.00cm,2.95cm)$) (MVARPIRMP) {$\varpi_{\rm p} = g(\varpi_{\rm geo}, \varpi_{\rm a}) + \Delta\varpi_{\rm p}$\\ \footnotesize(see Fig.~\ref{fig:utd_varpi_p})};
+		\draw [connection, purple] (DVARPIRMP) -- (MVARPIRMP);
+
+  \end{tikzpicture}
+  \end{adjustbox}
+  \caption{Uncertainty Tree Diagram for $\varpi_{\rm g}$.}
+  \label{fig:utd_varpi_g}
+\end{figure}

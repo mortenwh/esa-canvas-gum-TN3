@@ -892,5 +892,177 @@ class TestCompactionPass(unittest.TestCase):
             f"Max branch offset {max_offset:.2f} cm seems too large after compaction")
 
 
+# ── _model_node_lines / _model_node_display (separate-figure bbox drift) ────
+
+class TestModelNodeDisplay(unittest.TestCase):
+    """Regression tests for the separate-figure model_block bbox drift bug.
+
+    Previously, the bbox used to lay out a sub-model's model_block node was
+    always estimated from the bare equation, even for ``separate_figure``
+    sub-models whose actually-emitted node has a second, cross-reference
+    text line. This let the auto-layout/emission under-size the box and
+    produce real overlaps (as seen in dgeo.tex). _model_node_lines /
+    _model_node_display are now the single source of truth for both the
+    bbox estimate and the emitted text.
+    """
+
+    def _make_ivar_with_submodel(self, separate: bool) -> gd.InputVar:
+        sub_expr, _ = gd._parse_latex_expr(r"\frac{u}{v}", {})
+        syms = {str(s): s for s in sub_expr.free_symbols}
+        sub_model = gd.MeasurementModel(
+            latex_name=r"p", latex_expr=r"\frac{u}{v}", expr=sub_expr,
+            inputs=[
+                gd.InputVar("u", syms["u"], "red"),
+                gd.InputVar("v", syms["v"], "purple"),
+            ],
+        )
+        return gd.InputVar(
+            "p", sp.Symbol("p_root"), "red", submodel=sub_model,
+            separate_figure=separate, separate_label="utd_p",
+        )
+
+    def test_embedded_submodel_has_no_cross_ref_line(self):
+        ivar = self._make_ivar_with_submodel(separate=False)
+        eq_line, ref_line = gd._model_node_lines(ivar)
+        self.assertIsNone(ref_line)
+        self.assertEqual(gd._model_node_display(ivar), eq_line)
+
+    def test_separate_figure_has_cross_ref_line(self):
+        ivar = self._make_ivar_with_submodel(separate=True)
+        eq_line, ref_line = gd._model_node_lines(ivar)
+        self.assertIsNotNone(ref_line)
+        self.assertIn(r"\ref{fig:utd_p}", ref_line)
+        display = gd._model_node_display(ivar)
+        self.assertIn(eq_line, display)
+        self.assertIn(ref_line, display)
+        self.assertIn(r"\\", display)
+
+    def test_separate_figure_bbox_taller_than_bare_equation(self):
+        """The bug: bbox must reflect the extra cross-ref line, not just
+        the bare equation, or the layout under-sizes the node."""
+        ivar = self._make_ivar_with_submodel(separate=True)
+        bare_eq, _ = gd._model_node_lines(ivar)
+        hw_bare, hh_bare = gd._estimate_node_bbox("model", bare_eq)
+        hw_full, hh_full = gd._estimate_node_bbox("model", gd._model_node_display(ivar))
+        self.assertGreater(hh_full, hh_bare,
+            "separate-figure model bbox must be taller than bare-equation-only estimate")
+
+    def test_simulate_and_emit_use_same_bbox_source(self):
+        """_simulate_branch (layout) and _emit_branch (rendering) must size
+        the model_block node from the exact same content."""
+        ivar = self._make_ivar_with_submodel(separate=True)
+        root_model = gd.MeasurementModel(
+            latex_name="z", latex_expr="p", expr=sp.Symbol("p_root"), inputs=[ivar],
+        )
+        recs = gd._simulate_branch(root_model, ivar, 0.0, 1.5, math.pi)
+        model_rec = next(r for r in recs if r.ntype == "model")
+        expected_bbox = gd._estimate_node_bbox("model", gd._model_node_display(ivar))
+        self.assertEqual(model_rec.bbox, expected_bbox)
+
+
+# ── dgeo.tex regression: no overlaps AND >= 3mm clearance everywhere ─────────
+
+def _parse_tikz_node_positions(tikz: str):
+    """Resolve every TikZ ``\\node ... at ($(ref)+(dx,dy)$)`` in *tikz* to an
+    absolute (x, y) position, and return a list of
+    ``(node_id, x, y, ntype, bbox)`` records using the same content-aware
+    bbox estimator the layout engine itself uses.
+    """
+    nodes = {}
+    pattern = (
+        r'\\node\s*\[([^\]]+)\]\s*'
+        r'(?:at \(\$\(([^)]+)\)\+\(([-\d.]+)cm,([-\d.]+)cm\)\$\)\s*)?'
+        r'\((\w+)\)\s*\{(.+?)\};'
+    )
+    for m in re.finditer(pattern, tikz):
+        style, ref, dx, dy, nid, content = m.groups()
+        nodes[nid] = dict(
+            style=style.split(",")[0].strip(),
+            ref=ref,
+            dx=float(dx) if dx else 0.0,
+            dy=float(dy) if dy else 0.0,
+            content=content,
+        )
+
+    pos = {}
+
+    def resolve(nid):
+        if nid in pos:
+            return pos[nid]
+        n = nodes[nid]
+        if n["ref"] is None:
+            pos[nid] = (0.0, 0.0)
+        else:
+            rx, ry = resolve(n["ref"])
+            pos[nid] = (rx + n["dx"], ry + n["dy"])
+        return pos[nid]
+
+    for nid in nodes:
+        resolve(nid)
+
+    typemap = {
+        "root_block": "root", "model_block": "model",
+        "deriv_node": "deriv", "leaf_node": "leaf", "effect_node": "effect",
+    }
+    recs = []
+    for nid, n in nodes.items():
+        ntype = typemap.get(n["style"], n["style"])
+        content = n["content"].strip("$")
+        bbox = gd._estimate_node_bbox(ntype, content)
+        x, y = pos[nid]
+        recs.append((nid, x, y, ntype, bbox))
+    return recs
+
+
+class TestDgeoClearance(unittest.TestCase):
+    """End-to-end regression covering dgeo.tex's exact shape: a long root
+    expression with one plain leaf input and two separate-figure sub-model
+    inputs. Loads the real dgeo.tex (read-only) via parse_utd_tex, rebuilds
+    it with auto_layout, and checks both zero overlaps and >= 3mm clearance
+    between every pair of node bounding boxes."""
+
+    DGEO_PATH = str(Path(__file__).parent / "dgeo.tex")
+
+    def _build_recs(self):
+        loaded = gd.parse_utd_tex(self.DGEO_PATH)
+        model = loaded["model"]
+        tikz = gd.build_tikz(
+            model, label=loaded["label"], caption=loaded["caption"],
+            auto_layout=True,
+        )
+        return _parse_tikz_node_positions(tikz)
+
+    def test_no_overlaps(self):
+        recs = self._build_recs()
+        for i in range(len(recs)):
+            for j in range(i + 1, len(recs)):
+                idi, xi, yi, _, (hwi, hhi) = recs[i]
+                idj, xj, yj, _, (hwj, hhj) = recs[j]
+                dx = abs(xi - xj) - (hwi + hwj)
+                dy = abs(yi - yj) - (hhi + hhj)
+                self.assertFalse(
+                    dx < 0 and dy < 0,
+                    f"{idi} overlaps {idj}",
+                )
+
+    def test_minimum_3mm_clearance(self):
+        """Every pair of node bboxes must have >= 0.3 cm (3 mm) clearance
+        on at least one axis (matching gd._MIN_CLEARANCE_CM)."""
+        recs = self._build_recs()
+        TOL = 1e-6
+        for i in range(len(recs)):
+            for j in range(i + 1, len(recs)):
+                idi, xi, yi, _, (hwi, hhi) = recs[i]
+                idj, xj, yj, _, (hwj, hhj) = recs[j]
+                dx = abs(xi - xj) - (hwi + hwj)
+                dy = abs(yi - yj) - (hhi + hhj)
+                clearance = max(dx, dy)
+                self.assertGreaterEqual(
+                    clearance, gd._MIN_CLEARANCE_CM - TOL,
+                    f"Clearance {clearance:.3f} cm between {idi} and {idj} "
+                    f"is below the required {gd._MIN_CLEARANCE_CM} cm",
+                )
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
