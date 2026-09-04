@@ -2,4 +2,8 @@
   - @gum_diagram.py
   - @test_gum_diagram.py
 - gum_diagram.py is used to create uncertainty tree diagrams
+- use only the existing file dgeo.tex to investigate figures
+- never overwrite a tex file
+- there should be a distance of at least 3mm between edges
+- Connecting lines should go from edge to edge
 - Boxes and lines shall not overlap
