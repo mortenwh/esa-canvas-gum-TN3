@@ -1,0 +1,1 @@
+- Boxes and lines shall not overlap
