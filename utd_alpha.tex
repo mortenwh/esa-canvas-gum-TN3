@@ -18,7 +18,7 @@
 		\draw [connection, red] (ALPHAROOT) -- (DGAMMA);
 		\node [leaf_node, draw=red, text=red] at ($(ALPHAROOT)+(-0.00cm,-2.55cm)$) (UGAMMA) {$u(\gamma)$};
 		\draw [connection, red] (DGAMMA) -- (UGAMMA);
-		\node [effect_node, red] at ($(ALPHAROOT)+(-0.00cm,-3.45cm)$) (EFFGAMMA) {Roll angle uncertainty};
+		\node [effect_node, red] at ($(ALPHAROOT)+(-0.00cm,-3.45cm)$) (EFFGAMMA) {AOCS inaccuracy \\ Vibrations)};
 		\draw [connection, red, dashed] (EFFGAMMA) -- (UGAMMA);
 
 		% ∂\alpha/∂\phi
@@ -26,7 +26,7 @@
 		\draw [connection, blue!70!black] (ALPHAROOT) -- (DPHI);
 		\node [leaf_node, draw=blue!70!black, text=blue!70!black] at ($(ALPHAROOT)+(-3.36cm,0.00cm)$) (UPHI) {$u(\phi)$};
 		\draw [connection, blue!70!black] (DPHI) -- (UPHI);
-		\node [effect_node, blue!70!black] at ($(ALPHAROOT)+(-5.90cm,0.00cm)$) (EFFPHI) {Yaw angle uncertainty};
+		\node [effect_node, blue!70!black] at ($(ALPHAROOT)+(-5.90cm,0.00cm)$) (EFFPHI) {AOCS inaccuracy \\ Vibrations};
 		\draw [connection, blue!70!black, dashed] (EFFPHI) -- (UPHI);
 
 		% ∂\alpha/∂\psi
@@ -34,11 +34,11 @@
 		\draw [connection, purple] (ALPHAROOT) -- (DPSI);
 		\node [leaf_node, draw=purple, text=purple] at ($(ALPHAROOT)+(-0.00cm,2.55cm)$) (UPSI) {$u(\psi)$};
 		\draw [connection, purple] (DPSI) -- (UPSI);
-		\node [effect_node, purple] at ($(ALPHAROOT)+(-0.00cm,3.45cm)$) (EFFPSI) {Pitch angle uncertainty};
+		\node [effect_node, purple] at ($(ALPHAROOT)+(-0.00cm,3.45cm)$) (EFFPSI) {AOCS inaccuracy \\ Vibrations};
 		\draw [connection, purple, dashed] (EFFPSI) -- (UPSI);
 
   \end{tikzpicture}
   \end{adjustbox}
-  \caption{Uncertainty Tree Diagram for $\alpha$, resulting from estimates of satellite pitch, $\psi$, yaw, $\gamma$, and roll, $\phi$, attitude angles.}
+  \caption{Uncertainty Tree Diagram for $\alpha$, resulting from estimates of satellite pitch, $\psi$, yaw, $\gamma$, and roll, $\phi$, attitude angles, where AOCS stands for \acf{AOCS}.}
   \label{fig:utd_alpha}
 \end{figure}

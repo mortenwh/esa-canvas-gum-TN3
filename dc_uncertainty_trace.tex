@@ -26,7 +26,7 @@
 		\draw [connection, blue!70!black] (VARPIRMDCROOT) -- (DP);
 		\node [leaf_node, draw=blue!70!black, text=blue!70!black] at ($(VARPIRMDCROOT)+(-4.09cm,-2.73cm)$) (UP) {$u(P)$};
 		\draw [connection, blue!70!black] (DP) -- (UP);
-		\node [effect_node, blue!70!black] at ($(VARPIRMDCROOT)+(-6.32cm,-4.23cm)$) (EFFP) {Speckle \\ Scene backscatter variability};
+		\node [effect_node, blue!70!black] at ($(VARPIRMDCROOT)+(-6.32cm,-4.23cm)$) (EFFP) {Speckle \\ Aliasing \\ Azimuth gradients};
 		\draw [connection, blue!70!black, dashed] (EFFP) -- (UP);
 
 		% ∂\varpi_{\rm dc}/∂\mathbf{t}
