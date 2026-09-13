@@ -1,5 +1,25 @@
 \section{Uncertainty Propagation} \label{sec:uncertainty_propagation}
 
+There are two methodologies to propagate uncertainties through the measurement model until the measurand as introduced in \cite{QA4EO2}. The first method is the Law of Propagation of Uncertainties (LPU) relies on the error covariance matrices and sensitivity coefficient produced for each output quantity. The second method is the Monte Carlo (MC) method relies on the probability distribution function of each source of uncertainty or, in a compact way, the output quantities. This section details how to apply these methods during the uncertainty analysis.
+
 \subsection{Law of propagation of uncertainties method}
+
+This method is based on a locally linear approximation to combine uncertainties using the expresion:
+
+
+\[u^2(y) = \sum_{i=1}^N c_i^2 u^2(x_i) + 2 \sum_{i=1}^{N-1} \sum_{j=i+1}^N c_i c_j u(x_i, x_j)\]
+
+Where \(u^2(y)\) is the combined uncertainty associated with the measured value \(y\). \(u(x_i)\) is the uncertainty associated with the input quantity \(x_i\). \(u(x_i, x_j)\) is the covariance between \(x_i\) and \(x_j\). \(c_i=\delta y/ \delta x_i \) is the sensitivity coefficient, i.e. the relationship between an uncertainty associated to an input quantity and the uncertainty associated to the measured quantity. \(N\) represents the number of input quantities. In this equation the first term, \(\sum_{i=1}^N c_i^2 u^2(x_i)\) is fully independent, while the second term \(2 \sum_{i=1}^{N-1} \sum_{j=i+1}^N c_i c_j u(x_i, x_j)\) stands for the error correlation.
+
+The expression can also be written in matrix form as:
+
+
+\[u²(y)=cS(x)c^T\]
+
+where \(c=[\delta y/\delta x_1, ..., \delta y/\delta x_N]\) is a row vector of sensitivity coefficients and \(S(x)\) is the error covariance matrix for the input quantities with diagonals \(u²(x_i)\) and off-diagonals \(u(x_i, x_j)\)
+
 \subsection{MonteCarlo method}
 
+The MC method estimates the input probability distributions by finite sets of random draws from the those distributions. These drawss are processed through a measurement function to produce output values, which are treated as random samples of the output probability distribution. Statistical analysis, such as calculating standard deviations and error covariances, is then performed on the output values. 
+
+MC offers advantages such as providing insights into the shape of the output probability distribution, handling highly non-linear measurement functions, and accommodating complex probability distributions. They are particularly useful for models that cannot be expressed algebraically. However, they are computationally intensive, which is a significant drawback when dealing with large Earth Observation data volumes. In practice, uncertainty analysis often combines MC with LPU, where MC is used to determine uncertainty for specific quantities, which are then utilized in LPU for subsequent analysis.
