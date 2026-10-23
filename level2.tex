@@ -575,7 +575,7 @@ sources will contribute to the uncertainty of $J$:
 		\textbf{Uncertainty} & & & & \\
 		\quad -- PDF shape & Negative Exponential & Gaussian & Gaussian & TBD \\
 		\quad -- Units & dB & - & deg & dB \\
-		\quad -- Magnitude & 0.2 dB & Negligeable & $\approx$0.01 deg & <-30 dB \\
+		\quad -- Magnitude & 0.2 dB & Negligeable & $\approx$0.01 deg & $<$-30 dB \\
 		\midrule
 		\textbf{Sensitivity Coefficient} & $\frac{\partial J_{\sigma_{0}}}{\partial \sigma_{0}^{M}}$ & $\frac{\partial J_{\sigma_{0}}}{\partial \sigma_{0}^{S}} \frac{\partial \sigma_{0}^{S}}{\partial A_{i}}$ & $\frac{\partial J_{\sigma_{0}}}{\partial \sigma_{0}^{S}} \frac{\partial \sigma_{0}^{S}}{\partial \theta}$ & $\frac{\partial J_{\sigma_{0}}}{\partial \sigma_{0}^{M}} \frac{\partial \sigma_{0}^{M}}{\partial pol}$ \\
 		\bottomrule
@@ -961,6 +961,10 @@ uncertainties rather than purely random noise. Figure~\ref{fig:sm_uncertainty_tr
 shows a compact uncertainty tree diagram for the Level-2 \ac{SAR} soil moisture
 product.
 
+
+
+
+
 \begingroup
 \hfuzz=2pt
 \begin{figure*}[t]
@@ -1028,53 +1032,73 @@ product.
 Table~\ref{tab:sm_effects_table} provides a framework for documenting the main
 uncertainty effects for a Level-2 \ac{SAR} soil moisture product. The table is intended to be completed during the product-specific error-budget analysis. The column headers denote effect categories rather than individual effects, and the rows labelled "Maturity" are placeholders to be populated during the product-specific assessment; they should not be interpreted as fixed maturity scores.
 
-\begin{table}[ht]
+
+\begin{table}[H]
   \scriptsize
   \centering
 
-  \caption{Framework uncertainty effects table for Level-2 \ac{SAR} soil moisture,
-  $\theta_{\rm sm}$.}
+  \caption{Indicative uncertainty effects table for Level-2 \ac{SAR} soil moisture,
+  $\theta_{\rm sm}$. Entries are qualitative first-pass assessments for the CANVAS review and should be replaced by product-specific evidence where available.}
 
+  \resizebox{\textwidth}{!}{%
   \begin{tabular}{|l|c|c|c|c|c|c|}
     \hline
     \textbf{Effect category} & Observation & Geometry & Vegetation & Surface & Ancillary / & Total\\
     & noise/cal. & /topography & correction & model & post-proc. & product\\ \hline
-    \textbf{Effect} &  &  &  &  & & \\
-    \textbf{identifier} & 1 & 2 & 3 & 4 & 5 & 6 \\ \hline
+    \textbf{Effect} & Radiometry, & Local angle, & Canopy & Roughness, & Masks, & Combined \\
+    \textbf{identifier} & speckle & geocoding & attenuation & retrieval model & resampling & retrieval \\ \hline
     \textbf{Affected term} &  &  &  &  & & \\
     \textbf{term in} &  &  &  &  &  &\\
     \textbf{measurement} &  &  &  &  &  &\\
     \textbf{function} & $\sigma^0_{\rm cal}$ & $\vartheta$ & $x_{\rm veg}$ & $p_{\rm ret}$ & $x_{\rm aux}, c_{\rm pp}, R_{\rm sm}$ & $\theta_{\rm sm}$ \\ \hline
     \textbf{Maturity of} &  &  &  &  & & \\
-    \textbf{analysis} & TBD & TBD & TBD & TBD & TBD & TBD \\ \hline
+    \textbf{analysis} & High & Medium & Medium & Medium & Medium & Medium \\ \hline
     Maturity of &  & &  &  & &  \\
     uncertainty &  & &  &  & &  \\
-    estimate & TBD& TBD& TBD& TBD&TBD & TBD \\ \hline
+    estimate & Medium & Medium & Low--Med. & Low--Med. & Medium & Medium \\ \hline
     Maturity of &  & &  &  & &  \\
     correlation scale &  & &  &  & &  \\
-    estimate & TBD& TBD& TBD& TBD& TBD& TBD \\ \hline
+    estimate & Medium & Medium & Low & Low & Low--Med. & Low--Med. \\ \hline
     For low maturity, &  & &  &  & &  \\
     is effect negligible? & No & No & No & No & No & No\\ \hline
     \textbf{Correlation type} &  & &  &  &  &\\
     \textbf{and form} &  & &  &  &   &\\ \hline
-    Range/cross-track & TBD & TBD & TBD & TBD & TBD & TBD \\ \hline
-    Azimuth/along-track & TBD & TBD & TBD & TBD & TBD & TBD \\ \hline
-    Over time & TBD & TBD & TBD & TBD & TBD & TBD \\ \hline
-    Between land-cover classes & TBD & TBD & TBD & TBD & TBD & TBD \\ \hline
+    Range/cross-track & Sub-swath & DEM/angle & Weak & Weak & Mask edges & Mixed \\ \hline
+    Azimuth/along-track & Speckle/filter & Geolocation & Weak & Weak & Resampling & Mixed \\ \hline
+    Over time & Calibration & DEM stable & Seasonal & Parameter & Land-cover & Seasonal \\ \hline
+    Between land-cover classes & Low & Terrain-linked & Strong & Strong & Strong & Strong \\ \hline
     \textbf{Correlation scale} &  & & &  &  &  \\ \hline
-    Space & TBD & TBD & TBD & TBD & TBD & TBD\\ \hline
-    Time & TBD & TBD & TBD & TBD & TBD & TBD\\ \hline
-    Conditions & TBD & TBD & TBD & TBD & TBD & TBD \\ \hline
+    Space & Swath--km & DEM/grid & Land-cover & Field--region & Grid--region & Pixel--region\\ \hline
+    Time & Mission/scene & Persistent & Seasonal & Persistent & Product cycle & Product cycle\\ \hline
+    Conditions & Incidence/SNR & Topography & Vegetation & Moisture/roughness & Masks & Surface state \\ \hline
     \textbf{Uncertainty} &  & &  &  &&  \\ \hline
-    PDF shape & TBD & TBD & TBD & TBD & TBD & TBD \\ \hline
-    Units & input units & radians/deg & input units & input units & input units & m$^3$/m$^3$ \\ \hline
-    Magnitude & TBD & TBD & TBD & TBD & TBD & TBD \\ \hline
+    PDF shape & Gaussian/log & Bounded & Skewed & Nonlinear & Categorical & Non-Gaussian \\ \hline
+    Units & dB & degrees & input units & parameter units & input units & m$^3$/m$^3$ \\ \hline
+    Magnitude & Low--Med. & Low--Med. & Medium & Medium--High & Medium & Medium \\ \hline
     \textbf{Sensitivity} & & & &  &  &  \\
     \textbf{coefficient} & $\frac{\partial\theta_{\rm sm}}{\partial \sigma^0_{\rm cal}}$ & $\frac{\partial\theta_{\rm sm}}{\partial \vartheta}$ & $\frac{\partial\theta_{\rm sm}}{\partial x_{\rm veg}}$ & $\frac{\partial\theta_{\rm sm}}{\partial p_{\rm ret}}$ & branch-wise / combined & 1 \\ \hline
-  \end{tabular}
+  \end{tabular}%
+  }
 
   \label{tab:sm_effects_table}
 \end{table}
+
+
+
+\noindent\textbf{Traceability of the qualitative table entries.}
+The qualitative entries in Table~\ref{tab:sm_effects_table} are not final numerical scores. They are traceable judgements based on evidence normally available for operational SAR soil-moisture products: mission calibration documentation, SAR preprocessing specifications, ATBD assumptions, validation reports, in situ network characteristics, and expert judgement about representativeness and correlation structure. The rationale is as follows:
+\begin{itemize}
+  \item \textbf{Observation noise/calibration:} analysis maturity is set to High because radiometric calibration, thermal noise, speckle statistics and instrument quality control are normally documented. The uncertainty and correlation-scale maturity are Medium because product-level propagation still depends on aggregation, filtering, local signal-to-noise ratio and sub-swath or scene-level structures.
+  \item \textbf{Geometry/topography:} analysis and uncertainty maturity are Medium because incidence angle, geolocation, DEM quality and terrain normalization are standard SAR processing elements, but their error contribution is DEM-, orbit- and terrain-dependent. Correlation is persistent in space and time, but rarely delivered as a full covariance model.
+  \item \textbf{Vegetation correction:} analysis maturity is Medium because canopy effects are recognized and partly corrected using ancillary data or empirical terms. Uncertainty maturity is Low--Medium and correlation-scale maturity is Low because phenology, vegetation water content and forest/crop structure vary seasonally and by land-cover class.
+  \item \textbf{Surface model and roughness:} analysis maturity is Medium because roughness and model-form uncertainty are established contributors in SAR soil-moisture retrieval. Uncertainty maturity is Low--Medium because roughness is rarely measured operationally at product scale, and correlation-scale maturity is Low because field-scale persistence is hard to separate from vegetation and moisture-state effects.
+  \item \textbf{Ancillary data and post-processing:} analysis and uncertainty maturity are Medium where masks, land-cover layers, quality flags and resampling choices are documented. Correlation-scale maturity is Low--Medium because mask and land-cover errors are spatially structured and persistent, but usually represented qualitatively rather than through explicit covariance models.
+  \item \textbf{Total product uncertainty:} maturity is Medium because several components are documented, but their combination requires assumptions about nonlinearity, covariance, representativeness and validation support. The final PDF shape is marked Non-Gaussian because the product combines continuous retrieval uncertainty with bounded soil-moisture values, masks, thresholds and land-cover-dependent biases.
+\end{itemize}
+For a product-specific assessment, each qualitative entry should be backed by a traceability record containing the source document or dataset, the affected input variable or processing step, the assumed uncertainty distribution and units, the spatial/temporal/condition-dependent correlation assumptions, and the validation evidence used to confirm or revise the maturity level.
+
+
+
 
 \noindent In a product-specific implementation, the evaluation should distinguish
 between Type-A components estimated statistically from repeat observations or
@@ -1339,81 +1363,74 @@ the product-level context for the uncertainty components listed here
 
 \paragraph{Step 3: Evaluation of uncertainties}
 
-Table~\ref{tab:wetsnow_effects_table} gives a corresponding framework for the
-uncertainty analysis of a Level-2 Surface Wet Snow product. As for Table~\ref{tab:sm_effects_table}, the columns denote effect categories, while the maturity rows are placeholders to be filled with product-specific assessments rather than default zero scores.
+Table~\ref{tab:wetsnow_effects_table} provides an indicative framework for documenting the main uncertainty effects for a Level-2 Surface Wet Snow product. The former TBD fields are replaced by qualitative first-pass maturity levels (High, Medium, Low--Medium and Low). The assessment reflects the evidence normally available for operational SAR wet-snow products: observation calibration and standard SAR preprocessing are comparatively mature; reference-state construction, threshold transferability and mask logic are partly documented; and representativeness, class-transition probabilities and correlation scales remain strongly dependent on terrain, forest cover, season and melt--refreeze timing. The entries should therefore be treated as a CANVAS review baseline rather than as final product scores.
 
-\begin{table}[ht]
+\begin{table}[H]
   \scriptsize
   \centering
-
-  \caption{Framework uncertainty effects table for Level-2 Surface Wet Snow
-  classification, $S_{\rm ws}$.}
-
+  \caption{Indicative uncertainty effects table for Level-2 Surface Wet Snow classification. Entries are qualitative first-pass assessments for the CANVAS review and should be replaced by product-specific evidence where available.}
+  \resizebox{\textwidth}{!}{%
   \begin{tabular}{|l|c|c|c|c|c|c|}
     \hline
     \textbf{Effect category} & Observation & Reference & Decision & Ancillary & Representa- & Total\\
     & /calibration & state & logic & masks & tiveness & classification\\ \hline
-    \textbf{Effect} &  &  &  &  & & \\
-    \textbf{identifier} & 1 & 2 & 3 & 4 & 5 & 6 \\ \hline
+    \textbf{Effect} & Radiometry, & Baseline, & Threshold, & Terrain, forest, & Scale and & Combined \\
+    \textbf{identifier} & noise, speckle & reference archive & polarization weight & water, snow QC & state mismatch & classifier \\ \hline
     \textbf{Affected term} &  &  &  &  & & \\
     \textbf{term in} &  &  &  &  &  &\\
     \textbf{measurement} &  &  &  &  &  &\\
-    \textbf{function} & $\sigma^0_{\rm cal}$ & $t_{\rm ref}, \Delta\sigma^0$ & $q$ & $x_{\rm aux}$ & $R_{\rm ws}$ & $S_{\rm ws}$ \\ \hline
+    \textbf{function} & $\sigma^0_{\rm cal}$ & $r_{\rm ref}$ & $\tau,p_{\rm ws}$ & $x_{\rm aux},m$ & $R_{\rm ws}$ & $M_{\rm ws},S_{\rm ws}$ \\ \hline
     \textbf{Maturity of} &  &  &  &  & & \\
-    \textbf{analysis} & TBD & TBD & TBD & TBD & TBD & TBD \\ \hline
+    \textbf{analysis} & High & Medium & Medium & Medium & Low--Med. & Medium \\ \hline
     Maturity of &  & &  &  & &  \\
     uncertainty &  & &  &  & &  \\
-    estimate & TBD& TBD& TBD& TBD&TBD & TBD \\ \hline
+    estimate & Medium & Low--Med. & Low--Med. & Medium & Low & Low--Med. \\ \hline
     Maturity of &  & &  &  & &  \\
     correlation scale &  & &  &  & &  \\
-    estimate & TBD& TBD& TBD& TBD& TBD& TBD \\ \hline
+    estimate & Medium & Low & Low & Low--Med. & Low & Low \\ \hline
     For low maturity, &  & &  &  & &  \\
-    is effect negligible? &  No& No&  No&  No&  No& No\\ \hline
+    is effect negligible? & No & No & No & No & No & No \\ \hline
     \textbf{Correlation type} &  & &  &  &  &\\
     \textbf{and form} &  & &  &  &   &\\ \hline
-    Space & TBD & TBD & TBD & TBD & TBD & TBD \\ \hline
-    Over time & TBD & TBD & TBD & TBD & TBD & TBD \\ \hline
-    Between snow regimes & TBD & TBD & TBD & TBD & TBD & TBD \\ \hline
-    Between classes & TBD & TBD & TBD & TBD & TBD & TBD \\ \hline
+    Range/cross-track & Sub-swath/SNR & Reference mosaic & Incidence-linked & Terrain/mask edges & Terrain/forest & Mixed \\ \hline
+    Azimuth/along-track & Speckle/filter & Reference scenes & Orbit/weighting & Resampling & Topographic & Mixed \\ \hline
+    Over time & Calibration/scene & Persistent/seasonal & Seasonal threshold & Mask version & Diurnal/seasonal & Seasonal \\ \hline
+    Between snow regimes & State-dependent SNR & Dry/wet baseline & Strong boundary & Snow availability & Strong & Strong \\ \hline
+    Between classes & Confusion-linked & Class-dependent & Threshold-coupled & Mask transitions & Strong & Strong \\ \hline
+    \textbf{Correlation scale} &  & & &  &  &  \\ \hline
+    Space & Swath--km & Pixel--region & Terrain region & Grid--region & Slope--catchment & Pixel--region \\ \hline
+    Time & Mission/scene & Season--years & Scene--season & Product version & Hours--season & Scene--season \\ \hline
+    Conditions & Incidence/SNR & Snow regime & Margin/threshold & Terrain/land cover & Melt state & Surface state \\ \hline
     \textbf{Classification quality} &  & & &  &  &  \\ \hline
-    False-wet rate & TBD & TBD & TBD & TBD & TBD & TBD\\ \hline
-    Missed-wet rate & TBD & TBD & TBD & TBD & TBD & TBD\\ \hline
-    False-mask rate & TBD & TBD & TBD & TBD & TBD & TBD \\ \hline
+    False-wet influence & Medium & High & High & Medium & High & Combined \\ \hline
+    Missed-wet influence & Medium & High & High & Medium & High & Combined \\ \hline
+    False-mask influence & Low & Low & Medium & High & Medium & Combined \\ \hline
     \textbf{Uncertainty} &  & &  &  &&  \\ \hline
-    Output form & score & score & score & score & score & probability/confidence \\ \hline
-    Units & -- & -- & -- & -- & -- & class or probability \\ \hline
-    Magnitude & TBD & TBD & TBD & TBD & TBD & TBD \\ \hline
+    PDF/output form & Gaussian/log & Skewed & Bounded/nonlinear & Categorical & Mixed & Probability/class \\ \hline
+    Units & dB & dB & dB/-- & flag/fraction & probability/score & probability/class \\ \hline
+    Magnitude & Low--Med. & Med.--High & Med.--High & Medium & High & Med.--High \\ \hline
     \textbf{Sensitivity} & & & &  &  &  \\
-    \textbf{coefficient} & $\frac{\partial C}{\partial \sigma^0_{\rm cal}}$ & $\frac{\partial C}{\partial \Delta\sigma^0}$ & $\frac{\partial C}{\partial q}$ & $\frac{\partial C}{\partial x_{\rm aux}}$ & branch-wise / empirical & 1 \\ \hline
-  \end{tabular}
-
+    \textbf{coefficient} & $\frac{\partial M_{\rm ws}}{\partial \sigma^0_{\rm cal}}$ & $\frac{\partial M_{\rm ws}}{\partial r_{\rm ref}}$ & $\frac{\partial M_{\rm ws}}{\partial p_{\rm ws}}$ & branch-wise / scenario & empirical / validation & class mapping \\ \hline
+  \end{tabular}%
+  }
   \label{tab:wetsnow_effects_table}
 \end{table}
 
-\noindent In a product-specific implementation, performance should be summarized
-by class-wise probability of detection, false-alarm rate, omission and
-commission errors, and the stability of the \texttt{MASK} assignment. The
-analysis should also clarify whether \texttt{MASK} denotes unavailable data,
-invalid retrieval conditions, or an explicit physical class, since these cases
-have different implications for uncertainty reporting and downstream use. For wet snow, branch maturity is likewise expected to differ across the chain: observation and some masking components may be fairly mature, while threshold stability, reference-state representativeness and class-transition probabilities are often less mature and should be assessed separately.
+\noindent\textbf{Traceability of the qualitative table entries.}
+The qualitative entries in Table~\ref{tab:wetsnow_effects_table} are not final numerical scores. They are traceable judgements based on the evidence normally available for operational wet-snow products: mission calibration documentation, SAR preprocessing specifications, reference-image construction, ATBD decision rules, mask and QC definitions, validation reports, and expert knowledge of snow-state representativeness. The rationale is as follows:
+\begin{itemize}
+  \item \textbf{Observation noise and calibration:} analysis maturity is High because radiometric calibration, thermal noise, speckle behaviour, geolocation and standard terrain correction are established SAR processing components. Uncertainty and correlation-scale maturity are Medium because the effective contribution depends on polarization, incidence angle, local SNR, filtering and aggregation.
+  \item \textbf{Reference state:} analysis maturity is Medium because the need for a dry-snow or snow-free reference is explicit and reference-generation procedures are normally documented. Uncertainty maturity is Low--Medium and correlation-scale maturity is Low because contamination, archive length, seasonal drift, orbit mismatch and temporal representativeness are rarely propagated quantitatively.
+  \item \textbf{Decision logic:} analysis maturity is Medium because thresholds, polarization weights and class hierarchies are specified in the processor. Uncertainty maturity is Low--Medium because threshold transferability and coefficient uncertainty are not generally calibrated across terrain, snow regimes and seasons. Correlation-scale maturity is Low because a shared threshold creates structured errors over scenes and regions.
+  \item \textbf{Ancillary masks and QC:} analysis and uncertainty maturity are Medium where forest, water, glacier, layover/shadow and snow-availability masks are documented. Correlation-scale maturity is Low--Medium because errors are spatially persistent along land-cover and terrain boundaries and may change with product versions.
+  \item \textbf{Representativeness:} analysis maturity is Low--Medium and uncertainty maturity is Low because a radar class represents a shallow, condition-dependent electromagnetic response, while reference observations may describe point-scale LWC, surface temperature, optical snow presence or modelled bulk snow state. Diurnal melt--refreeze cycles, vertical liquid-water distribution, forest cover and sub-pixel terrain mixtures can all change the class interpretation.
+  \item \textbf{Total classification uncertainty:} maturity is Low--Medium because individual effects are recognized, but their joint propagation requires non-Gaussian probability models, covariance assumptions and independent validation. A categorical code alone is not an uncertainty estimate; the preferred outputs are the continuous margin, class probabilities, conditioning flags and class-wise validation metrics.
+\end{itemize}
 
-\noindent For ESA/Copernicus delivery, the final analysis should also document:
-\begin{enumerate}
-  \item the exact class definitions and decision hierarchy;
-  \item the reference-state construction and update strategy;
-  \item the role of terrain, forest and viewing geometry in class confusion;
-  \item whether confidence is reported as class probability, score or flag; and
-  \item the validation strategy against in situ observations, optical snow maps
-  and expert-labelled reference data.
-\end{enumerate}
+For a product-specific assessment, each qualitative entry should be backed by a traceability record containing the source document or dataset, the affected variable or processing step, the assumed uncertainty distribution and units, spatial, temporal and snow-regime correlation assumptions, and the validation evidence used to confirm or revise the maturity level.
 
-\noindent The two frameworks above are intentionally focused on \ac{SAR}-based
-Level-2 products and can be specialized further for \mbox{C-band} missions such
-as Sentinel-1 or for \mbox{L-band} missions where deeper penetration and
-stronger vegetation interaction must be reflected explicitly in the error
-budget. For soil moisture, this refinement mainly affects the forward model and
-the covariance structure of the propagated uncertainty; for wet snow, it mainly
-affects the separability of classes and the stability of the decision variable
-and thresholds.
+
+
+
 
 
