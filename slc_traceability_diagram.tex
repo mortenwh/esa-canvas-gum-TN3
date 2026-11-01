@@ -1,230 +1,292 @@
+% \begin{figure}[H]
+%   \centering
+%   \resizebox{0.92\textwidth}{!}{%
+%   \begin{tikzpicture}[node distance=1.15cm and 1.15cm, every node/.style={font=\scriptsize}]
+%     \node[draw,
+%           text width=3.0cm,
+%           align=center,
+%           minimum height=0.9cm] (raw)
+%           {$s_{\rm raw}$};
+
+%     \node[draw,
+%           right=1.8cm of raw,
+%           text width=2.8cm,
+%           align=center,
+%           minimum height=0.9cm] (crad)
+%           {$C_{\rm rad}$};
+
+%     \node[draw,
+%           right=1.8cm of crad,
+%           text width=3.2cm,
+%           align=center,
+%           minimum height=0.9cm] (cgeo)
+%           {$C_{\rm geo},\phi_{\rm corr}$};
+
+%     \node[draw,
+%           above=1.1cm of cgeo,
+%           text width=3.4cm,
+%           align=center,
+%           minimum height=0.9cm] (prop)
+%           {$\Delta_{\rm trop},\Delta_{\rm iono}$\\path delay, attenuation, Faraday};
+
+%     % ROOT:
+%     \node[draw,
+%           below=1.8cm of crad,
+%           text width=6.6cm,
+%           align=center,
+%           minimum height=1.1cm] (slc)
+%           {$s_{\rm c}=f(s_{\rm raw},C_{\rm rad},C_{\rm geo},n,\phi_{\rm corr})+\Delta s$}; 
+
+%     \node[draw,
+%           below=2.0cm of slc,
+%           text width=5.6cm,
+%           align=center,
+%           minimum height=1.1cm] (rad)
+%           {$z_{\rm rad}=g_{\rm rad}(s_{\rm c},K_{\rm rad},G,\theta)+\Delta z_{\rm rad}$};
+
+%     \node[draw,
+%           below=2.7cm of rad,
+%           text width=6.4cm,
+%           align=center,
+%           minimum height=1.1cm] (geo)
+%           {$\mathbf{g}=g_{\rm geo}(p_{\rm img},t_{\rm rg},t_{\rm az},\mathbf{p}_{\rm orb},\mathbf{p}_{\rm att})+\Delta\mathbf{g}$};
+
+%     \node[draw,
+%           below=2.7cm of geo,
+%           text width=5.6cm,
+%           align=center,
+%           minimum height=1.1cm] (pha)
+%           {$\phi_{\rm L1}=g_{\rm ph}(\arg(s_{\rm c}),\phi_{\rm corr})+\Delta\phi$};
+
+%     \node[draw,
+%           left=3.3cm of rad,
+%           text width=1.9cm,
+%           align=center,
+%           minimum height=0.85cm] (dradsc)
+%           {$\frac{\partial z_{\rm rad}}{\partial s_{\rm c}}$};
+
+%     \node[draw,
+%           right=3.3cm of rad,
+%           text width=2.1cm,
+%           align=center,
+%           minimum height=0.85cm] (dradcrad)
+%           {$\frac{\partial z_{\rm rad}}{\partial C_{\rm rad}}$};
+
+%     \node[draw,
+%           below left=1.2cm and 2.6cm of rad,
+%           text width=1.8cm,
+%           align=center,
+%           minimum height=0.85cm] (dradn)
+%           {$\frac{\partial z_{\rm rad}}{\partial n}$};
+
+%     \node[left=1.6cm of dradsc,
+%           text width=2.4cm,
+%           align=center] (uradsc)
+%           {$u(s_{\rm c})$\\focused\\sample};
+
+%     \node[right=1.6cm of dradcrad,
+%           text width=2.4cm,
+%           align=center] (ucradleaf)
+%           {$u(C_{\rm rad})$\\gain drift};
+
+%     \node[left=1.5cm of dradn,
+%           text width=2.4cm,
+%           align=center] (unleaf)
+%           {$u(n)$\\thermal noise};
+
+%     \node[draw,
+%           left=3.4cm of geo,
+%           text width=2.0cm,
+%           align=center,
+%           minimum height=0.85cm] (dgeosc)
+%           {$\frac{\partial \mathbf{g}}{\partial s_{\rm c}}$};
+
+%     \node[draw,
+%           right=3.4cm of geo,
+%           text width=1.9cm,
+%           align=center,
+%           minimum height=0.85cm] (dgeotrg)
+%           {$\frac{\partial \mathbf{g}}{\partial t_{\rm rg}}$};
+
+%     \node[draw,
+%           below right=1.2cm and 2.7cm of geo,
+%           text width=2.3cm,
+%           align=center,
+%           minimum height=0.85cm] (dgeoorb)
+%           {$\frac{\partial \mathbf{g}}{\partial \mathbf{p}_{\rm orb}}$};
+
+%     \node[draw,
+%           above right=1.2cm and 2.7cm of geo,
+%           text width=2.3cm,
+%           align=center,
+%           minimum height=0.85cm] (dgeoprop)
+%           {$\frac{\partial \mathbf{g}}{\partial \Delta_{\rm prop}}$};
+
+%     \node[left=1.5cm of dgeosc,
+%           text width=2.4cm,
+%           align=center] (ugeosc)
+%           {$u(s_{\rm c})$\\target\\position};
+
+%     \node[right=1.5cm of dgeotrg,
+%           text width=2.1cm,
+%           align=center] (utrgleaf)
+%           {$u(t_{\rm rg})$\\timing};
+
+%     \node[right=1.4cm of dgeoorb,
+%           text width=2.4cm,
+%           align=center] (uorbleaf)
+%           {$u(\mathbf{p}_{\rm orb})$\\orbit state};
+
+%     \node[right=1.4cm of dgeoprop,
+%           text width=2.7cm,
+%           align=center] (upropgeo)
+%           {$u(\Delta_{\rm prop})$\\tropo/iono delay};
+
+%     \node[draw,
+%           left=3.3cm of pha,
+%           text width=1.9cm,
+%           align=center,
+%           minimum height=0.85cm] (dphisc)
+%           {$\frac{\partial \phi_{\rm L1}}{\partial s_{\rm c}}$};
+
+%     \node[draw,
+%           right=3.3cm of pha,
+%           text width=2.2cm,
+%           align=center,
+%           minimum height=0.85cm] (dphicorr)
+%           {$\frac{\partial \phi_{\rm L1}}{\partial \phi_{\rm corr}}$};
+
+%     \node[draw,
+%           below left=1.2cm and 2.6cm of pha,
+%           text width=1.8cm,
+%           align=center,
+%           minimum height=0.85cm] (dphan)
+%           {$\frac{\partial \phi_{\rm L1}}{\partial n}$};
+
+%     \node[draw,
+%           below right=1.2cm and 2.6cm of pha,
+%           text width=2.1cm,
+%           align=center,
+%           minimum height=0.85cm] (dphiprop)
+%           {$\frac{\partial \phi_{\rm L1}}{\partial \Delta_{\rm iono}}$};
+
+%     \node[left=1.6cm of dphisc,
+%           text width=2.4cm,
+%           align=center] (uphasc)
+%           {$u(s_{\rm c})$\\phase\\sample};
+
+%     \node[right=1.5cm of dphicorr,
+%           text width=2.5cm,
+%           align=center] (uphicorrleaf)
+%           {$u(\phi_{\rm corr})$\\phase correction};
+
+%     \node[left=1.5cm of dphan,
+%           text width=2.4cm,
+%           align=center] (uphanleaf)
+%           {$u(n)$\\noise floor};
+
+%     \node[right=1.5cm of dphiprop,
+%           text width=2.6cm,
+%           align=center] (uphiprop)
+%           {ionospheric phase\\Faraday rotation};
+
+%     \draw[-latex] (raw) -- (slc);
+%     \draw[-latex] (crad) -- (slc);
+%     \draw[-latex] (cgeo) -- (slc);
+%     \draw[-latex] (prop) -- (cgeo);
+
+%     \draw[-latex] (slc) -- (rad);
+%     \draw[-latex] (slc) -- (geo);
+%     \draw[-latex] (slc) -- (pha);
+
+%     \draw[-latex] (dradsc) -- (rad);
+%     \draw[-latex] (dradcrad) -- (rad);
+%     \draw[-latex] (dradn) -- (rad);
+%     \draw[-latex] (uradsc) -- (dradsc);
+%     \draw[-latex] (ucradleaf) -- (dradcrad);
+%     \draw[-latex] (unleaf) -- (dradn);
+
+%     \draw[-latex] (dgeosc) -- (geo);
+%     \draw[-latex] (dgeotrg) -- (geo);
+%     \draw[-latex] (dgeoorb) -- (geo);
+%     \draw[-latex] (dgeoprop) -- (geo);
+%     \draw[-latex] (ugeosc) -- (dgeosc);
+%     \draw[-latex] (utrgleaf) -- (dgeotrg);
+%     \draw[-latex] (uorbleaf) -- (dgeoorb);
+%     \draw[-latex] (upropgeo) -- (dgeoprop);
+
+%     \draw[-latex] (dphisc) -- (pha);
+%     \draw[-latex] (dphicorr) -- (pha);
+%     \draw[-latex] (dphan) -- (pha);
+%     \draw[-latex] (dphiprop) -- (pha);
+%     \draw[-latex] (uphasc) -- (dphisc);
+%     \draw[-latex] (uphicorrleaf) -- (dphicorr);
+%     \draw[-latex] (uphanleaf) -- (dphan);
+%     \draw[-latex] (uphiprop) -- (dphiprop);
+%   \end{tikzpicture}%
+%   }
+%   \caption{Traceability diagram for a calibrated single-look complex product and the three main families of derived Level-1 observables: radiometric, geometric, and phase observables.}
+%   \label{fig:slc_traceability}
+% \end{figure}
+
+
 \begin{figure}[H]
   \centering
-  \resizebox{0.92\textwidth}{!}{%
-  \begin{tikzpicture}[node distance=1.15cm and 1.15cm, every node/.style={font=\scriptsize}]
-    \node[draw,
-          text width=3.0cm,
-          align=center,
-          minimum height=0.9cm] (raw)
-          {$s_{\rm raw}$};
+  % Scale to fit page: preserves aspect ratio within textwidth × 0.88 textheight
+  \begin{adjustbox}{max width=\textwidth, max totalheight=0.72\textheight, keepaspectratio}
+  \begin{tikzpicture}[
+    connection/.style={draw, thick},
+    root_block/.style={draw=blue!60!black, very thick, rectangle, fill=blue!8, inner sep=8pt, font=\normalsize\bfseries, align=center},
+    model_block/.style={draw, rectangle, inner sep=4pt, font=\footnotesize\bfseries, align=center},
+    deriv_node/.style={draw, rectangle, rounded corners=3pt, inner sep=4pt, font=\footnotesize, align=center},
+    leaf_node/.style={draw, rectangle, inner sep=4pt, font=\footnotesize, align=center},
+    effect_node/.style={draw, dashed, font=\footnotesize\itshape, align=center, inner sep=2pt}
+    ]
+		% ROOT: s_{\rm c}
+		\node [root_block] (SRMCROOT) {$s_{\rm c} = C_{\rm rad}\,\mathcal G_{\rm geo}(s_{\rm in};\mathbf x_{\rm geo})e^{-j\phi_{\rm corr}}+\Delta s$};
 
-    \node[draw,
-          right=1.8cm of raw,
-          text width=2.8cm,
-          align=center,
-          minimum height=0.9cm] (crad)
-          {$C_{\rm rad}$};
+		% ∂s_{\rm c}/∂\Delta s
+		\node [deriv_node] at ($(SRMCROOT)+(0.4382cm,-1.2095cm)$) (DDELTAS) {$\frac{\partial s_{\rm c}}{\partial \Delta s}$};
+		\draw [connection, red] (SRMCROOT) -- (DDELTAS);
+		\node [leaf_node, draw=red, text=red] at ($(SRMCROOT)+(0.8024cm,-2.1989cm)$) (UDELTAS) {$u(\Delta s)$};
+		\draw [connection, red] (DDELTAS) -- (UDELTAS);
+		\node [effect_node, red] at ($(SRMCROOT)+(1.1154cm,-3.0646cm)$) (EFFDELTAS) {Residual modelling errors};
+		\draw [connection, red, dashed] (EFFDELTAS) -- (UDELTAS);
 
-    \node[draw,
-          right=1.8cm of crad,
-          text width=3.2cm,
-          align=center,
-          minimum height=0.9cm] (cgeo)
-          {$C_{\rm geo},\phi_{\rm corr}$};
+		% ∂s_{\rm c}/∂s_{\rm in}
+		\node [deriv_node] at ($(SRMCROOT)+(-1.3789cm,-1.9628cm)$) (DSRMIN) {$\frac{\partial s_{\rm c}}{\partial s_{\rm in}}$};
+		\draw [connection, blue!70!black] (SRMCROOT) -- (DSRMIN);
+		\node [leaf_node, draw=blue!70!black, text=blue!70!black] at ($(SRMCROOT)+(-2.0861cm,-2.9756cm)$) (USRMIN) {$u(s_{\rm in})$};
+		\draw [connection, blue!70!black] (DSRMIN) -- (USRMIN);
+		\node [effect_node, blue!70!black] at ($(SRMCROOT)+(-2.9612cm,-4.2278cm)$) (EFFSRMIN) {Delivered focused SLC \\ S2, S9, S10: inherited noise, \\ processor and digitisation effects};
+		\draw [connection, blue!70!black, dashed] (EFFSRMIN) -- (USRMIN);
 
-    \node[draw,
-          above=1.1cm of cgeo,
-          text width=3.4cm,
-          align=center,
-          minimum height=0.9cm] (prop)
-          {$\Delta_{\rm trop},\Delta_{\rm iono}$\\path delay, attenuation, Faraday};
+		% ∂s_{\rm c}/∂C_{\rm rad}
+		\node [deriv_node] at ($(SRMCROOT)+(-4.2307cm,0.0000cm)$) (DCRMRAD) {$\frac{\partial s_{\rm c}}{\partial C_{\rm rad}}$};
+		\draw [connection, purple] (SRMCROOT) -- (DCRMRAD);
+		\node [leaf_node, draw=purple, text=purple] at ($(SRMCROOT)+(-5.7929cm,0.0000cm)$) (UCRMRAD) {$u(C_{\rm rad})$};
+		\draw [connection, purple] (DCRMRAD) -- (UCRMRAD);
+		\node [effect_node, purple] at ($(SRMCROOT)+(-8.9761cm,0.0000cm)$) (EFFCRMRAD) {S1, S3: calibration / antenna \\ AUX/LUT coefficients};
+		\draw [connection, purple, dashed] (EFFCRMRAD) -- (UCRMRAD);
 
-    % ROOT:
-    \node[draw,
-          below=1.8cm of crad,
-          text width=6.6cm,
-          align=center,
-          minimum height=1.1cm] (slc)
-          {$s_{\rm c}=f(s_{\rm raw},C_{\rm rad},C_{\rm geo},n,\phi_{\rm corr})+\Delta s$}; 
+		% ∂s_{\rm c}/∂\mathbf x_{\rm geo}
+		\node [deriv_node] at ($(SRMCROOT)+(-0.8733cm,1.2442cm)$) (DMATHBFXRMGEO) {$\frac{\partial s_{\rm c}}{\partial \mathbf x_{\rm geo}}$};
+		\draw [connection, green!50!black] (SRMCROOT) -- (DMATHBFXRMGEO);
 
-    \node[draw,
-          below=2.0cm of slc,
-          text width=5.6cm,
-          align=center,
-          minimum height=1.1cm] (rad)
-          {$z_{\rm rad}=g_{\rm rad}(s_{\rm c},K_{\rm rad},G,\theta)+\Delta z_{\rm rad}$};
+		% sub-model: \mathbf x_{\rm geo}
+		\node [model_block] at ($(SRMCROOT)+(-1.7225cm,2.4616cm)$) (MMATHBFXRMGEO) {$\mathbf x_{\rm geo} = H_{\rm geo}(\mathbf t,\mathbf o,\boldsymbol\ell)$\\ \footnotesize(see Fig.~\ref{fig:slc_aux_geometry_proposed})};
+		\draw [connection, green!50!black] (DMATHBFXRMGEO) -- (MMATHBFXRMGEO);
 
-    \node[draw,
-          below=2.7cm of rad,
-          text width=6.4cm,
-          align=center,
-          minimum height=1.1cm] (geo)
-          {$\mathbf{g}=g_{\rm geo}(p_{\rm img},t_{\rm rg},t_{\rm az},\mathbf{p}_{\rm orb},\mathbf{p}_{\rm att})+\Delta\mathbf{g}$};
+		% ∂s_{\rm c}/∂\phi_{\rm corr}
+		\node [deriv_node] at ($(SRMCROOT)+(0.6814cm,1.8772cm)$) (DPHIRMCORR) {$\frac{\partial s_{\rm c}}{\partial \phi_{\rm corr}}$};
+		\draw [connection, orange!80!black] (SRMCROOT) -- (DPHIRMCORR);
+		\node [leaf_node, draw=orange!80!black, text=orange!80!black] at ($(SRMCROOT)+(1.0502cm,2.8871cm)$) (UPHIRMCORR) {$u(\phi_{\rm corr})$};
+		\draw [connection, orange!80!black] (DPHIRMCORR) -- (UPHIRMCORR);
+		\node [effect_node, orange!80!black] at ($(SRMCROOT)+(1.4273cm,3.9241cm)$) (EFFPHIRMCORR) {S8: phase / oscillator \\ AUX or annotations};
+		\draw [connection, orange!80!black, dashed] (EFFPHIRMCORR) -- (UPHIRMCORR);
 
-    \node[draw,
-          below=2.7cm of geo,
-          text width=5.6cm,
-          align=center,
-          minimum height=1.1cm] (pha)
-          {$\phi_{\rm L1}=g_{\rm ph}(\arg(s_{\rm c}),\phi_{\rm corr})+\Delta\phi$};
-
-    \node[draw,
-          left=3.3cm of rad,
-          text width=1.9cm,
-          align=center,
-          minimum height=0.85cm] (dradsc)
-          {$\frac{\partial z_{\rm rad}}{\partial s_{\rm c}}$};
-
-    \node[draw,
-          right=3.3cm of rad,
-          text width=2.1cm,
-          align=center,
-          minimum height=0.85cm] (dradcrad)
-          {$\frac{\partial z_{\rm rad}}{\partial C_{\rm rad}}$};
-
-    \node[draw,
-          below left=1.2cm and 2.6cm of rad,
-          text width=1.8cm,
-          align=center,
-          minimum height=0.85cm] (dradn)
-          {$\frac{\partial z_{\rm rad}}{\partial n}$};
-
-    \node[left=1.6cm of dradsc,
-          text width=2.4cm,
-          align=center] (uradsc)
-          {$u(s_{\rm c})$\\focused\\sample};
-
-    \node[right=1.6cm of dradcrad,
-          text width=2.4cm,
-          align=center] (ucradleaf)
-          {$u(C_{\rm rad})$\\gain drift};
-
-    \node[left=1.5cm of dradn,
-          text width=2.4cm,
-          align=center] (unleaf)
-          {$u(n)$\\thermal noise};
-
-    \node[draw,
-          left=3.4cm of geo,
-          text width=2.0cm,
-          align=center,
-          minimum height=0.85cm] (dgeosc)
-          {$\frac{\partial \mathbf{g}}{\partial s_{\rm c}}$};
-
-    \node[draw,
-          right=3.4cm of geo,
-          text width=1.9cm,
-          align=center,
-          minimum height=0.85cm] (dgeotrg)
-          {$\frac{\partial \mathbf{g}}{\partial t_{\rm rg}}$};
-
-    \node[draw,
-          below right=1.2cm and 2.7cm of geo,
-          text width=2.3cm,
-          align=center,
-          minimum height=0.85cm] (dgeoorb)
-          {$\frac{\partial \mathbf{g}}{\partial \mathbf{p}_{\rm orb}}$};
-
-    \node[draw,
-          above right=1.2cm and 2.7cm of geo,
-          text width=2.3cm,
-          align=center,
-          minimum height=0.85cm] (dgeoprop)
-          {$\frac{\partial \mathbf{g}}{\partial \Delta_{\rm prop}}$};
-
-    \node[left=1.5cm of dgeosc,
-          text width=2.4cm,
-          align=center] (ugeosc)
-          {$u(s_{\rm c})$\\target\\position};
-
-    \node[right=1.5cm of dgeotrg,
-          text width=2.1cm,
-          align=center] (utrgleaf)
-          {$u(t_{\rm rg})$\\timing};
-
-    \node[right=1.4cm of dgeoorb,
-          text width=2.4cm,
-          align=center] (uorbleaf)
-          {$u(\mathbf{p}_{\rm orb})$\\orbit state};
-
-    \node[right=1.4cm of dgeoprop,
-          text width=2.7cm,
-          align=center] (upropgeo)
-          {$u(\Delta_{\rm prop})$\\tropo/iono delay};
-
-    \node[draw,
-          left=3.3cm of pha,
-          text width=1.9cm,
-          align=center,
-          minimum height=0.85cm] (dphisc)
-          {$\frac{\partial \phi_{\rm L1}}{\partial s_{\rm c}}$};
-
-    \node[draw,
-          right=3.3cm of pha,
-          text width=2.2cm,
-          align=center,
-          minimum height=0.85cm] (dphicorr)
-          {$\frac{\partial \phi_{\rm L1}}{\partial \phi_{\rm corr}}$};
-
-    \node[draw,
-          below left=1.2cm and 2.6cm of pha,
-          text width=1.8cm,
-          align=center,
-          minimum height=0.85cm] (dphan)
-          {$\frac{\partial \phi_{\rm L1}}{\partial n}$};
-
-    \node[draw,
-          below right=1.2cm and 2.6cm of pha,
-          text width=2.1cm,
-          align=center,
-          minimum height=0.85cm] (dphiprop)
-          {$\frac{\partial \phi_{\rm L1}}{\partial \Delta_{\rm iono}}$};
-
-    \node[left=1.6cm of dphisc,
-          text width=2.4cm,
-          align=center] (uphasc)
-          {$u(s_{\rm c})$\\phase\\sample};
-
-    \node[right=1.5cm of dphicorr,
-          text width=2.5cm,
-          align=center] (uphicorrleaf)
-          {$u(\phi_{\rm corr})$\\phase correction};
-
-    \node[left=1.5cm of dphan,
-          text width=2.4cm,
-          align=center] (uphanleaf)
-          {$u(n)$\\noise floor};
-
-    \node[right=1.5cm of dphiprop,
-          text width=2.6cm,
-          align=center] (uphiprop)
-          {ionospheric phase\\Faraday rotation};
-
-    \draw[-latex] (raw) -- (slc);
-    \draw[-latex] (crad) -- (slc);
-    \draw[-latex] (cgeo) -- (slc);
-    \draw[-latex] (prop) -- (cgeo);
-
-    \draw[-latex] (slc) -- (rad);
-    \draw[-latex] (slc) -- (geo);
-    \draw[-latex] (slc) -- (pha);
-
-    \draw[-latex] (dradsc) -- (rad);
-    \draw[-latex] (dradcrad) -- (rad);
-    \draw[-latex] (dradn) -- (rad);
-    \draw[-latex] (uradsc) -- (dradsc);
-    \draw[-latex] (ucradleaf) -- (dradcrad);
-    \draw[-latex] (unleaf) -- (dradn);
-
-    \draw[-latex] (dgeosc) -- (geo);
-    \draw[-latex] (dgeotrg) -- (geo);
-    \draw[-latex] (dgeoorb) -- (geo);
-    \draw[-latex] (dgeoprop) -- (geo);
-    \draw[-latex] (ugeosc) -- (dgeosc);
-    \draw[-latex] (utrgleaf) -- (dgeotrg);
-    \draw[-latex] (uorbleaf) -- (dgeoorb);
-    \draw[-latex] (upropgeo) -- (dgeoprop);
-
-    \draw[-latex] (dphisc) -- (pha);
-    \draw[-latex] (dphicorr) -- (pha);
-    \draw[-latex] (dphan) -- (pha);
-    \draw[-latex] (dphiprop) -- (pha);
-    \draw[-latex] (uphasc) -- (dphisc);
-    \draw[-latex] (uphicorrleaf) -- (dphicorr);
-    \draw[-latex] (uphanleaf) -- (dphan);
-    \draw[-latex] (uphiprop) -- (dphiprop);
-  \end{tikzpicture}%
-  }
-  \caption{Traceability diagram for a calibrated single-look complex product and the three main families of derived Level-1 observables: radiometric, geometric, and phase observables.}
-  \label{fig:slc_traceability}
+  \end{tikzpicture}
+  \end{adjustbox}
+  \caption{Uncertainty tree diagram for the calibrated single-look complex sample. The starting point is the delivered SLC $s_{\rm in}$, is the target SLC. Inherited effects are retained through input covariance. Effect identifiers refer to Table~\ref{tab:slc_effects_table_proposed} and its continuation panels.}
+  \label{fig:slc_traceability_proposed}
 \end{figure}

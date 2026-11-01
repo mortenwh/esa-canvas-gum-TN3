@@ -1,0 +1,93 @@
+\begin{table}[p]
+\centering\scriptsize
+\renewcommand{\arraystretch}{1.1}
+\caption{Uncertainty effects table for the Interferometric Level-1 product, panel 1/3.}
+\label{tab:insar_effects_table_proposed}
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{3.0cm}|*{4}{>{\raggedright\arraybackslash}X|}}\hline
+\textbf{Name of effect} & Input \ac{SLC} radiometric/phase errors & Co-registration error & Baseline and orbit uncertainty & Thermal noise and finite window \\ \hline
+\textbf{Effect identifier} & I1 & I2 & I3 & I4 \\ \hline
+\textbf{Affected term in measurement function} & $s_1,s_2$ & $\mathbf d_{12}$ & $\mathbf b$ & $Q,P_1,P_2$ \\ \hline
+\textbf{AUX inputs / origin} & Inherited SLC calibration/annotation covariance & Registration estimates / annotations & Orbit AUX and derived baseline covariance & SLC/noise AUX and estimator model \\ \hline
+\textbf{Coherence} & Yes & Yes & weak & Yes \\ \hline
+\textbf{Phase} & Yes & Yes & Yes & Yes \\ \hline
+\textbf{Maturity of analysis} & - & - & - & - \\ \hline
+\textbf{Maturity of uncertainty estimate} & 2--3 & 2--3 & 2--3 & 3 \\ \hline
+\textbf{Maturity of correlation scale estimate} & - & - & - & - \\ \hline
+\textbf{For low maturity, is effect negligible?} & Not established & Not established & Not established & Not established \\ \hline
+\textbf{Correlation type and form} & structured / image pair & structured / burst-scene & structured / pair & random / estimator window \\ \hline
+\textbf{Range form} & - & - & - & - \\ \hline
+\textbf{Azimuth form} & - & - & - & - \\ \hline
+\textbf{Over time form} & - & - & - & - \\ \hline
+\textbf{Correlation scale} & Not yet quantified & Not yet quantified & Not yet quantified & Not yet quantified \\ \hline
+\textbf{Range scale} & - & - & - & - \\ \hline
+\textbf{Azimuth scale} & - & - & - & - \\ \hline
+\textbf{Over time scale} & - & - & - & - \\ \hline
+\textbf{Uncertainty: PDF shape} & - & - & - & - \\ \hline
+\textbf{Units} & sample units & pixel & m & rad, 1 \\ \hline
+\textbf{Magnitude} & - & - & - & - \\ \hline
+\textbf{Typical uncertainty form} & inherited covariance term & residual decorrelation / phase ramp & geometric phase term & estimator variance \\ \hline
+\textbf{Sensitivity coefficient} & $\mathbf J_{I1}$ & $\mathbf J_{I2}$ & $\mathbf J_{I3}$ & $\mathbf J_{I4}$ \\ \hline
+\end{tabularx}
+\end{table}
+\begin{table}[p]
+\centering\scriptsize
+\renewcommand{\arraystretch}{1.1}
+\caption{Uncertainty effects table for the Interferometric Level-1 product, panel 2/3.}
+\label{tab:insar_effects_table_proposed_2}
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{3.0cm}|*{4}{>{\raggedright\arraybackslash}X|}}\hline
+\textbf{Name of effect} & Temporal decorrelation & Geometric/volume decorrelation & Phase unwrapping (if used) & DEM and height reference \\ \hline
+\textbf{Effect identifier} & I5 & I6 & I7 & I8 \\ \hline
+\textbf{Affected term in measurement function} & $\mathbf x_{\rm scene}$ & $\mathbf x_{\rm scene}$ & $k$ & $\mathbf d_{\rm DEM}$ \\ \hline
+\textbf{AUX inputs / origin} & Scene dependence; not an independent AUX error & Scene/baseline dependence; DEM if modelled & Unwrapping state / quality flags & DEM, geoid and height-reference AUX \\ \hline
+\textbf{Coherence} & Yes & Yes & No & Conditional \\ \hline
+\textbf{Phase} & weak & weak & Yes & Yes \\ \hline
+\textbf{Maturity of analysis} & - & - & - & - \\ \hline
+\textbf{Maturity of uncertainty estimate} & 2 & 2 & 1--2 & - \\ \hline
+\textbf{Maturity of correlation scale estimate} & - & - & - & - \\ \hline
+\textbf{For low maturity, is effect negligible?} & Not established & Not established & Not established & Not established \\ \hline
+\textbf{Correlation type and form} & scene-dependent & scene-dependent & structured / connected region & structured / terrain tile \\ \hline
+\textbf{Range form} & - & - & - & - \\ \hline
+\textbf{Azimuth form} & - & - & - & - \\ \hline
+\textbf{Over time form} & - & - & - & - \\ \hline
+\textbf{Correlation scale} & Not yet quantified & Not yet quantified & Not yet quantified & Not yet quantified \\ \hline
+\textbf{Range scale} & - & - & - & - \\ \hline
+\textbf{Azimuth scale} & - & - & - & - \\ \hline
+\textbf{Over time scale} & - & - & - & - \\ \hline
+\textbf{Uncertainty: PDF shape} & - & - & - & - \\ \hline
+\textbf{Units} & 1 & 1 & integer & m \\ \hline
+\textbf{Magnitude} & - & - & - & - \\ \hline
+\textbf{Typical uncertainty form} & coherence loss & coherence loss & discrete ambiguity term & demodulation-phase covariance \\ \hline
+\textbf{Sensitivity coefficient} & $\mathbf J_{I5}$ & $\mathbf J_{I6}$ & Discrete / definition; see text & $\mathbf J_{I8}$ \\ \hline
+\end{tabularx}
+\end{table}
+\begin{table}[p]
+\centering\scriptsize
+\renewcommand{\arraystretch}{1.1}
+\caption{Uncertainty effects table for the Interferometric Level-1 product, panel 3/3. }
+\label{tab:insar_effects_table_proposed_3}
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{3.0cm}|*{1}{>{\raggedright\arraybackslash}X|}}\hline
+\textbf{Name of effect} & Differential atmospheric and ionospheric delay \\ \hline
+\textbf{Effect identifier} & I9 \\ \hline
+\textbf{Affected term in measurement function} & $\Delta L_{\rm prop}$ \\ \hline
+\textbf{AUX inputs / origin} & Meteorological / ionospheric AUX \\ \hline
+\textbf{Coherence} & Conditional \\ \hline
+\textbf{Phase} & Yes \\ \hline
+\textbf{Maturity of analysis} & - \\ \hline
+\textbf{Maturity of uncertainty estimate} & - \\ \hline
+\textbf{Maturity of correlation scale estimate} & - \\ \hline
+\textbf{For low maturity, is effect negligible?} & Not established \\ \hline
+\textbf{Correlation type and form} & scene-dependent / image pair \\ \hline
+\textbf{Range form} & - \\ \hline
+\textbf{Azimuth form} & - \\ \hline
+\textbf{Over time form} & - \\ \hline
+\textbf{Correlation scale} & Not yet quantified \\ \hline
+\textbf{Range scale} & - \\ \hline
+\textbf{Azimuth scale} & - \\ \hline
+\textbf{Over time scale} & - \\ \hline
+\textbf{Uncertainty: PDF shape} & - \\ \hline
+\textbf{Units} & m \\ \hline
+\textbf{Magnitude} & - \\ \hline
+\textbf{Typical uncertainty form} & differential propagation phase \\ \hline
+\textbf{Sensitivity coefficient} & $\mathbf J_{I9}$ \\ \hline
+\end{tabularx}
+\end{table}

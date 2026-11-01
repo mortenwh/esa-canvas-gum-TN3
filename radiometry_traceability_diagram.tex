@@ -1,0 +1,44 @@
+\begin{figure}[ht]
+  \centering
+  % Scale to fit page: preserves aspect ratio within textwidth × 0.88 textheight
+  \begin{adjustbox}{max width=\textwidth, max totalheight=0.72\textheight, keepaspectratio}
+  \begin{tikzpicture}[
+    connection/.style={draw, thick},
+    root_block/.style={draw=blue!60!black, very thick, rectangle, fill=blue!8, inner sep=8pt, font=\normalsize\bfseries, align=center},
+    model_block/.style={draw, rectangle, inner sep=4pt, font=\footnotesize\bfseries, align=center},
+    deriv_node/.style={draw, rectangle, rounded corners=3pt, inner sep=4pt, font=\footnotesize, align=center},
+    leaf_node/.style={draw, rectangle, inner sep=4pt, font=\footnotesize, align=center},
+    effect_node/.style={draw, dashed, font=\footnotesize\itshape, align=center, inner sep=2pt}
+    ]
+		% ROOT: z_{\rm rad}
+		\node [root_block] (ZRMRADROOT) {$z_{\rm rad} = \langle |s_{\rm c}|^2\rangle_W-\widehat N_c+\Delta z_{\rm rad}$};
+
+		% ∂z_{\rm rad}/∂\Delta z_{\rm rad}
+		\node [deriv_node] at ($(ZRMRADROOT)+(0.0000cm,-1.2534cm)$) (DDELTAZRMRAD) {$\frac{\partial z_{\rm rad}}{\partial \Delta z_{\rm rad}}$};
+		\draw [connection, red] (ZRMRADROOT) -- (DDELTAZRMRAD);
+		\node [leaf_node, draw=red, text=red] at ($(ZRMRADROOT)+(0.0000cm,-2.2747cm)$) (UDELTAZRMRAD) {$u(\Delta z_{\rm rad})$};
+		\draw [connection, red] (DDELTAZRMRAD) -- (UDELTAZRMRAD);
+		\node [effect_node, red] at ($(ZRMRADROOT)+(0.0000cm,-3.3424cm)$) (EFFDELTAZRMRAD) {S4: finite-window / scene statistics \\ and remaining estimator error};
+		\draw [connection, red, dashed] (EFFDELTAZRMRAD) -- (UDELTAZRMRAD);
+
+		% ∂z_{\rm rad}/∂s_{\rm c}
+		\node [deriv_node] at ($(ZRMRADROOT)+(-3.5748cm,0.0000cm)$) (DSRMC) {$\frac{\partial z_{\rm rad}}{\partial s_{\rm c}}$};
+		\draw [connection, blue!70!black] (ZRMRADROOT) -- (DSRMC);
+
+		% sub-model: s_{\rm c}
+		\node [model_block] at ($(ZRMRADROOT)+(-7.2016cm,0.0000cm)$) (MSRMC) {$s_{\rm c} = C_{\rm rad}\,\mathcal G_{\rm geo}(s_{\rm in};\mathbf x_{\rm geo})e^{-j\phi_{\rm corr}}+\Delta s$\\ \footnotesize(see Fig.~\ref{fig:slc_traceability_proposed})};
+		\draw [connection, blue!70!black] (DSRMC) -- (MSRMC);
+
+		% ∂z_{\rm rad}/∂\widehat N_c
+		\node [deriv_node] at ($(ZRMRADROOT)+(0.0000cm,1.2659cm)$) (DWIDEHATNC) {$\frac{\partial z_{\rm rad}}{\partial \widehat N_c}$};
+		\draw [connection, purple] (ZRMRADROOT) -- (DWIDEHATNC);
+		\node [leaf_node, draw=purple, text=purple] at ($(ZRMRADROOT)+(0.0000cm,2.3352cm)$) (UWIDEHATNC) {$u(\widehat N_c)$};
+		\draw [connection, purple] (DWIDEHATNC) -- (UWIDEHATNC);
+		\node [effect_node, purple] at ($(ZRMRADROOT)+(0.0000cm,3.4386cm)$) (EFFWIDEHATNC) {S2: calibrated noise power \\ Noise AUX/LUT or estimation};
+		\draw [connection, purple, dashed] (EFFWIDEHATNC) -- (UWIDEHATNC);
+
+  \end{tikzpicture}
+  \end{adjustbox}
+  \caption{Uncertainty tree diagram for an intensity observable derived from the SLC. $W$ is the stated estimation support and$\widehat N_c$ is noise power in calibrated intensity units.}
+  \label{fig:slc_radiometric_proposed}
+\end{figure}

@@ -1,0 +1,52 @@
+\begin{figure}[H]
+  \centering
+  % Scale to fit page: preserves aspect ratio within textwidth × 0.88 textheight
+  \begin{adjustbox}{max width=\textwidth, max totalheight=0.72\textheight, keepaspectratio}
+  \begin{tikzpicture}[
+    connection/.style={draw, thick},
+    root_block/.style={draw=blue!60!black, very thick, rectangle, fill=blue!8, inner sep=8pt, font=\normalsize\bfseries, align=center},
+    model_block/.style={draw, rectangle, inner sep=4pt, font=\footnotesize\bfseries, align=center},
+    deriv_node/.style={draw, rectangle, rounded corners=3pt, inner sep=4pt, font=\footnotesize, align=center},
+    leaf_node/.style={draw, rectangle, inner sep=4pt, font=\footnotesize, align=center},
+    effect_node/.style={draw, dashed, font=\footnotesize\itshape, align=center, inner sep=2pt}
+    ]
+		% ROOT: \mathbf g
+		\node [root_block] (MATHBFGROOT) {$\mathbf g = g_{\rm geo}(\mathbf p_{\rm img},\mathbf x_{\rm geo},h_{\rm ref})+\Delta\mathbf g$};
+
+		% ∂\mathbf g/∂\Delta\mathbf g
+		\node [deriv_node] at ($(MATHBFGROOT)+(0.2397cm,-1.2098cm)$) (DDELTAMATHBFG) {$\frac{\partial \mathbf g}{\partial \Delta\mathbf g}$};
+		\draw [connection, red] (MATHBFGROOT) -- (DDELTAMATHBFG);
+		\node [leaf_node, draw=red, text=red] at ($(MATHBFGROOT)+(0.4449cm,-2.2227cm)$) (UDELTAMATHBFG) {$u(\Delta\mathbf g)$};
+		\draw [connection, red] (DDELTAMATHBFG) -- (UDELTAMATHBFG);
+		\node [effect_node, red] at ($(MATHBFGROOT)+(0.6183cm,-3.1059cm)$) (EFFDELTAMATHBFG) {Reference/analysis-model residual};
+		\draw [connection, red, dashed] (EFFDELTAMATHBFG) -- (UDELTAMATHBFG);
+
+		% ∂\mathbf g/∂\mathbf p_{\rm img}
+		\node [deriv_node] at ($(MATHBFGROOT)+(-1.8447cm,-1.2298cm)$) (DMATHBFPRMIMG) {$\frac{\partial \mathbf g}{\partial \mathbf p_{\rm img}}$};
+		\draw [connection, blue!70!black] (MATHBFGROOT) -- (DMATHBFPRMIMG);
+		\node [leaf_node, draw=blue!70!black, text=blue!70!black] at ($(MATHBFGROOT)+(-3.3864cm,-2.2627cm)$) (UMATHBFPRMIMG) {$u(\mathbf p_{\rm img})$};
+		\draw [connection, blue!70!black] (DMATHBFPRMIMG) -- (UMATHBFPRMIMG);
+		\node [effect_node, blue!70!black] at ($(MATHBFGROOT)+(-4.9716cm,-3.3216cm)$) (EFFMATHBFPRMIMG) {S7: target localisation \\ and interpolation};
+		\draw [connection, blue!70!black, dashed] (EFFMATHBFPRMIMG) -- (UMATHBFPRMIMG);
+
+		% ∂\mathbf g/∂\mathbf x_{\rm geo}
+		\node [deriv_node] at ($(MATHBFGROOT)+(-1.8360cm,1.2240cm)$) (DMATHBFXRMGEO) {$\frac{\partial \mathbf g}{\partial \mathbf x_{\rm geo}}$};
+		\draw [connection, purple] (MATHBFGROOT) -- (DMATHBFXRMGEO);
+
+		% sub-model: \mathbf x_{\rm geo}
+		\node [model_block] at ($(MATHBFGROOT)+(-3.6584cm,2.4443cm)$) (MMATHBFXRMGEO) {$\mathbf x_{\rm geo} = H_{\rm geo}(\mathbf t,\mathbf o,\boldsymbol\ell)$\\ \footnotesize(see Fig.~\ref{fig:slc_aux_geometry_proposed})};
+		\draw [connection, purple] (DMATHBFXRMGEO) -- (MMATHBFXRMGEO);
+
+		% ∂\mathbf g/∂h_{\rm ref}
+		\node [deriv_node] at ($(MATHBFGROOT)+(0.2428cm,1.2140cm)$) (DHRMREF) {$\frac{\partial \mathbf g}{\partial h_{\rm ref}}$};
+		\draw [connection, green!50!black] (MATHBFGROOT) -- (DHRMREF);
+		\node [leaf_node, draw=green!50!black, text=green!50!black] at ($(MATHBFGROOT)+(0.4436cm,2.2311cm)$) (UHRMREF) {$u(h_{\rm ref})$};
+		\draw [connection, green!50!black] (DHRMREF) -- (UHRMREF);
+		\node [effect_node, green!50!black] at ($(MATHBFGROOT)+(0.6560cm,3.2988cm)$) (EFFHRMREF) {S12: DEM / reference height \\ AUX where required};
+		\draw [connection, green!50!black, dashed] (EFFHRMREF) -- (UHRMREF);
+
+  \end{tikzpicture}
+  \end{adjustbox}
+  \caption{Uncertainty tree diagram for the SLC localisation observable. The image position, annotation geometry and reference information are required in addition to the complex sample. Reference-coordinate and analysis-tool uncertainty enter the comparison model described in the general framework.}
+  \label{fig:slc_geometric_proposed}
+\end{figure}

@@ -6,16 +6,12 @@ activity---as the measurand-oriented starting point. This is consistent with
 metrological practice: uncertainty analysis should begin from the reported
 quantity, define its measurement model, identify all relevant input quantities,
 and then propagate the corresponding uncertainties to the final product
-statement \cite{JCGMGUM,QA4EO3}. For Level-1 \ac{SAR}, this means that the
-uncertainty analysis should be organized around the calibrated \ac{SLC}, the
-polarimetric single-look complex, the interferometric product, geocoded Analysis Ready Data
-such as Normalised Radar Backscatter, and the geophysical
-Doppler product.
+statement \cite{JCGMGUM,QA4EO3}. %For Level-1 \ac{SAR}, this means that the uncertainty analysis should be organized around SLC product, the interferometric product, geocoded Analysis Ready Data such as Normalised Radar Backscatter, and the geophysical Doppler product.
 
 Radiometric, geometric, and polarimetric calibration are therefore treated here
 as \emph{contributors} to the uncertainty budget of the corresponding Level-1
 product, not as separate top-level measurands. For example, a calibrated
-\ac{SLC} product inherits uncertainty contributions from radiometric gain and
+SLC product inherits uncertainty contributions from radiometric gain and
 noise corrections, geometric timing and orbit knowledge, processor
 approximations, and, where relevant, polarimetric channel corrections. In the
 same way, an interferometric product inherits uncertainties from the two input
@@ -29,7 +25,7 @@ The following product-based structure is adopted:
   \item a general \ac{GUM}-oriented framework for Level-1 products;
   \item a calibrated single-channel \ac{SLC} product as the main Level-1
   example;
-\item a polarimetric \ac{SLC} product, for which the scattering matrix is the
+\item a polarimetric acquisition for which the scattering matrix is the
   principal measurand;
   \item an interferometric product, whose principal observables are coherence,
   phase, and related quality indicators;
@@ -67,8 +63,7 @@ Section~\ref{sec:uncertainty_propagation}. In covariance form,
 \end{equation}
 where $\mathbf{J}_{f}$ is the Jacobian of the measurement model and
 $\mathbf{U}_{\mathbf{x}}$ is the covariance matrix of the input quantities.
-For Level-1 \ac{SAR} products, the practical difficulty is not the propagation
-itself, but the correct identification of structured errors and spatial or temporal correlations.
+For Level-1 \ac{SAR} products, the main challenge is identifying and quantifying all relevant uncertainty sources and accounting for their dependencies - for example, calibration or orbit uncertainties that affect many pixels together, and errors that vary in a correlated way across space or time.
 
 Across all Level-1 products, the dominant uncertainty sources generally belong
 to the following categories:
@@ -86,7 +81,7 @@ to the following categories:
 
 The uncertainty budget shall also include the \ac{Cal/Val} reference and the
 measurement tool used to estimate the product quality indicator. For point
-target IRF, geolocation, and radiometric checks, this includes target survey
+target Impulse Response Function (IRF), geolocation, and radiometric checks, this includes target survey
 uncertainty, target calibration uncertainty, signal-to-clutter ratio,
 background estimation, atmospheric and ionospheric propagation at the time of
 acquisition, and the implementation uncertainty of the analysis software. For
@@ -98,8 +93,7 @@ background or model field.
 Auxiliary data files are part of the measurement model. Orbit and attitude
 products, \acp{DEM}, meteorological fields, ionospheric maps, antenna patterns,
 calibration look-up tables, masks, and processor annotation files shall
-therefore be assigned uncertainty terms, validity domains, and correlation
-scales. Atmospheric propagation terms include atmospheric path delay and
+therefore be documented with their validity domains and, where applicable, uncertainty terms, validity domains, and correlation scales. Atmospheric propagation terms include atmospheric path delay and
 attenuation; ionospheric terms include dispersive group delay, and Faraday
 rotation. These terms can affect \ac{SLC}, and interferometric products and are not
 limited to geocoded products.
@@ -118,12 +112,19 @@ For consistency in the traceability diagrams used below, $u(x)$ denotes the
 standard uncertainty of input quantity $x$, $\Delta x$ denotes a residual or
 model error term, $\partial y/\partial x$ denotes a sensitivity coefficient,
 $\mathbf{U}$ denotes a covariance matrix, $\mathbf{J}$ denotes a Jacobian, and
-arrows indicate propagation from an input quantity or uncertainty contribution
+connections model dependence and uncertainty propagation from an input quantity or uncertainty contribution
 to the measurand.
-
 
 This product-based organization places the role of radiometric,
 geometric, or polarimetric calibration inside the measurement model of the final product.
+
+For the CANVAS Cal/Val tool, the starting point is an SLC product with its annotations and declared calibration state. Raw-data focusing is outside the tool boundary. Instrument and processor effects already present in that SLC are inherited uncertainty contributions.
+
+
+Uncertainty related to Auxiliary files (AUX) is attached to the quantities read or derived from each file. Calibration, noise and antenna-pattern LUTs, orbit, attitude and timing products, DEM and height-reference data, and atmospheric and ionospheric inputs
+are identified in the diagrams and in the tables' ``AUX inputs / origin'' row.
+
+The following four subsections present the effects of uncertainties on the considered L1 products. Complex and vector derivatives denote Jacobian blocks for real and imaginary components. Note that the maturity ranges presented in the effects tables are not verified product-specific scores. Many maturity fields, uncertainty magnitudes, PDFs and numerical correlation scales remain TBD.  $\mathbf J_{Ei}$ denotes the total Jacobian with respect to effect $Ei$ in the selected observable model.
 
 \subsection{Calibrated Level-1 SLC product}
 
@@ -132,33 +133,40 @@ A calibrated Level-1 \ac{SLC} is the natural reference example because it is the
 \subsubsection{Step 1: Definition of measurand and measurement model}
 
 Let the calibrated complex sample be denoted by $s_{\rm c}$. A generic model is
+
 \begin{equation}
-  s_{\rm c} = C_{\rm rad}\, C_{\rm geo}\,
-  \left(s_{\rm raw} - n\right) e^{-j\phi_{\rm corr}} + \Delta s,
+  s_{\rm c} = C_{\rm rad}\,\mathcal G_{\rm geo}\!\left(s_{\rm in};\mathbf x_{\rm geo}\right) e^{-j\phi_{\rm corr}} + \Delta s,
   \label{eq:slc_model}
 \end{equation}
-where $s_{\rm raw}$ is the focused but not yet fully corrected complex sample,
-$n$ is the thermal-noise contribution, $C_{\rm rad}$ summarizes radiometric
-calibration factors, $C_{\rm geo}$ summarizes geometric and timing corrections,
-$\phi_{\rm corr}$ collects phase corrections applied during processing, and
-$\Delta s$ represents residual processor and modelling errors.
+
+where $s_{\rm in}$ is the SLC sample,
+$C_{\rm rad}$ summarizes any radiometric amplitude calibration factors not
+already applied, $\mathcal G_{\rm geo}$ is an operator for any remaining
+geometric/timing correction, $\mathbf x_{\rm geo}$ contains timing, orbit,
+attitude and propagation information, $\phi_{\rm corr}$ collects any remaining
+phase corrections, and $\Delta s$ represents residual processor and modelling
+errors. If the delivered product already includes a correction, its operator
+is the identity (or its phase correction is zero); its uncertainty is still
+inherited. Thermal noise is present in the SLC and cannot generally be
+subtracted as a known complex realisation. For an intensity observable,
+noise subtraction instead uses an estimated noise power in consistent units,
+$z_{\rm rad}=\langle|s_{\rm c}|^2\rangle_W-\widehat N_c$, on a stated support $W$.
+
 
 Equation~\ref{eq:slc_model} makes clear that radiometric and geometric
-calibration are not separate measurands here; they are input quantities in the
-measurement model of the Level-1 \ac{SLC} product.
+calibration are input quantities in the measurement model of the Level-1 \ac{SLC} product.
 
 
 
-\subsubsection{Step 2: Traceability diagram for the single-look complex product}
+\subsubsection{Step 2: Traceability diagram}
 
 Figure~\ref{fig:slc_traceability} summarizes the uncertainty propagation from
 the calibrated single-look complex sample to three branches of Level-1
-observables. For a calibrated \ac{SLC}, the uncertainty budget is conveniently organized into three observable-oriented branches, each derived from the same calibrated complex sample but leading to a different product-level uncertainty statement.
+observables. For a calibrated \ac{SLC}, the uncertainty budget is conveniently organized into three observable-oriented branches.
 
 The radiometric branch includes uncertainty of the absolute calibration factor,
-receiver gain, antenna pattern normalization, thermal-noise subtraction,
-scalloping corrections, and finite-look image statistics. When image intensity
-or $\sigma^{0}$ is estimated from the \ac{SLC}, these terms dominate the radiometric quality statement.
+receiver gain, antenna pattern normalization, thermal-noise correction and 
+scalloping corrections. When the radar cross-section, $\sigma^{0}$, is estimated from the \ac{SLC}, these terms dominate the radiometric quality statement.
 
 The geometric branch includes range timing, azimuth timing, orbit knowledge,
 attitude knowledge, and localization error introduced by finite resolution,
@@ -169,8 +177,7 @@ The processor branch includes focusing approximations, quantization,
 resampling, burst stitching, annotation approximations, and any correction that
 is common to the whole product or to a swath or burst. Such terms are often
 correlated in space and must therefore be tracked as structured uncertainty
-components. In the present product-oriented framing, these processor terms
-contribute to three derived observable families:
+components. These processor terms contribute to three derived observable families:
 
 \begin{itemize}
   \item \textbf{radiometric observables} derived from image intensity, such as
@@ -183,17 +190,35 @@ contribute to three derived observable families:
   phase differences, such as phase bias, phase stability, and phase noise.
 \end{itemize}
 
-The figure is intentionally analogous to the uncertainty tree
-diagrams used elsewhere in TN3: the calibrated sample is the central product,
-while the radiometric, geometric, and phase observables are treated as three
-derived measurands with partially shared inputs. Atmospheric and ionospheric
-propagation terms are shown explicitly where they affect amplitude, timing, or
-phase.
+Here the term \textit{observable} can refer to both product quantities and Cal/Val quality indicators. The radiometric, geometric, and phase observables are treated as three derived measurands with partially shared inputs. Atmospheric and ionospheric
+propagation terms are shown explicitly where they affect amplitude, timing, or phase.
+
+To simplify the uncertainty trace, the model is shown in
+Fig.\ref{fig:slc_traceability_proposed} and the three observable branches in
+Figs.\ref{fig:slc_radiometric_proposed}, \ref{fig:slc_geometric_proposed} and \ref{fig:slc_phase_proposed}
 
 \input{slc_traceability_diagram}
 
+\input{radiometry_traceability_diagram}
 
-\subsubsection{Step 3: Propagation to Level-1 observables}
+\input{geometric_traceability_diagram}
+
+\input{phase_traceability_diagram}
+
+\input{aux_traceability_diagram}
+
+
+\subsubsection{Step 3: Evaluation of Uncertainties}
+
+Table~\ref{tab:slc_effects_table_proposed} summarizes the main effects contributing to
+the uncertainty of the three observable families derived from the single-look
+complex product. In the context of SLC products, the purpose is not
+to quantify one single scalar measurand, but to identify which sources are dominant for radiometric, geometric, and phase-related uses of the same product.
+
+\input{slc_effects}
+
+\subsubsection{Step 4: Calculate the observables and their uncertainty}
+
 
 The complex sample itself is usually not the only reported quantity. Several
 Level-1 observables are derived from it, and each inherits a different subset
@@ -209,7 +234,7 @@ of the same uncertainty budget. Examples are:
 Accordingly, the uncertainty propagation should not stop at the complex sample,
 but continue to the actual Level-1 quantity being reported. For a backscatter
 observable $z = |s_{\rm c}|^2$, the uncertainty is driven mainly by the
-radiometric branch; for a localization observable $\mathbf{g}=h(s_{\rm c})$,
+radiometric branch; for a localization observable $\mathbf{g}=g_{\rm geo}(\mathbf p_{\rm img},\mathbf x_{\rm geo},h_{\rm ref})$,
 the geometric branch is dominant. The same \ac{SLC} product thus supports
 multiple product-level uncertainty statements. A convenient formalization is
 to treat the three observable families separately:
@@ -220,46 +245,19 @@ to treat the three observable families separately:
   \mathbf{J}_{\rm geo}^{\mathsf{T}}, \\
   u^{2}(\phi_{\rm L1}) &\approx \mathbf{J}_{\rm ph}\, \mathbf{U}_{\rm ph}\,
   \mathbf{J}_{\rm ph}^{\mathsf{T}},
-  \label{eq:slc_three_branches}
+  \label{eq:slc_three_branches_proposed}
 \end{align}
 where each covariance matrix contains the dominant inputs for the corresponding
 observable family. This makes it possible to report a product-consistent yet
 observable-specific uncertainty estimate.
 
-\subsubsection{Step 4: Uncertainty effects table for the single-look complex product}
 
-Table~\ref{tab:slc_effects_table} summarizes the main effects contributing to
-the uncertainty of the three observable families derived from the single-look
-complex product. In contrast with the Doppler example, the purpose here is not
-to quantify one single scalar measurand, but to identify which sources are
-dominant for radiometric, geometric, and phase-related uses of the same
-product.
+Each covariance matrix shall include shared-input and reference terms relevant
+to its observable. Thermal noise and sampling contributions already
+included in input covariance shall not be added again as estimator residuals.
 
-\begin{table*}[ht]
-  \scriptsize
-  \centering
-  \caption{Uncertainty effects table for the calibrated single-look complex product and its main derived Level-1 observables.}
-  \resizebox{\textwidth}{!}{%
-  \begin{tabular}{|p{2.8cm}|c|c|c|c|c|c|p{2.4cm}|}
-    \hline
-    \textbf{Name of effect} & \textbf{Radiometric} & \textbf{Geometric} & \textbf{Phase} & \textbf{Maturity of} & \textbf{Correlation} & \textbf{Sensitivity} & \textbf{Typical uncertainty form} \\ 
-     & \textbf{observable} & \textbf{observable} & \textbf{observable} & \textbf{estimate} & \textbf{type/scale} & \textbf{coefficient} &  \\ \hline
-    Absolute calibration factor & Yes & No & No & 2--3 & systematic / swath & high for $z_{\rm rad}$ & multiplicative bias \\ \hline
-    Thermal-noise subtraction & Yes & No & Yes & 2 & random + structured / range & medium & additive noise term \\ \hline
-    Antenna pattern normalization & Yes & No & No & 2--3 & structured / range & high & range-dependent bias \\ \hline
-    Speckle and finite-sample statistics & Yes & weak & weak & 3 & random / local window & high locally & variance reduction with averaging \\ \hline
-    Range and azimuth timing & No & Yes & weak & 2--3 & systematic / product & high for $\mathbf{g}$ & additive localization bias \\ \hline
-    Orbit and attitude knowledge & No & Yes & Yes & 2--3 & structured / scene-product & high for $\mathbf{g}$ & covariance term \\ \hline
-    Target localization/interpolation & No & Yes & No & 2 & random / local target & medium--high & estimator variance \\ \hline
-    Oscillator and phase correction terms & No & No & Yes & 1--2 & structured / burst-product & high for $\phi_{\rm L1}$ & additive phase bias/noise \\ \hline
-    Focusing and resampling approximations & Yes & Yes & Yes & 1--2 & structured / burst-swath & medium & processor-dependent residual \\ \hline
-    Quantization and digitization & weak & weak & weak & 1--2 & random / sample & low--medium & additive noise \\ \hline
-  \end{tabular}
-  }
-  \label{tab:slc_effects_table}
-\end{table*}
 
-\subsubsection{Step 5: Product-level reporting}
+\subsubsection{Step 5: Documentation}
 
 For a calibrated \ac{SLC}, it is therefore recommended to report uncertainty in
 terms of product-level quality indicators, for example:
@@ -268,24 +266,12 @@ terms of product-level quality indicators, for example:
   \item localization accuracy and bias for geometric quality;
   \item phase stability for phase-sensitive applications.
 \end{itemize}
-The key point is that these are all uncertainty statements of the \emph{same}
-Level-1 product, not separate products created by the calibration procedures.
-In practice, this means that a single-look complex product should ideally be
-delivered with either dedicated quality layers or documentation that separates:
-\begin{itemize}
-  \item uncertainties attached to radiometric observables derived from the
-  product;
-  \item uncertainties attached to geometric observables derived from the
-  product; and
-  \item uncertainties attached to phase observables derived from the product.
-\end{itemize}
-This separation mirrors the way users actually exploit Level-1 data and makes
-the uncertainty statement much more actionable for downstream applications.
 
-\subsection{Polarimetric Level-1 product}
+From the above uncertainity analysis, an SLC product should ideally be delivered with either dedicated quality layers or documentation featuring uncertainties related to radiometric, geometric and phase observables derived from the product. This separation mirrors the way users actually exploit Level-1 data and makes the uncertainty statement much more actionable for downstream applications.
 
-For a polarimetric Level-1 product, the measurand is no longer a single complex
-sample but the calibrated scattering matrix, or equivalently the covariance or
+\subsection{Polarimetric products}
+
+For a polarimetric product, the measurand is the calibrated scattering matrix, or equivalently the covariance or
 coherency representation derived from it. All single-channel \ac{SLC} uncertainty effects still
 apply to every polarimetric channel. The additional polarimetric information
 allows some channel imbalance, cross-talk, co-polar phase, and Faraday-rotation
@@ -303,13 +289,13 @@ model is
 \end{equation}
 where $\mathbf{S}_{\rm m}$ is the measured matrix,
 $\mathbf{M}_{\rm r}$ and $\mathbf{M}_{\rm t}$ summarize receive and transmit
-channel distortions, and $\Delta\mathbf{S}$ is the residual polarimetric error.
+channel distortions, and $\Delta\mathbf{S}$ is the residual polarimetric error. The declared distortion model shall include Faraday rotation where relevant.
 
 
 
 
 
-\subsubsection{Step 2: Traceability diagram for the polarimetric product}
+\subsubsection{Step 2: Traceability diagram}
 
 For the polarimetric product, the uncertainty contributions arise from:
 \begin{itemize}
@@ -324,9 +310,16 @@ For the polarimetric product, the uncertainty contributions arise from:
 Figure~\ref{fig:pol_traceability} shows a compact uncertainty tree for the
 polarimetric Level-1 product. The calibrated scattering matrix is the central
 measurand, while channel imbalance, cross-talk, and co-polar phase observables
-are treated as derived quantities supported by reference targets and channel
-statistics.
+are treated as derived quantities supported by reference targets and channel statistics.
 
+
+The calibration-estimation submodel is shown separately in Fig.~\ref{fig:pol_calibration_proposed}. Both distortion matrices inherit covariance from the same calibration estimates.
+Where calibration AUX/LUT coefficients $\mathbf q_{\rm AUX}$ are used, their
+uncertainty enters this same parameter model (P1--P3). This branch is inactive when those external coefficients are not used.
+
+\input{pol_tracability}
+
+\input{pol_calibration}
 % \begin{figure}[H]
 %   \centering
 %   \resizebox{0.96\textwidth}{!}{%
@@ -363,6 +356,11 @@ statistics.
 %     \node[right=1.3cm of dphb,text width=2.2cm,align=center] (uphb)
 %       {$u(\Delta\phi_{\rm co})$\\co-pol phase offset};
 
+%     \node[draw,left=3.0cm of phb,text width=2.0cm,align=center,minimum height=0.85cm] (dpoliono)
+%       {$\frac{\partial q_{\phi}}{\partial F_{\rm iono}}$};
+%     \node[left=1.3cm of dpoliono,text width=2.4cm,align=center] (uiono)
+%       {$u(F_{\rm iono})$\\Faraday rotation};
+
 %     \draw[-latex] (sm) -- (sc);
 %     \draw[-latex] (mr) -- (sc);
 %     \draw[-latex] (mt) -- (sc);
@@ -375,94 +373,37 @@ statistics.
 %     \draw[-latex] (uxt) -- (dxt);
 %     \draw[-latex] (dphb) -- (phb);
 %     \draw[-latex] (uphb) -- (dphb);
+%     \draw[-latex] (dpoliono) -- (phb);
+%     \draw[-latex] (uiono) -- (dpoliono);
 %   \end{tikzpicture}%
 %   }
 %   \caption{Traceability diagram for the polarimetric Level-1 product and the main observables related to channel imbalance, cross-talk, and co-polar phase bias.}
 %   \label{fig:pol_traceability}
 % \end{figure}
-\begin{figure}[H]
-  \centering
-  \resizebox{0.96\textwidth}{!}{%
-  \begin{tikzpicture}[node distance=1.25cm and 1.2cm, every node/.style={font=\small}]
-    \node[draw,text width=2.8cm,align=center,minimum height=0.9cm] (sm)
-      {$\mathbf{S}_{\rm m}$};
-    \node[draw,right=1.9cm of sm,text width=2.3cm,align=center,minimum height=0.9cm] (mr)
-      {$\mathbf{M}_{\rm r}$};
-    \node[draw,right=1.9cm of mr,text width=2.3cm,align=center,minimum height=0.9cm] (mt)
-      {$\mathbf{M}_{\rm t}$};
 
-    \node[draw,below=1.6cm of mr,text width=6.8cm,align=center,minimum height=1.05cm] (sc)
-      {$\mathbf{S}_{\rm c}=\mathbf{M}_{\rm r}^{-1}\mathbf{S}_{\rm m}\mathbf{M}_{\rm t}^{-1}+\Delta\mathbf{S}$};
+\subsubsection{Step 3: Evaluation of uncertainties}
+Table \ref{tab:pol_effects_table} summarizes the effects for the polarimetric product and its main observables.
 
-    \node[draw,below=2.0cm of sc,text width=4.8cm,align=center,minimum height=1.0cm] (imb)
-      {$q_{\rm imb}=g_{\rm imb}(\mathbf{S}_{\rm c})+\Delta q_{\rm imb}$};
-    \node[draw,below=2.4cm of imb,text width=4.8cm,align=center,minimum height=1.0cm] (xt)
-      {$q_{\rm xt}=g_{\rm xt}(\mathbf{S}_{\rm c})+\Delta q_{\rm xt}$};
-    \node[draw,below=2.4cm of xt,text width=4.8cm,align=center,minimum height=1.0cm] (phb)
-      {$q_{\phi}=g_{\phi}(\mathbf{S}_{\rm c})+\Delta q_{\phi}$};
-
-    \node[draw,left=3.0cm of imb,text width=1.9cm,align=center,minimum height=0.85cm] (dimb)
-      {$\frac{\partial q_{\rm imb}}{\partial \mathbf{S}_{\rm c}}$};
-    \node[left=1.3cm of dimb,text width=2.2cm,align=center] (uimb)
-      {$u(\mathbf{M}_{\rm r,t})$\\channel imbalance};
-
-    \node[draw,left=3.0cm of xt,text width=1.9cm,align=center,minimum height=0.85cm] (dxt)
-      {$\frac{\partial q_{\rm xt}}{\partial \mathbf{S}_{\rm c}}$};
-    \node[left=1.3cm of dxt,text width=2.0cm,align=center] (uxt)
-      {$u(\mathrm{XT})$\\cross-talk};
-
-    \node[draw,right=3.0cm of phb,text width=1.9cm,align=center,minimum height=0.85cm] (dphb)
-      {$\frac{\partial q_{\phi}}{\partial \mathbf{S}_{\rm c}}$};
-    \node[right=1.3cm of dphb,text width=2.2cm,align=center] (uphb)
-      {$u(\Delta\phi_{\rm co})$\\co-pol phase offset};
-
-    \node[draw,left=3.0cm of phb,text width=2.0cm,align=center,minimum height=0.85cm] (dpoliono)
-      {$\frac{\partial q_{\phi}}{\partial F_{\rm iono}}$};
-    \node[left=1.3cm of dpoliono,text width=2.4cm,align=center] (uiono)
-      {$u(F_{\rm iono})$\\Faraday rotation};
-
-    \draw[-latex] (sm) -- (sc);
-    \draw[-latex] (mr) -- (sc);
-    \draw[-latex] (mt) -- (sc);
-    \draw[-latex] (sc) -- (imb);
-    \draw[-latex] (sc) -- (xt);
-    \draw[-latex] (sc) -- (phb);
-    \draw[-latex] (dimb) -- (imb);
-    \draw[-latex] (uimb) -- (dimb);
-    \draw[-latex] (dxt) -- (xt);
-    \draw[-latex] (uxt) -- (dxt);
-    \draw[-latex] (dphb) -- (phb);
-    \draw[-latex] (uphb) -- (dphb);
-    \draw[-latex] (dpoliono) -- (phb);
-    \draw[-latex] (uiono) -- (dpoliono);
-  \end{tikzpicture}%
-  }
-  \caption{Traceability diagram for the polarimetric Level-1 product and the main observables related to channel imbalance, cross-talk, and co-polar phase bias.}
-  \label{fig:pol_traceability}
-\end{figure}
-
-\subsubsection{Step 3: Uncertainty effects table for the polarimetric product}
-This is provided in Table \ref{tab:pol_effects_table}.
-
-\begin{table*}[ht]
-  \scriptsize
-  \centering
-  \caption{Uncertainty effects table for the polarimetric Level-1 product and its main observables.}
-  \resizebox{\textwidth}{!}{%
-  \begin{tabular}{|p{3.0cm}|c|c|c|c|c|p{2.8cm}|}
-    \hline
-    \textbf{Name of effect} & \textbf{Imbalance} & \textbf{Cross-talk} & \textbf{Phase bias} & \textbf{Maturity} & \textbf{Correlation} & \textbf{Typical uncertainty form} \\ \hline
-    Channel gain imbalance & Yes & weak & weak & 2--3 & structured / channel & multiplicative bias \\ \hline
-    Cross-talk coefficients & weak & Yes & weak & 2--3 & structured / channel & leakage term \\ \hline
-    Co-polar phase offset & No & weak & Yes & 2--3 & structured / product & additive phase bias \\ \hline
-    Reference target response & Yes & Yes & Yes & 2 & scene-dependent / target & calibration reference uncertainty \\ \hline
-    Channel co-registration & weak & Yes & Yes & 2 & structured / image & residual misregistration \\ \hline
-    Thermal noise/statistics & weak & Yes & Yes & 2--3 & random / window & covariance estimation variance \\ \hline
-    Faraday/ionospheric effects & weak & weak & Yes & 1--2 & scene-dependent & propagation-induced phase term \\ \hline
-  \end{tabular}
-  }
-  \label{tab:pol_effects_table}
-\end{table*}
+\input{pol_effects}
+% \begin{table*}[ht]
+%   \scriptsize
+%   \centering
+%   \caption{Uncertainty effects table for the polarimetric Level-1 product and its main observables.}
+%   \resizebox{\textwidth}{!}{%
+%   \begin{tabular}{|p{3.0cm}|c|c|c|c|c|p{2.8cm}|}
+%     \hline
+%     \textbf{Name of effect} & \textbf{Imbalance} & \textbf{Cross-talk} & \textbf{Phase bias} & \textbf{Maturity} & \textbf{Correlation} & \textbf{Typical uncertainty form} \\ \hline
+%     Channel gain imbalance & Yes & weak & weak & 2--3 & structured / channel & multiplicative bias \\ \hline
+%     Cross-talk coefficients & weak & Yes & weak & 2--3 & structured / channel & leakage term \\ \hline
+%     Co-polar phase offset & No & weak & Yes & 2--3 & structured / product & additive phase bias \\ \hline
+%     Reference target response & Yes & Yes & Yes & 2 & scene-dependent / target & calibration reference uncertainty \\ \hline
+%     Channel co-registration & weak & Yes & Yes & 2 & structured / image & residual misregistration \\ \hline
+%     Thermal noise/statistics & weak & Yes & Yes & 2--3 & random / window & covariance estimation variance \\ \hline
+%     Faraday/ionospheric effects & weak & weak & Yes & 1--2 & scene-dependent & propagation-induced phase term \\ \hline
+%   \end{tabular}
+%   }
+%   \label{tab:pol_effects_table}
+% \end{table*}
 
 \subsubsection{Step 4: Propagation to polarimetric observables}
 
@@ -504,9 +445,17 @@ interferometric observables are
 The measurement model therefore contains both input-product uncertainties and
 interferometric-estimator uncertainties.
 
+The two input products are delivered SLCs. Where co-registration, flattening or
+propagation corrections are performed during analysis, these operations and
+their covariance are included explicitly. For window observables, write
+$Q=\sum_k I_{{\rm c},k}$ and $P_i=\sum_k|s_{i,k}|^2$ using the same registered
+samples, so that $\hat\phi_W=\arg Q$ and
+$\hat\gamma=|Q|/\sqrt{P_1P_2}$. The sample count $N$ is a chosen estimator
+configuration; sample dependence determines the effective number of looks.
 
 
-\subsubsection{Step 2: Traceability diagram for the interferometric product}
+
+\subsubsection{Step 2: Traceability Diagram}
 
 The uncertainty budget of the interferometric product contains:
 \begin{itemize}
@@ -533,84 +482,96 @@ interferometric product. The two calibrated input single-look complex products
 feed the interferogram, from which phase and coherence are estimated as the
 main Level-1 observables.
 
-\begin{figure}[H]
-  \centering
-  \resizebox{0.96\textwidth}{!}{%
-  \begin{tikzpicture}[node distance=1.25cm and 1.2cm, every node/.style={font=\small}]
-    \node[draw,text width=2.6cm,align=center,minimum height=0.9cm] (s1)
-      {$s_{1}$};
-    \node[draw,right=2.0cm of s1,text width=2.6cm,align=center,minimum height=0.9cm] (s2)
-      {$s_{2}$};
 
-    \node[draw,below=1.7cm of $(s1)!0.5!(s2)$,text width=5.8cm,align=center,minimum height=1.0cm] (igram)
-      {$I=s_{1}s_{2}^{\ast}+\Delta I$};
+To simplify the figure, the interferogram and its optional demodulation model
+are shown separately in Figs.~\ref{fig:insar_interferogram}
+and~\ref{fig:insar_demodulation}. Coherence requires both input powers
+and their covariance with the complex cross-product.
 
-    \node[draw,below=2.0cm of igram,text width=4.6cm,align=center,minimum height=1.0cm] (coh)
-      {$\hat{\gamma}=g_{\gamma}(I,N)+\Delta\gamma$};
-    \node[draw,below=2.3cm of coh,text width=4.6cm,align=center,minimum height=1.0cm] (iph)
-      {$\hat{\phi}=g_{\phi}(I,\mathbf{b})+\Delta\phi$};
+\input{insar_traceability}
+\input{insar_interferogram}
+\input{insar_demodulation}
+% \begin{figure}[H]
+%   \centering
+%   \resizebox{0.96\textwidth}{!}{%
+%   \begin{tikzpicture}[node distance=1.25cm and 1.2cm, every node/.style={font=\small}]
+%     \node[draw,text width=2.6cm,align=center,minimum height=0.9cm] (s1)
+%       {$s_{1}$};
+%     \node[draw,right=2.0cm of s1,text width=2.6cm,align=center,minimum height=0.9cm] (s2)
+%       {$s_{2}$};
 
-    \node[draw,left=2.8cm of coh,text width=1.8cm,align=center,minimum height=0.85cm] (dcoh)
-      {$\frac{\partial \hat{\gamma}}{\partial I}$};
-    \node[left=1.3cm of dcoh,text width=2.5cm,align=center] (ucoh)
-      {$u(N)$\\window/noise};
+%     \node[draw,below=1.7cm of $(s1)!0.5!(s2)$,text width=5.8cm,align=center,minimum height=1.0cm] (igram)
+%       {$I=s_{1}s_{2}^{\ast}+\Delta I$};
 
-    \node[draw,right=2.8cm of iph,text width=1.8cm,align=center,minimum height=0.85cm] (diph)
-      {$\frac{\partial \hat{\phi}}{\partial I}$};
-    \node[right=1.3cm of diph,text width=2.6cm,align=center] (uiph)
-      {$u(\mathbf{b})$\\baseline/orbit};
+%     \node[draw,below=2.0cm of igram,text width=4.6cm,align=center,minimum height=1.0cm] (coh)
+%       {$\hat{\gamma}=g_{\gamma}(I,N)+\Delta\gamma$};
+%     \node[draw,below=2.3cm of coh,text width=4.6cm,align=center,minimum height=1.0cm] (iph)
+%       {$\hat{\phi}=g_{\phi}(I,\mathbf{b})+\Delta\phi$};
 
-    \node[draw,left=2.8cm of iph,text width=2.0cm,align=center,minimum height=0.85cm] (dinsprop)
-      {$\frac{\partial \hat{\phi}}{\partial \Delta L_{\rm prop}}$};
-    \node[left=1.3cm of dinsprop,text width=2.7cm,align=center] (uinsprop)
-      {tropospheric and\\ionospheric delay};
+%     \node[draw,left=2.8cm of coh,text width=1.8cm,align=center,minimum height=0.85cm] (dcoh)
+%       {$\frac{\partial \hat{\gamma}}{\partial I}$};
+%     \node[left=1.3cm of dcoh,text width=2.5cm,align=center] (ucoh)
+%       {$u(N)$\\window/noise};
 
-    \node[draw,left=2.8cm of igram,text width=1.8cm,align=center,minimum height=0.85cm] (dig)
-      {$\frac{\partial I}{\partial s_{1,2}}$};
-    \node[left=1.3cm of dig,text width=2.3cm,align=center] (uslc)
-    {$u(s_{1}),u(s_{2})$\\input \acp{SLC}};
+%     \node[draw,right=2.8cm of iph,text width=1.8cm,align=center,minimum height=0.85cm] (diph)
+%       {$\frac{\partial \hat{\phi}}{\partial I}$};
+%     \node[right=1.3cm of diph,text width=2.6cm,align=center] (uiph)
+%       {$u(\mathbf{b})$\\baseline/orbit};
 
-    \draw[-latex] (s1) -- (igram);
-    \draw[-latex] (s2) -- (igram);
-    \draw[-latex] (dig) -- (igram);
-    \draw[-latex] (uslc) -- (dig);
-    \draw[-latex] (igram) -- (coh);
-    \draw[-latex] (igram) -- (iph);
-    \draw[-latex] (dcoh) -- (coh);
-    \draw[-latex] (ucoh) -- (dcoh);
-    \draw[-latex] (diph) -- (iph);
-    \draw[-latex] (uiph) -- (diph);
-    \draw[-latex] (dinsprop) -- (iph);
-    \draw[-latex] (uinsprop) -- (dinsprop);
-  \end{tikzpicture}%
-  }
-  \caption{Traceability diagram for the interferometric Level-1 product and its principal observables: coherence and interferometric phase.}
-  \label{fig:insar_traceability}
-\end{figure}
+%     \node[draw,left=2.8cm of iph,text width=2.0cm,align=center,minimum height=0.85cm] (dinsprop)
+%       {$\frac{\partial \hat{\phi}}{\partial \Delta L_{\rm prop}}$};
+%     \node[left=1.3cm of dinsprop,text width=2.7cm,align=center] (uinsprop)
+%       {tropospheric and\\ionospheric delay};
 
-\subsubsection{Step 3: Uncertainty effects table for the interferometric product}
-This is reported in Table \ref{tab:insar_effects_table}
-\begin{table*}[ht]
-  \scriptsize
-  \centering
-  \caption{Uncertainty effects table for the interferometric Level-1 product and its main observables.}
-  \resizebox{\textwidth}{!}{%
-  \begin{tabular}{|p{3.0cm}|c|c|c|c|p{3.2cm}|}
-    \hline
-    \textbf{Name of effect} & \textbf{Coherence} & \textbf{Phase} & \textbf{Maturity} & \textbf{Correlation} & \textbf{Typical uncertainty form} \\ \hline
-    Input \ac{SLC} radiometric/phase errors & Yes & Yes & 2--3 & structured / image pair & inherited covariance term \\ \hline
-    Co-registration error & Yes & Yes & 2--3 & structured / burst-scene & residual decorrelation / phase ramp \\ \hline
-    Baseline and orbit uncertainty & weak & Yes & 2--3 & structured / pair & geometric phase term \\ \hline
-    Thermal noise and finite window & Yes & Yes & 3 & random / estimator window & estimator variance \\ \hline
-    Temporal decorrelation & Yes & weak & 2 & scene-dependent & coherence loss \\ \hline
-    Geometric/volume decorrelation & Yes & weak & 2 & scene-dependent & coherence loss \\ \hline
-    Phase unwrapping (if used) & No & Yes & 1--2 & structured / connected region & discrete ambiguity term \\ \hline
-  \end{tabular}
-  }
-  \label{tab:insar_effects_table}
-\end{table*}
+%     \node[draw,left=2.8cm of igram,text width=1.8cm,align=center,minimum height=0.85cm] (dig)
+%       {$\frac{\partial I}{\partial s_{1,2}}$};
+%     \node[left=1.3cm of dig,text width=2.3cm,align=center] (uslc)
+%     {$u(s_{1}),u(s_{2})$\\input \acp{SLC}};
 
-\subsubsection{Step 4: Propagation and interpretation}
+%     \draw[-latex] (s1) -- (igram);
+%     \draw[-latex] (s2) -- (igram);
+%     \draw[-latex] (dig) -- (igram);
+%     \draw[-latex] (uslc) -- (dig);
+%     \draw[-latex] (igram) -- (coh);
+%     \draw[-latex] (igram) -- (iph);
+%     \draw[-latex] (dcoh) -- (coh);
+%     \draw[-latex] (ucoh) -- (dcoh);
+%     \draw[-latex] (diph) -- (iph);
+%     \draw[-latex] (uiph) -- (diph);
+%     \draw[-latex] (dinsprop) -- (iph);
+%     \draw[-latex] (uinsprop) -- (dinsprop);
+%   \end{tikzpicture}%
+%   }
+%   \caption{Traceability diagram for the interferometric Level-1 product and its principal observables: coherence and interferometric phase.}
+%   \label{fig:insar_traceability}
+% \end{figure}
+
+\subsubsection{Step 3: Evaluation of uncertainties}
+Table \ref{tab:insar_effects_table} summarizes the effects for coherence and phase.
+
+\input{insar_effects}
+
+% \begin{table*}[ht]
+%   \scriptsize
+%   \centering
+%   \caption{Uncertainty effects table for the interferometric Level-1 product and its main observables.}
+%   \resizebox{\textwidth}{!}{%
+%   \begin{tabular}{|p{3.0cm}|c|c|c|c|p{3.2cm}|}
+%     \hline
+%     \textbf{Name of effect} & \textbf{Coherence} & \textbf{Phase} & \textbf{Maturity} & \textbf{Correlation} & \textbf{Typical uncertainty form} \\ \hline
+%     Input \ac{SLC} radiometric/phase errors & Yes & Yes & 2--3 & structured / image pair & inherited covariance term \\ \hline
+%     Co-registration error & Yes & Yes & 2--3 & structured / burst-scene & residual decorrelation / phase ramp \\ \hline
+%     Baseline and orbit uncertainty & weak & Yes & 2--3 & structured / pair & geometric phase term \\ \hline
+%     Thermal noise and finite window & Yes & Yes & 3 & random / estimator window & estimator variance \\ \hline
+%     Temporal decorrelation & Yes & weak & 2 & scene-dependent & coherence loss \\ \hline
+%     Geometric/volume decorrelation & Yes & weak & 2 & scene-dependent & coherence loss \\ \hline
+%     Phase unwrapping (if used) & No & Yes & 1--2 & structured / connected region & discrete ambiguity term \\ \hline
+%   \end{tabular}
+%   }
+%   \label{tab:insar_effects_table}
+% \end{table*}
+
+\subsubsection{Step 4: Calculate the interferometric product and its uncertainty}
 
 The uncertainty of coherence and interferometric phase is strongly estimator-
 dependent and scene-dependent. For this reason, a mixed strategy is often more
@@ -619,7 +580,11 @@ can be propagated analytically, while the statistical behaviour of the
 interferometric estimator is better characterized through repeated acquisitions,
 homogeneous calibration areas, or Monte Carlo simulation of complex signals.
 
-\subsubsection{Step 5: Product-level reporting}
+Temporal, geometric and volume decorrelation condition the estimator statistics. Optional phase unwrapping is a discrete ambiguity problem, assessed through
+ambiguity probabilities or quality flags rather than a local derivative with respect to an integer
+cycle count.
+
+\subsubsection{Step 5: Documentation}
 
 For an interferometric product, the uncertainty statement should always be tied
 to the acquisition pair, the estimator window, and the scene class. In this
@@ -656,7 +621,12 @@ where $\mathbf{p}$ is the output map-grid pixel, $z_{\rm src}$ is the calibrated
 \end{equation}
 where $G$ is the geocoding operator, $\mathbf{g}_{\rm src}$ is the source-product geometric information, $\mathbf{x}_{\rm orb}$ represents orbit and attitude information, $\mathbf{x}_{\rm CRS}$ defines the coordinate reference system and map-grid convention, and $\mathbf{x}_{\rm resamp}$ represents interpolation and resampling choices.
 
-\subsubsection{Step 2: Traceability diagram for the NRB product}
+
+The source quantity is obtained from the SLC (or an explicitly
+identified detected/NRB product). Local incidence, slope and aspect derived from a DEM are correlated with that DEM. Masks define the validity of the measurand. CRS and grid conventions
+are declared definitions.
+
+\subsubsection{Traceability diagram}
 
 The \ac{NRB} uncertainty budget should be organized into inherited and product-generation terms:
 \begin{itemize}
@@ -675,78 +645,87 @@ is important because an \ac{NRB} pixel is not only a calibrated backscatter valu
 it is a terrain-normalised value assigned to a defined map-grid pixel and
 qualified by masks and metadata.
 
-\begin{figure}[H]
-  \centering
-  \resizebox{\textwidth}{!}{%
-  \begin{tikzpicture}[node distance=1.35cm and 1.55cm, every node/.style={font=\small}]
-    \node[draw,text width=3.2cm,align=center,minimum height=0.9cm] (src)
-      {$z_{\rm src}$\\source radiometry};
-    \node[draw,right=1.8cm of src,text width=3.4cm,align=center,minimum height=0.9cm] (dem)
-      {$\mathbf{d}_{\rm DEM},\theta_{\rm loc}$\\terrain geometry};
-    \node[draw,right=1.8cm of dem,text width=3.2cm,align=center,minimum height=0.9cm] (geo)
-      {$\mathbf{x}_{\rm orb},\mathbf{x}_{\rm CRS}$\\geocoding};
-    \node[draw,above=1.45cm of geo,text width=3.8cm,align=center,minimum height=0.9cm] (atm)
-      {$\mathbf{x}_{\rm atm},\mathbf{x}_{\rm iono}$\\attenuation, delay};
 
-    \node[draw,below=2.0cm of dem,text width=7.8cm,align=center,minimum height=1.0cm] (trad)
-      {$T_{\rm rad}(z_{\rm src},\theta_{\rm loc},\mathbf{d}_{\rm DEM},\mathbf{m})+\Delta y_{\rm NRB}$};
+\LoneChange{To simplify the trace, terrain geometry and ground assignment are shown
+separately in Figs.~}\LoneChange{\ref{fig:nrb_terrain_proposed}}
+\LoneChange{and~}\LoneChange{\ref{fig:nrb_geolocation_proposed}}\LoneChange{. Shared source geometry, orbit and DEM
+contributions are retained once in the joint covariance.}
+\input{nrb_traceability_marked}
+\input{nrb_terrain_marked}
+\input{nrb_geolocation_marked}
 
-    \node[draw,below=2.0cm of trad,text width=7.3cm,align=center,minimum height=1.0cm] (grid)
-      {$y_{\rm NRB}(\mathbf{p}),\;\mathbf{g}_{\rm NRB}=G(\mathbf{g}_{\rm src},\mathbf{x}_{\rm orb},\mathbf{d}_{\rm DEM},\mathbf{x}_{\rm CRS},\mathbf{x}_{\rm resamp})+\Delta\mathbf{g}_{\rm NRB}$};
+% \begin{figure}[H]
+%   \centering
+%   \resizebox{\textwidth}{!}{%
+%   \begin{tikzpicture}[node distance=1.35cm and 1.55cm, every node/.style={font=\small}]
+%     \node[draw,text width=3.2cm,align=center,minimum height=0.9cm] (src)
+%       {$z_{\rm src}$\\source radiometry};
+%     \node[draw,right=1.8cm of src,text width=3.4cm,align=center,minimum height=0.9cm] (dem)
+%       {$\mathbf{d}_{\rm DEM},\theta_{\rm loc}$\\terrain geometry};
+%     \node[draw,right=1.8cm of dem,text width=3.2cm,align=center,minimum height=0.9cm] (geo)
+%       {$\mathbf{x}_{\rm orb},\mathbf{x}_{\rm CRS}$\\geocoding};
+%     \node[draw,above=1.45cm of geo,text width=3.8cm,align=center,minimum height=0.9cm] (atm)
+%       {$\mathbf{x}_{\rm atm},\mathbf{x}_{\rm iono}$\\attenuation, delay};
 
-    \node[draw,left=3.0cm of trad,text width=1.7cm,align=center,minimum height=0.85cm] (dsrc)
-      {$\frac{\partial y}{\partial z_{\rm src}}$};
-    \node[left=1.45cm of dsrc,text width=2.6cm,align=center] (usrc)
-      {$u(z_{\rm src})$\\calibration, noise, speckle};
+%     \node[draw,below=2.0cm of dem,text width=7.8cm,align=center,minimum height=1.0cm] (trad)
+%       {$T_{\rm rad}(z_{\rm src},\theta_{\rm loc},\mathbf{d}_{\rm DEM},\mathbf{m})+\Delta y_{\rm NRB}$};
 
-    \node[draw,above=1.55cm of trad,text width=1.9cm,align=center,minimum height=0.85cm] (ddem)
-      {$\frac{\partial y}{\partial \mathbf{d}_{\rm DEM}}$};
-    \node[above=1.25cm of ddem,text width=3.0cm,align=center] (udem)
-      {$u(\mathbf{d}_{\rm DEM}),u(\theta_{\rm loc})$\\height, slope, aspect};
+%     \node[draw,below=2.0cm of trad,text width=7.3cm,align=center,minimum height=1.0cm] (grid)
+%       {$y_{\rm NRB}(\mathbf{p}),\;\mathbf{g}_{\rm NRB}=G(\mathbf{g}_{\rm src},\mathbf{x}_{\rm orb},\mathbf{d}_{\rm DEM},\mathbf{x}_{\rm CRS},\mathbf{x}_{\rm resamp})+\Delta\mathbf{g}_{\rm NRB}$};
 
-    \node[draw,right=3.0cm of trad,text width=1.8cm,align=center,minimum height=0.85cm] (dgeo)
-      {$\frac{\partial \mathbf{g}}{\partial \mathbf{x}_{\rm geo}}$};
-    \node[right=1.45cm of dgeo,text width=2.8cm,align=center] (ugeo)
-      {$u(\mathbf{x}_{\rm orb}),u(\mathbf{x}_{\rm CRS})$\\orbit, grid, CRS};
+%     \node[draw,left=3.0cm of trad,text width=1.7cm,align=center,minimum height=0.85cm] (dsrc)
+%       {$\frac{\partial y}{\partial z_{\rm src}}$};
+%     \node[left=1.45cm of dsrc,text width=2.6cm,align=center] (usrc)
+%       {$u(z_{\rm src})$\\calibration, noise, speckle};
 
-    \node[draw,above right=2.05cm and 2.35cm of trad,text width=2.0cm,align=center,minimum height=0.85cm] (datm)
-      {$\frac{\partial y,\mathbf{g}}{\partial \mathbf{x}_{\rm prop}}$};
-    \node[right=1.35cm of datm,text width=2.8cm,align=center] (uatm)
-      {$u(\mathbf{x}_{\rm atm}),u(\mathbf{x}_{\rm iono})$\\meteo, TEC maps};
+%     \node[draw,above=1.55cm of trad,text width=1.9cm,align=center,minimum height=0.85cm] (ddem)
+%       {$\frac{\partial y}{\partial \mathbf{d}_{\rm DEM}}$};
+%     \node[above=1.25cm of ddem,text width=3.0cm,align=center] (udem)
+%       {$u(\mathbf{d}_{\rm DEM}),u(\theta_{\rm loc})$\\height, slope, aspect};
 
-    \node[draw,left=3.0cm of grid,text width=1.9cm,align=center,minimum height=0.85cm] (dres)
-      {$\frac{\partial y}{\partial \mathbf{x}_{\rm resamp}}$};
-    \node[left=1.45cm of dres,text width=2.8cm,align=center] (ures)
-      {$u(\mathbf{x}_{\rm resamp})$\\kernel, aggregation};
+%     \node[draw,right=3.0cm of trad,text width=1.8cm,align=center,minimum height=0.85cm] (dgeo)
+%       {$\frac{\partial \mathbf{g}}{\partial \mathbf{x}_{\rm geo}}$};
+%     \node[right=1.45cm of dgeo,text width=2.8cm,align=center] (ugeo)
+%       {$u(\mathbf{x}_{\rm orb}),u(\mathbf{x}_{\rm CRS})$\\orbit, grid, CRS};
 
-    \node[draw,right=3.0cm of grid,text width=1.8cm,align=center,minimum height=0.85cm] (dmask)
-      {$u_{\rm mask}$};
-    \node[right=1.45cm of dmask,text width=2.7cm,align=center] (umask)
-      {layover, shadow, no-data, validity flags};
+%     \node[draw,above right=2.05cm and 2.35cm of trad,text width=2.0cm,align=center,minimum height=0.85cm] (datm)
+%       {$\frac{\partial y,\mathbf{g}}{\partial \mathbf{x}_{\rm prop}}$};
+%     \node[right=1.35cm of datm,text width=2.8cm,align=center] (uatm)
+%       {$u(\mathbf{x}_{\rm atm}),u(\mathbf{x}_{\rm iono})$\\meteo, TEC maps};
 
-    \draw[-latex] (src) -- (trad);
-    \draw[-latex] (dem) -- (trad);
-    \draw[-latex] (geo) -- (trad);
-    \draw[-latex] (atm) -- (trad);
-    \draw[-latex] (trad) -- (grid);
-    \draw[-latex] (usrc) -- (dsrc);
-    \draw[-latex] (dsrc) -- (trad);
-    \draw[-latex] (udem) -- (ddem);
-    \draw[-latex] (ddem) -- (trad);
-    \draw[-latex] (ugeo) -- (dgeo);
-    \draw[-latex] (dgeo) -- (trad);
-    \draw[-latex] (uatm) -- (datm);
-    \draw[-latex] (datm) -- (trad);
-    \draw[-latex] (datm) -- (grid);
-    \draw[-latex] (ures) -- (dres);
-    \draw[-latex] (dres) -- (grid);
-    \draw[-latex] (umask) -- (dmask);
-    \draw[-latex] (dmask) -- (grid);
-  \end{tikzpicture}%
-  }
-  \caption{Traceability diagram for a geocoded \ac{ARD}/\ac{NRB} Level-1 product. The final measurands are the terrain-normalised backscatter value $y_{\rm NRB}(\mathbf{p})$ and its associated map-grid location $\mathbf{g}_{\rm NRB}$.}
-  \label{fig:nrb_traceability}
-\end{figure}
+%     \node[draw,left=3.0cm of grid,text width=1.9cm,align=center,minimum height=0.85cm] (dres)
+%       {$\frac{\partial y}{\partial \mathbf{x}_{\rm resamp}}$};
+%     \node[left=1.45cm of dres,text width=2.8cm,align=center] (ures)
+%       {$u(\mathbf{x}_{\rm resamp})$\\kernel, aggregation};
+
+%     \node[draw,right=3.0cm of grid,text width=1.8cm,align=center,minimum height=0.85cm] (dmask)
+%       {$u_{\rm mask}$};
+%     \node[right=1.45cm of dmask,text width=2.7cm,align=center] (umask)
+%       {layover, shadow, no-data, validity flags};
+
+%     \draw[-latex] (src) -- (trad);
+%     \draw[-latex] (dem) -- (trad);
+%     \draw[-latex] (geo) -- (trad);
+%     \draw[-latex] (atm) -- (trad);
+%     \draw[-latex] (trad) -- (grid);
+%     \draw[-latex] (usrc) -- (dsrc);
+%     \draw[-latex] (dsrc) -- (trad);
+%     \draw[-latex] (udem) -- (ddem);
+%     \draw[-latex] (ddem) -- (trad);
+%     \draw[-latex] (ugeo) -- (dgeo);
+%     \draw[-latex] (dgeo) -- (trad);
+%     \draw[-latex] (uatm) -- (datm);
+%     \draw[-latex] (datm) -- (trad);
+%     \draw[-latex] (datm) -- (grid);
+%     \draw[-latex] (ures) -- (dres);
+%     \draw[-latex] (dres) -- (grid);
+%     \draw[-latex] (umask) -- (dmask);
+%     \draw[-latex] (dmask) -- (grid);
+%   \end{tikzpicture}%
+%   }
+%   \caption{Traceability diagram for a geocoded \ac{ARD}/\ac{NRB} Level-1 product. The final measurands are the terrain-normalised backscatter value $y_{\rm NRB}(\mathbf{p})$ and its associated map-grid location $\mathbf{g}_{\rm NRB}$.}
+%   \label{fig:nrb_traceability}
+% \end{figure}
 
 \subsubsection{Step 4: Uncertainty effects table for the NRB product}
 

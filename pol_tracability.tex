@@ -1,0 +1,53 @@
+
+\begin{figure}[H]
+  \centering
+  % Scale to fit page: preserves aspect ratio within textwidth × 0.88 textheight
+  \begin{adjustbox}{max width=\textwidth, max totalheight=0.72\textheight, keepaspectratio}
+  \begin{tikzpicture}[
+    connection/.style={draw, thick},
+    root_block/.style={draw=blue!60!black, very thick, rectangle, fill=blue!8, inner sep=8pt, font=\normalsize\bfseries, align=center},
+    model_block/.style={draw, rectangle, inner sep=4pt, font=\footnotesize\bfseries, align=center},
+    deriv_node/.style={draw, rectangle, rounded corners=3pt, inner sep=4pt, font=\footnotesize, align=center},
+    leaf_node/.style={draw, rectangle, inner sep=4pt, font=\footnotesize, align=center},
+    effect_node/.style={draw, dashed, font=\footnotesize\itshape, align=center, inner sep=2pt}
+    ]
+		% ROOT: \mathbf S_{\rm c}
+		\node [root_block] (MATHBFSRMCROOT) {$\mathbf S_{\rm c} = \mathbf M_{\rm r}^{-1}\mathbf S_{\rm m}\mathbf M_{\rm t}^{-1}+\Delta\mathbf S$};
+
+		% ∂\mathbf S_{\rm c}/∂\Delta\mathbf S
+		\node [deriv_node] at ($(MATHBFSRMCROOT)+(0.2429cm,-1.2084cm)$) (DDELTAMATHBFS) {$\frac{\partial \mathbf S_{\rm c}}{\partial \Delta\mathbf S}$};
+		\draw [connection, red] (MATHBFSRMCROOT) -- (DDELTAMATHBFS);
+		\node [leaf_node, draw=red, text=red] at ($(MATHBFSRMCROOT)+(0.4356cm,-2.1978cm)$) (UDELTAMATHBFS) {$u(\Delta\mathbf S)$};
+		\draw [connection, red] (DDELTAMATHBFS) -- (UDELTAMATHBFS);
+		\node [effect_node, red] at ($(MATHBFSRMCROOT)+(0.6065cm,-3.0635cm)$) (EFFDELTAMATHBFS) {Residual polarimetric error};
+		\draw [connection, red, dashed] (EFFDELTAMATHBFS) -- (UDELTAMATHBFS);
+
+		% ∂\mathbf S_{\rm c}/∂\mathbf S_{\rm m}
+		\node [deriv_node] at ($(MATHBFSRMCROOT)+(-1.8329cm,-1.2260cm)$) (DMATHBFSRMM) {$\frac{\partial \mathbf S_{\rm c}}{\partial \mathbf S_{\rm m}}$};
+		\draw [connection, blue!70!black] (MATHBFSRMCROOT) -- (DMATHBFSRMM);
+		\node [leaf_node, draw=blue!70!black, text=blue!70!black] at ($(MATHBFSRMCROOT)+(-3.2130cm,-2.1460cm)$) (UMATHBFSRMM) {$u(\mathbf S_{\rm m})$};
+		\draw [connection, blue!70!black] (DMATHBFSRMM) -- (UMATHBFSRMM);
+		\node [effect_node, blue!70!black] at ($(MATHBFSRMCROOT)+(-5.0881cm,-3.3983cm)$) (EFFMATHBFSRMM) {Input polarimetric SLC \\ P5, P6: registration and noise \\ Inherited single-channel effects};
+		\draw [connection, blue!70!black, dashed] (EFFMATHBFSRMM) -- (UMATHBFSRMM);
+
+		% ∂\mathbf S_{\rm c}/∂\mathbf M_{\rm r}
+		\node [deriv_node] at ($(MATHBFSRMCROOT)+(-1.8329cm,1.2260cm)$) (DMATHBFMRMR) {$\frac{\partial \mathbf S_{\rm c}}{\partial \mathbf M_{\rm r}}$};
+		\draw [connection, purple] (MATHBFSRMCROOT) -- (DMATHBFMRMR);
+
+		% sub-model: \mathbf M_{\rm r}
+		\node [model_block] at ($(MATHBFSRMCROOT)+(-3.6280cm,2.4262cm)$) (MMATHBFMRMR) {$\mathbf M_{\rm r} = D_{\rm r}(\mathbf q_{\rm cal})$\\ \footnotesize(see Fig.~\ref{fig:pol_calibration_proposed})};
+		\draw [connection, purple] (DMATHBFMRMR) -- (MMATHBFMRMR);
+
+		% ∂\mathbf S_{\rm c}/∂\mathbf M_{\rm t}
+		\node [deriv_node] at ($(MATHBFSRMCROOT)+(0.2452cm,1.2261cm)$) (DMATHBFMRMT) {$\frac{\partial \mathbf S_{\rm c}}{\partial \mathbf M_{\rm t}}$};
+		\draw [connection, green!50!black] (MATHBFSRMCROOT) -- (DMATHBFMRMT);
+
+		% sub-model: \mathbf M_{\rm t}
+		\node [model_block] at ($(MATHBFSRMCROOT)+(0.4843cm,2.4265cm)$) (MMATHBFMRMT) {$\mathbf M_{\rm t} = D_{\rm t}(\mathbf q_{\rm cal})$\\ \footnotesize(see Fig.~\ref{fig:pol_calibration_proposed})};
+		\draw [connection, green!50!black] (DMATHBFMRMT) -- (MMATHBFMRMT);
+
+  \end{tikzpicture}
+  \end{adjustbox}
+  \caption{Uncertainty tree diagram for the polarimetric Level-1 product retaining the simplified scattering-matrix model. The receive and transmit matrices depend on shared calibration estimates (Fig.~\ref{fig:pol_calibration_proposed}). Faraday rotation is included through the declared propagation/distortion model.}
+  \label{fig:pol_traceability_proposed}
+\end{figure}

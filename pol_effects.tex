@@ -1,0 +1,64 @@
+\begin{table}[p]
+\centering\scriptsize
+\renewcommand{\arraystretch}{1.1}
+\caption{Uncertainty effects table for the Polarimetric Level-1 product, panel 1/2.}
+\label{tab:pol_effects_table}
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{3.0cm}|*{4}{>{\raggedright\arraybackslash}X|}}\hline
+\textbf{Name of effect} & Channel gain imbalance & Cross-talk coefficients & Co-polar phase offset & Reference target response \\ \hline
+\textbf{Effect identifier} & P1 & P2 & P3 & P4 \\ \hline
+\textbf{Affected term in measurement function} & $\mathbf q_{\rm cal}$ & $\mathbf q_{\rm cal}$ & $\mathbf q_{\rm cal}$ & $\mathbf r_{\rm ref}$ \\ \hline
+\textbf{AUX inputs / origin} & Gain/phase AUX/LUT or joint calibration fit & Cross-talk AUX/LUT or joint calibration fit & Phase-offset AUX/LUT or joint calibration fit & Characterised reference response and uncertainty \\ \hline
+\textbf{Imbalance} & Yes & weak & No & Yes \\ \hline
+\textbf{Cross-talk} & weak & Yes & weak & Yes \\ \hline
+\textbf{Phase bias} & weak & weak & Yes & Yes \\ \hline
+\textbf{Maturity of analysis} & - & - & - & - \\ \hline
+\textbf{Maturity of uncertainty estimate} & 2--3 & 2--3 & 2--3 & 2 \\ \hline
+\textbf{Maturity of correlation scale estimate} & - & - & - & - \\ \hline
+\textbf{For low maturity, is effect negligible?} & Not established & Not established & Not established & Not established \\ \hline
+\textbf{Correlation type and form} & structured / channel & structured / channel & structured / product & scene-dependent / target \\ \hline
+\textbf{Range form} & - & - & - & - \\ \hline
+\textbf{Azimuth form} & - & - & - & - \\ \hline
+\textbf{Over time form} & - & - & - & - \\ \hline
+\textbf{Correlation scale} & Not yet quantified & Not yet quantified & Not yet quantified & Not yet quantified \\ \hline
+\textbf{Range scale} & - & - & - & - \\ \hline
+\textbf{Azimuth scale} & - & - & - & - \\ \hline
+\textbf{Over time scale} & - & - & - & - \\ \hline
+\textbf{Uncertainty: PDF shape} & - & - & - & - \\ \hline
+\textbf{Units} & 1, rad & 1 & rad & reference units \\ \hline
+\textbf{Magnitude} & - & - & - & - \\ \hline
+\textbf{Typical uncertainty form} & multiplicative bias & leakage term & additive phase bias & calibration reference uncertainty \\ \hline
+\textbf{Sensitivity coefficient} & $\mathbf J_{P1}$ & $\mathbf J_{P2}$ & $\mathbf J_{P3}$ & $\mathbf J_{P4}$ \\ \hline
+\end{tabularx}
+\end{table}
+\begin{table}[p]
+\centering\scriptsize
+\renewcommand{\arraystretch}{1.1}
+\caption{Uncertainty effects table for the Polarimetric Level-1 product, panel 2/2.}
+\label{tab:pol_effects_table_proposed_2}
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{3.0cm}|*{3}{>{\raggedright\arraybackslash}X|}}\hline
+\textbf{Name of effect} & Channel co-registration & Thermal noise/statistics & Faraday/ionospheric effects \\ \hline
+\textbf{Effect identifier} & P5 & P6 & P7 \\ \hline
+\textbf{Affected term in measurement function} & $\mathbf d_{\rm ch}$ & $\mathbf S_{\rm m}$ & $F_{\rm iono}$ \\ \hline
+\textbf{AUX inputs / origin} & Channel-registration estimates / annotations & Input SLC covariance; noise AUX where used & Ionospheric AUX or estimated Faraday angle \\ \hline
+\textbf{Imbalance} & weak & weak & Conditional \\ \hline
+\textbf{Cross-talk} & Yes & Yes & Conditional \\ \hline
+\textbf{Phase bias} & Yes & Yes & Conditional \\ \hline
+\textbf{Maturity of analysis} & - & - & - \\ \hline
+\textbf{Maturity of uncertainty estimate} & 2 & 2--3 & 1--2 \\ \hline
+\textbf{Maturity of correlation scale estimate} & - & - & - \\ \hline
+\textbf{For low maturity, is effect negligible?} & Not established & Not established & Not established \\ \hline
+\textbf{Correlation type and form} & structured / image & random / window & scene-dependent \\ \hline
+\textbf{Range form} & - & - & - \\ \hline
+\textbf{Azimuth form} & - & - & - \\ \hline
+\textbf{Over time form} & - & - & - \\ \hline
+\textbf{Correlation scale} & Not yet quantified & Not yet quantified & Not yet quantified \\ \hline
+\textbf{Range scale} & - & - & - \\ \hline
+\textbf{Azimuth scale} & - & - & - \\ \hline
+\textbf{Over time scale} & - & - & - \\ \hline
+\textbf{Uncertainty: PDF shape} & - & - & - \\ \hline
+\textbf{Units} & pixel & sample units & rad \\ \hline
+\textbf{Magnitude} & - & - & - \\ \hline
+\textbf{Typical uncertainty form} & residual misregistration & covariance estimation variance & polarization mixing; amplitude and phase effects \\ \hline
+\textbf{Sensitivity coefficient} & $\mathbf J_{P5}$ & $\mathbf J_{P6}$ & $\mathbf J_{P7}$ \\ \hline
+\end{tabularx}
+\end{table}

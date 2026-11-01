@@ -1,0 +1,44 @@
+\begin{figure}[ht]
+  \centering
+  % Scale to fit page: preserves aspect ratio within textwidth × 0.88 textheight
+  \begin{adjustbox}{max width=\textwidth, max totalheight=0.72\textheight, keepaspectratio}
+  \begin{tikzpicture}[
+    connection/.style={draw, thick},
+    root_block/.style={draw=blue!60!black, very thick, rectangle, fill=blue!8, inner sep=8pt, font=\normalsize\bfseries, align=center},
+    model_block/.style={draw, rectangle, inner sep=4pt, font=\footnotesize\bfseries, align=center},
+    deriv_node/.style={draw, rectangle, rounded corners=3pt, inner sep=4pt, font=\footnotesize, align=center},
+    leaf_node/.style={draw, rectangle, inner sep=4pt, font=\footnotesize, align=center},
+    effect_node/.style={draw, dashed, font=\footnotesize\itshape, align=center, inner sep=2pt}
+    ]
+		% ROOT: \mathbf x_{\rm geo}
+		\node [root_block] (MATHBFXRMGEOROOT) {$\mathbf x_{\rm geo} = H_{\rm geo}(\mathbf t,\mathbf o,\boldsymbol\ell)$};
+
+		% ∂\mathbf x_{\rm geo}/∂\mathbf t
+		\node [deriv_node] at ($(MATHBFXRMGEOROOT)+(0.0000cm,-1.2035cm)$) (DMATHBFT) {$\frac{\partial \mathbf x_{\rm geo}}{\partial \mathbf t}$};
+		\draw [connection, blue!70!black] (MATHBFXRMGEOROOT) -- (DMATHBFT);
+		\node [leaf_node, draw=blue!70!black, text=blue!70!black] at ($(MATHBFXRMGEOROOT)+(0.0000cm,-2.2100cm)$) (UMATHBFT) {$u(\mathbf t)$};
+		\draw [connection, blue!70!black] (DMATHBFT) -- (UMATHBFT);
+		\node [effect_node, blue!70!black] at ($(MATHBFXRMGEOROOT)+(0.0000cm,-3.2364cm)$) (EFFMATHBFT) {S5: timing annotations \\ and clock-calibration AUX};
+		\draw [connection, blue!70!black, dashed] (EFFMATHBFT) -- (UMATHBFT);
+
+		% ∂\mathbf x_{\rm geo}/∂\mathbf o
+		\node [deriv_node] at ($(MATHBFXRMGEOROOT)+(-2.7604cm,0.0000cm)$) (DMATHBFO) {$\frac{\partial \mathbf x_{\rm geo}}{\partial \mathbf o}$};
+		\draw [connection, purple] (MATHBFXRMGEOROOT) -- (DMATHBFO);
+		\node [leaf_node, draw=purple, text=purple] at ($(MATHBFXRMGEOROOT)+(-4.0888cm,0.0000cm)$) (UMATHBFO) {$u(\mathbf o)$};
+		\draw [connection, purple] (DMATHBFO) -- (UMATHBFO);
+		\node [effect_node, purple] at ($(MATHBFXRMGEOROOT)+(-6.5107cm,0.0000cm)$) (EFFMATHBFO) {S6: orbit and attitude \\ AUX products};
+		\draw [connection, purple, dashed] (EFFMATHBFO) -- (UMATHBFO);
+
+		% ∂\mathbf x_{\rm geo}/∂\boldsymbol\ell
+		\node [deriv_node] at ($(MATHBFXRMGEOROOT)+(0.0000cm,1.2035cm)$) (DBOLDSYMBOLELL) {$\frac{\partial \mathbf x_{\rm geo}}{\partial \boldsymbol\ell}$};
+		\draw [connection, green!50!black] (MATHBFXRMGEOROOT) -- (DBOLDSYMBOLELL);
+		\node [leaf_node, draw=green!50!black, text=green!50!black] at ($(MATHBFXRMGEOROOT)+(0.0000cm,2.2100cm)$) (UBOLDSYMBOLELL) {$u(\boldsymbol\ell)$};
+		\draw [connection, green!50!black] (DBOLDSYMBOLELL) -- (UBOLDSYMBOLELL);
+		\node [effect_node, green!50!black] at ($(MATHBFXRMGEOROOT)+(0.0000cm,3.2865cm)$) (EFFBOLDSYMBOLELL) {S11: meteo / ionospheric AUX \\ path-delay / propagation estimates};
+		\draw [connection, green!50!black, dashed] (EFFBOLDSYMBOLELL) -- (UBOLDSYMBOLELL);
+
+  \end{tikzpicture}
+  \end{adjustbox}
+  \caption{Uncertainty tree diagram for geometric inputs derived from auxiliary information. $\mathbf t$ denotes timing/clock inputs, $\mathbf o$ orbit/attitude, and $\boldsymbol\ell$ propagation quantities. The DEM/reference-height input to ground localisation is shown separately in Fig.\ref{fig:slc_geometric_proposed}.}
+  \label{fig:slc_aux_geometry_proposed}
+\end{figure}
