@@ -1,0 +1,68 @@
+\begin{figure}[p]
+  \centering
+  % Scale to fit page: preserves aspect ratio within textwidth × 0.88 textheight
+  \begin{adjustbox}{max width=\textwidth, max totalheight=.88\textheight, keepaspectratio}
+  \begin{tikzpicture}[
+    connection/.style={draw, thick},
+    root_block/.style={draw, rectangle, inner sep=10pt, font=\Large\bfseries, align=center},
+    model_block/.style={draw, rectangle, inner sep=8pt, font=\large\bfseries, align=center},
+    deriv_node/.style={draw, rectangle, rounded corners=5pt, inner sep=5pt, font=\normalsize, align=center},
+    leaf_node/.style={draw, rectangle, inner sep=5pt, font=\small, align=center, text width=1.3cm},
+    effect_node/.style={draw, dashed, font=\footnotesize\itshape, align=center, text width=2.3cm, inner sep=3pt}
+    ]
+		% ROOT: H_s
+		\node [root_block] (HSROOT) {$H_s = \left(\frac{\lambda_C^{20^\circ} - \mathbf{b}}{\mathbf{b}}\right)^{2}$};
+
+		% ∂H_s/∂\lambda_C^{20^\circ}
+		\node [deriv_node] at ($(HSROOT)+(-0.72cm,2.70cm)$) (DLAMBDAC20CIRC) {$\frac{\partial H_s}{\partial \lambda_C^{20^\circ}}$};
+		\draw [connection, red] (HSROOT) -- (DLAMBDAC20CIRC);
+
+		% sub-model: \lambda_C^{20^\circ}
+		\node [model_block] at ($(HSROOT)+(-1.29cm,4.83cm)$) (MLAMBDAC20CIRC) {$\lambda_C^{20^\circ} = \frac{\lambda_C \cdot R}{\theta \cdot \phi_0}$};
+		\draw [connection, red] (DLAMBDAC20CIRC) -- (MLAMBDAC20CIRC);
+		% ∂\lambda_C^{20^\circ}/∂R
+		\node [deriv_node] at ($(HSROOT)+(-7.09cm,6.18cm)$) (DR) {$\frac{\partial \lambda_C^{20^\circ}}{\partial R}$};
+		\draw [connection, purple] (MLAMBDAC20CIRC) -- (DR);
+		\node [leaf_node, draw=purple, text=purple] at ($(HSROOT)+(-7.66cm,8.30cm)$) (UR) {$u(R)$};
+		\draw [connection, purple] (DR) -- (UR);
+		\node [effect_node, purple] at ($(HSROOT)+(-8.18cm,10.23cm)$) (EFFR) {Geolocation \\ Orbital Fitting \\ Antenna mis-pointing};
+		\draw [connection, purple, dashed] (EFFR) -- (UR);
+
+		% ∂\lambda_C^{20^\circ}/∂\theta
+		\node [deriv_node] at ($(HSROOT)+(-3.71cm,7.08cm)$) (DTHETA) {$\frac{\partial \lambda_C^{20^\circ}}{\partial \theta}$};
+		\draw [connection, cyan!80!black] (MLAMBDAC20CIRC) -- (DTHETA);
+		\node [leaf_node, draw=cyan!80!black, text=cyan!80!black] at ($(HSROOT)+(-4.28cm,9.21cm)$) (UTHETA) {$u(\theta)$};
+		\draw [connection, cyan!80!black] (DTHETA) -- (UTHETA);
+		\node [effect_node, cyan!80!black] at ($(HSROOT)+(-4.80cm,11.14cm)$) (EFFTHETA) {Geolocation \\ Orbital Fitting \\ Antenna mis-pointing};
+		\draw [connection, cyan!80!black, dashed] (EFFTHETA) -- (UTHETA);
+
+		% ∂\lambda_C^{20^\circ}/∂\lambda_C
+		\node [deriv_node] at ($(HSROOT)+(-0.33cm,7.99cm)$) (DLAMBDAC) {$\frac{\partial \lambda_C^{20^\circ}}{\partial \lambda_C}$};
+		\draw [connection, red] (MLAMBDAC20CIRC) -- (DLAMBDAC);
+		\node [leaf_node, draw=red, text=red] at ($(HSROOT)+(-0.90cm,10.11cm)$) (ULAMBDAC) {$u(\lambda_C)$};
+		\draw [connection, red] (DLAMBDAC) -- (ULAMBDAC);
+		\node [effect_node, red] at ($(HSROOT)+(-1.42cm,12.04cm)$) (EFFLAMBDAC) {Bright Target Removal \\ FFT \\ CCS \\ Range-avg CCS \\ IFFT \\ Gaussian fit};
+		\draw [connection, red, dashed] (EFFLAMBDAC) -- (ULAMBDAC);
+
+		% ∂\lambda_C^{20^\circ}/∂\phi_0
+		\node [deriv_node] at ($(HSROOT)+(3.05cm,8.89cm)$) (DPHI0) {$\frac{\partial \lambda_C^{20^\circ}}{\partial \phi_0}$};
+		\draw [connection, green!60!black] (MLAMBDAC20CIRC) -- (DPHI0);
+		\node [leaf_node, draw=green!60!black, text=green!60!black] at ($(HSROOT)+(2.48cm,11.02cm)$) (UPHI0) {$u(\phi_0)$};
+		\draw [connection, green!60!black] (DPHI0) -- (UPHI0);
+		\node [effect_node, green!60!black] at ($(HSROOT)+(1.97cm,12.95cm)$) (EFFPHI0) {NWP modelling};
+		\draw [connection, green!60!black, dashed] (EFFPHI0) -- (UPHI0);
+
+
+		% ∂H_s/∂\mathbf{b}
+		\node [deriv_node] at ($(HSROOT)+(2.42cm,1.40cm)$) (DMATHBFB) {$\frac{\partial H_s}{\partial \mathbf{b}}$};
+		\draw [connection, blue!70!black] (HSROOT) -- (DMATHBFB);
+		\node [leaf_node, draw=blue!70!black, text=blue!70!black] at ($(HSROOT)+(4.33cm,2.50cm)$) (UMATHBFB) {$u(\mathbf{b})$};
+		\draw [connection, blue!70!black] (DMATHBFB) -- (UMATHBFB);
+		\node [effect_node, blue!70!black] at ($(HSROOT)+(6.06cm,3.50cm)$) (EFFMATHBFB) {Linear Fitting};
+		\draw [connection, blue!70!black, dashed] (EFFMATHBFB) -- (UMATHBFB);
+
+  \end{tikzpicture}
+  \end{adjustbox}
+  \caption{Uncertainty Tree Diagram for $H_s$.}
+  \label{fig:swh_utd}
+\end{figure}
