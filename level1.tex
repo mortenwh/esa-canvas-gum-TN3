@@ -626,7 +626,7 @@ The source quantity is obtained from the SLC (or an explicitly
 identified detected/NRB product). Local incidence, slope and aspect derived from a DEM are correlated with that DEM. Masks define the validity of the measurand. CRS and grid conventions
 are declared definitions.
 
-\subsubsection{Traceability diagram}
+\subsubsection{Step 2: Traceability diagram}
 
 The \ac{NRB} uncertainty budget should be organized into inherited and product-generation terms:
 \begin{itemize}
@@ -642,17 +642,14 @@ Figure~\ref{fig:nrb_traceability} shows the uncertainty tree for a geocoded
 branch from the product-generation branches introduced by terrain
 normalisation, geocoding, resampling, masking, and ancillary-data lineage. This
 is important because an \ac{NRB} pixel is not only a calibrated backscatter value;
-it is a terrain-normalised value assigned to a defined map-grid pixel and
-qualified by masks and metadata.
+it is a terrain-normalised value assigned to a defined map-grid pixel and qualified by masks and metadata.
 
+To simplify the trace, terrain geometry and ground assignment are shown separately in Figs.~\ref{fig:nrb_terrain}
+and~\ref{fig:nrb_geolocation}. Shared source geometry, orbit and DEM contributions are retained once in the joint covariance.
 
-\LoneChange{To simplify the trace, terrain geometry and ground assignment are shown
-separately in Figs.~}\LoneChange{\ref{fig:nrb_terrain_proposed}}
-\LoneChange{and~}\LoneChange{\ref{fig:nrb_geolocation_proposed}}\LoneChange{. Shared source geometry, orbit and DEM
-contributions are retained once in the joint covariance.}
-\input{nrb_traceability_marked}
-\input{nrb_terrain_marked}
-\input{nrb_geolocation_marked}
+\input{nrb_traceability}
+\input{nrb_terrain}
+\input{nrb_geolocation}
 
 % \begin{figure}[H]
 %   \centering
@@ -727,56 +724,76 @@ contributions are retained once in the joint covariance.}
 %   \label{fig:nrb_traceability}
 % \end{figure}
 
-\subsubsection{Step 4: Uncertainty effects table for the NRB product}
+
+
+\subsubsection{Step 3: Evaluation of uncertainties}
 
 Table~\ref{tab:nrb_effects_table} summarizes the main uncertainty effects for
 \ac{NRB}/\ac{ARD} products. The table distinguishes radiometric uncertainty, geometric
 uncertainty, and mask/metadata validity because these components have different
 correlation structures and are used differently by downstream users.
 
-\begin{table*}[ht]
-  \scriptsize
-  \centering
-  \caption{Uncertainty effects table for the geocoded \ac{NRB} Level-1 product.}
-  \resizebox{\textwidth}{!}{%
-  \begin{tabular}{|p{3.2cm}|c|c|c|c|p{3.3cm}|p{3.2cm}|}
-    \hline
-    \textbf{Name of effect} & \textbf{Radiometric} & \textbf{Geometric} & \textbf{Mask / metadata} & \textbf{Maturity} & \textbf{Correlation type / scale} & \textbf{Typical uncertainty form} \\ \hline
-    Inherited source-product calibration & Yes & weak & No & 2--3 & structured / swath-product & multiplicative backscatter bias \\ \hline
-    Source-product noise, speckle, and finite looks & Yes & weak & No & 2--3 & random to local-window & variance term reduced by averaging \\ \hline
-    \ac{DEM} height, slope, and aspect & Yes & Yes & weak & 2--3 & spatially correlated / terrain tile & local-incidence and geolocation covariance \\ \hline
-    Local incidence-angle estimation & Yes & weak & No & 2--3 & structured / terrain facet & terrain-normalisation sensitivity term \\ \hline
-    Terrain-flattening and scattering-area model & Yes & weak & No & 1--2 & structured / scene class & model-convention bias \\ \hline
-    Orbit, attitude, and timing inherited by geocoding & weak & Yes & No & 2--3 & structured / acquisition & map-location covariance term \\ \hline
-    CRS, grid origin, pixel spacing, and coordinate convention & No & Yes & Yes & 2--3 & product-wide systematic & map-grid convention and metadata term \\ \hline
-    Resampling, interpolation, and aggregation & Yes & Yes & weak & 1--2 & local-window / kernel footprint & smoothing, covariance, and edge effects \\ \hline
-    Layover, shadow, water, no-data, and validity masks & weak & weak & Yes & 1--2 & object/local-region & classification or flagging uncertainty \\ \hline
-    Ancillary-data lineage and processor version & Yes & Yes & Yes & 1--2 & product-wide / processing baseline & traceability and reproducibility term \\ \hline
-    Reference image or GCP validation data & weak & Yes & weak & 2 & local to scene-wide & validation-reference covariance \\ \hline
-  \end{tabular}
-  }
-  \label{tab:nrb_effects_table}
-\end{table*}
+\input{nrb_effects}
 
-\subsubsection{Step 5: Propagation and covariance structure}
+
+N7, N9 and N10 are retained as quality/validity and lineage requirements. N11 reference uncertainty enters validation, or the generation model if reference data estimate a correction.
+
+% \begin{table*}[ht]
+%   \scriptsize
+%   \centering
+%   \caption{Uncertainty effects table for the geocoded \ac{NRB} Level-1 product.}
+%   \resizebox{\textwidth}{!}{%
+%   \begin{tabular}{|p{3.2cm}|c|c|c|c|p{3.3cm}|p{3.2cm}|}
+%     \hline
+%     \textbf{Name of effect} & \textbf{Radiometric} & \textbf{Geometric} & \textbf{Mask / metadata} & \textbf{Maturity} & \textbf{Correlation type / scale} & \textbf{Typical uncertainty form} \\ \hline
+%     Inherited source-product calibration & Yes & weak & No & 2--3 & structured / swath-product & multiplicative backscatter bias \\ \hline
+%     Source-product noise, speckle, and finite looks & Yes & weak & No & 2--3 & random to local-window & variance term reduced by averaging \\ \hline
+%     \ac{DEM} height, slope, and aspect & Yes & Yes & weak & 2--3 & spatially correlated / terrain tile & local-incidence and geolocation covariance \\ \hline
+%     Local incidence-angle estimation & Yes & weak & No & 2--3 & structured / terrain facet & terrain-normalisation sensitivity term \\ \hline
+%     Terrain-flattening and scattering-area model & Yes & weak & No & 1--2 & structured / scene class & model-convention bias \\ \hline
+%     Orbit, attitude, and timing inherited by geocoding & weak & Yes & No & 2--3 & structured / acquisition & map-location covariance term \\ \hline
+%     CRS, grid origin, pixel spacing, and coordinate convention & No & Yes & Yes & 2--3 & product-wide systematic & map-grid convention and metadata term \\ \hline
+%     Resampling, interpolation, and aggregation & Yes & Yes & weak & 1--2 & local-window / kernel footprint & smoothing, covariance, and edge effects \\ \hline
+%     Layover, shadow, water, no-data, and validity masks & weak & weak & Yes & 1--2 & object/local-region & classification or flagging uncertainty \\ \hline
+%     Ancillary-data lineage and processor version & Yes & Yes & Yes & 1--2 & product-wide / processing baseline & traceability and reproducibility term \\ \hline
+%     Reference image or GCP validation data & weak & Yes & weak & 2 & local to scene-wide & validation-reference covariance \\ \hline
+%   \end{tabular}
+%   }
+%   \label{tab:nrb_effects_table}
+% \end{table*}
+
+\subsubsection{Step 4: Calculate the geocoded ARD/NRB product and its uncertainty}
 
 For \ac{NRB}, uncertainty propagation should account for both radiometric and geometric covariance. In compact form,
+% \begin{equation}
+%   u^2\!\left(y_{\rm NRB}\right) \approx
+%   \mathbf{J}_{T}\,\mathbf{U}_{\rm src}\,\mathbf{J}_{T}^{\mathsf{T}}
+%   + \mathbf{J}_{a}\,\mathbf{U}_{\rm aux}\,\mathbf{J}_{a}^{\mathsf{T}}
+%   + \mathbf{J}_{p}\,\mathbf{U}_{\rm proc}\,\mathbf{J}_{p}^{\mathsf{T}}
+%   + u^2_{\rm mask},
+%   \label{eq:nrb_uncertainty}
+% \end{equation}
+
 \begin{equation}
   u^2\!\left(y_{\rm NRB}\right) \approx
-  \mathbf{J}_{T}\,\mathbf{U}_{\rm src}\,\mathbf{J}_{T}^{\mathsf{T}}
-  + \mathbf{J}_{a}\,\mathbf{U}_{\rm aux}\,\mathbf{J}_{a}^{\mathsf{T}}
-  + \mathbf{J}_{p}\,\mathbf{U}_{\rm proc}\,\mathbf{J}_{p}^{\mathsf{T}}
-  + u^2_{\rm mask},
-  \label{eq:nrb_uncertainty}
+  \mathbf J\,\mathbf U_{\rm src,aux,proc}\,\mathbf J^{\mathsf T},
+  \label{eq:nrb_uncertainty_proposed}
 \end{equation}
-where $\mathbf{U}_{\rm src}$ contains inherited source-product covariance, $\mathbf{U}_{\rm aux}$ contains \ac{DEM}, orbit, incidence-angle, and other ancillary-data covariance, $\mathbf{U}_{\rm proc}$ contains geocoding and resampling implementation terms, and $u_{\rm mask}$ represents uncertainty associated with validity classification. These terms are often spatially correlated: for example, a \ac{DEM} bias or orbit error can affect many neighbouring pixels coherently, whereas speckle and feature-identification errors may be more local. A \ac{GUM}-compliant \ac{NRB} uncertainty statement should therefore avoid treating all terms as independent per-pixel random noise.
 
-\subsubsection{Step 6: Product-level reporting}
+
+where $\mathbf U_{\rm src,aux,proc}$ contains the source-product, auxiliary-data
+and processing covariance, including cross-covariance between these groups,
+and $\mathbf J$ is the corresponding joint Jacobian. Validity classification
+is reported through masks/quality information or an explicit classification
+model.
+These terms are often spatially correlated: for example, a \ac{DEM} bias or orbit error can affect many neighbouring pixels coherently, whereas speckle and feature-identification errors may be more local. A \ac{GUM}-compliant \ac{NRB} uncertainty statement should therefore avoid treating all terms as independent per-pixel random noise.
+
+\subsubsection{Step 5: Documentation}
 
 For CANVAS, the uncertainty statement for \ac{NRB}/\ac{ARD} products should report at least:
 \begin{itemize}
   \item inherited source-product radiometric and geometric uncertainty;
-  \item uncertainty associated with \ac{DEM}, local incidence angle, terrain correction, and terrain-normalisation convention;
+  \item uncertainty associated with \ac{DEM}, local incidence angle, terrain correction, and terrain normalisation convention;
   \item map-grid/geolocation uncertainty, including CRS, pixel coordinate convention, pixel spacing, and resampling method;
   \item mask-related uncertainty or quality flags for layover, shadow, no-data, and invalid pixels;
   \item correlation assumptions, including whether uncertainty terms are per-pixel, local-window, swath-scale, or product-wide;

@@ -1,0 +1,60 @@
+
+\begin{figure}[H]
+  \centering
+  \begin{adjustbox}{max width=\textwidth, max totalheight=0.72\textheight, keepaspectratio}
+  \begin{tikzpicture}[
+    connection/.style={draw, thick},
+    root_block/.style={draw=blue!60!black, very thick, rectangle, fill=blue!8, inner sep=8pt, font=\normalsize\bfseries, align=center},
+    model_block/.style={draw, rectangle, inner sep=4pt, font=\footnotesize\bfseries, align=center},
+    deriv_node/.style={draw, rectangle, rounded corners=3pt, inner sep=4pt, font=\footnotesize, align=center},
+    leaf_node/.style={draw, rectangle, inner sep=4pt, font=\footnotesize, align=center},
+    effect_node/.style={draw, dashed, font=\footnotesize\itshape, align=center, inner sep=2pt}
+    ]
+		% ROOT: \mathbf g_{\rm NRB}
+		\node [root_block] (MATHBFGRMNRBROOT) {$\mathbf g_{\rm NRB} = G(\mathbf g_{\rm src},\mathbf x_{\rm orb},\mathbf d_{\rm DEM},\mathbf x_{\rm resamp})+\Delta\mathbf g_{\rm NRB}$};
+
+		% ∂\mathbf g_{\rm NRB}/∂\Delta\mathbf g_{\rm NRB}
+		\node [deriv_node] at ($(MATHBFGRMNRBROOT)+(1.2077cm,-3.3017cm)$) (DDELTAMATHBFGRMNRB) {$\frac{\partial \mathbf g_{\rm NRB}}{\partial \Delta\mathbf g_{\rm NRB}}$};
+		\draw [connection, red] (MATHBFGRMNRBROOT) -- (DDELTAMATHBFGRMNRB);
+		\node [leaf_node, draw=red, text=red] at ($(MATHBFGRMNRBROOT)+(1.5761cm,-4.3204cm)$) (UDELTAMATHBFGRMNRB) {$u(\Delta\mathbf g_{\rm NRB})$};
+		\draw [connection, red] (DDELTAMATHBFGRMNRB) -- (UDELTAMATHBFGRMNRB);
+		\node [effect_node, red] at ($(MATHBFGRMNRBROOT)+(1.8973cm,-5.2036cm)$) (EFFDELTAMATHBFGRMNRB) {Remaining geocoding/model error};
+		\draw [connection, red, dashed] (EFFDELTAMATHBFGRMNRB) -- (UDELTAMATHBFGRMNRB);
+
+		% ∂\mathbf g_{\rm NRB}/∂\mathbf g_{\rm src}
+		\node [deriv_node] at ($(MATHBFGRMNRBROOT)+(-2.1358cm,-3.0486cm)$) (DMATHBFGRMSRC) {$\frac{\partial \mathbf g_{\rm NRB}}{\partial \mathbf g_{\rm src}}$};
+		\draw [connection, blue!70!black] (MATHBFGRMNRBROOT) -- (DMATHBFGRMSRC);
+		\node [leaf_node, draw=blue!70!black, text=blue!70!black] at ($(MATHBFGRMNRBROOT)+(-2.8468cm,-4.0644cm)$) (UMATHBFGRMSRC) {$u(\mathbf g_{\rm src})$};
+		\draw [connection, blue!70!black] (DMATHBFGRMSRC) -- (UMATHBFGRMSRC);
+		\node [effect_node, blue!70!black] at ($(MATHBFGRMNRBROOT)+(-3.7225cm,-5.3167cm)$) (EFFMATHBFGRMSRC) {Inherited source geometry \\ N11: reference comparison uncertainty \\ N12: propagation residuals};
+		\draw [connection, blue!70!black, dashed] (EFFMATHBFGRMSRC) -- (UMATHBFGRMSRC);
+
+		% ∂\mathbf g_{\rm NRB}/∂\mathbf x_{\rm orb}
+		\node [deriv_node] at ($(MATHBFGRMNRBROOT)+(-5.0689cm,0.0000cm)$) (DMATHBFXRMORB) {$\frac{\partial \mathbf g_{\rm NRB}}{\partial \mathbf x_{\rm orb}}$};
+		\draw [connection, purple] (MATHBFGRMNRBROOT) -- (DMATHBFXRMORB);
+		\node [leaf_node, draw=purple, text=purple] at ($(MATHBFGRMNRBROOT)+(-6.6740cm,0.0000cm)$) (UMATHBFXRMORB) {$u(\mathbf x_{\rm orb})$};
+		\draw [connection, purple] (DMATHBFXRMORB) -- (UMATHBFXRMORB);
+		\node [effect_node, purple] at ($(MATHBFGRMNRBROOT)+(-9.5674cm,0.0000cm)$) (EFFMATHBFXRMORB) {N6: orbit / attitude AUX};
+		\draw [connection, purple, dashed] (EFFMATHBFXRMORB) -- (UMATHBFXRMORB);
+
+		% ∂\mathbf g_{\rm NRB}/∂\mathbf d_{\rm DEM}
+		\node [deriv_node] at ($(MATHBFGRMNRBROOT)+(-1.2006cm,1.7138cm)$) (DMATHBFDRMDEM) {$\frac{\partial \mathbf g_{\rm NRB}}{\partial \mathbf d_{\rm DEM}}$};
+		\draw [connection, green!50!black] (MATHBFGRMNRBROOT) -- (DMATHBFDRMDEM);
+		\node [leaf_node, draw=green!50!black, text=green!50!black] at ($(MATHBFGRMNRBROOT)+(-1.9137cm,2.7324cm)$) (UMATHBFDRMDEM) {$u(\mathbf d_{\rm DEM})$};
+		\draw [connection, green!50!black] (DMATHBFDRMDEM) -- (UMATHBFDRMDEM);
+		\node [effect_node, green!50!black] at ($(MATHBFGRMNRBROOT)+(-2.5304cm,3.6157cm)$) (EFFMATHBFDRMDEM) {N3: DEM / terrain AUX covariance};
+		\draw [connection, green!50!black, dashed] (EFFMATHBFDRMDEM) -- (UMATHBFDRMDEM);
+
+		% ∂\mathbf g_{\rm NRB}/∂\mathbf x_{\rm resamp}
+		\node [deriv_node] at ($(MATHBFGRMNRBROOT)+(1.2126cm,3.3291cm)$) (DMATHBFXRMRESAMP) {$\frac{\partial \mathbf g_{\rm NRB}}{\partial \mathbf x_{\rm resamp}}$};
+		\draw [connection, orange!80!black] (MATHBFGRMNRBROOT) -- (DMATHBFXRMRESAMP);
+		\node [leaf_node, draw=orange!80!black, text=orange!80!black] at ($(MATHBFGRMNRBROOT)+(1.5838cm,4.3590cm)$) (UMATHBFXRMRESAMP) {$u(\mathbf x_{\rm resamp})$};
+		\draw [connection, orange!80!black] (DMATHBFXRMRESAMP) -- (UMATHBFXRMRESAMP);
+		\node [effect_node, orange!80!black] at ($(MATHBFGRMNRBROOT)+(1.9018cm,5.2247cm)$) (EFFMATHBFXRMRESAMP) {N8: interpolation residuals};
+		\draw [connection, orange!80!black, dashed] (EFFMATHBFXRMRESAMP) -- (UMATHBFXRMRESAMP);
+
+  \end{tikzpicture}
+  \end{adjustbox}
+  \caption{Uncertainty tree diagram for NRB ground assignment with the CRS and map grid held at their declared definitions. Source geometry, orbit and DEM covariance is joint, including cross-terms. N11 reference data enter the validation comparison, or the product model if used to estimate a correction.}
+  \label{fig:nrb_geolocation}
+\end{figure}

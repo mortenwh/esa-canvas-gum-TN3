@@ -1,0 +1,52 @@
+
+\begin{figure}[H]
+  \centering
+  \begin{adjustbox}{max width=\textwidth, max totalheight=0.72\textheight, keepaspectratio}
+  \begin{tikzpicture}[
+    connection/.style={draw, thick},
+    root_block/.style={draw=blue!60!black, very thick, rectangle, fill=blue!8, inner sep=8pt, font=\normalsize\bfseries, align=center},
+    model_block/.style={draw, rectangle, inner sep=4pt, font=\footnotesize\bfseries, align=center},
+    deriv_node/.style={draw, rectangle, rounded corners=3pt, inner sep=4pt, font=\footnotesize, align=center},
+    leaf_node/.style={draw, rectangle, inner sep=4pt, font=\footnotesize, align=center},
+    effect_node/.style={draw, dashed, font=\footnotesize\itshape, align=center, inner sep=2pt}
+    ]
+		% ROOT: y_{\rm NRB}
+		\node [root_block] (YRMNRBROOT) {$y_{\rm NRB} = T_{\rm rad}(z_{\rm src},\mathbf t_{\rm ter};\mathbf m,\mathbf x_{\rm resamp})+\Delta y_{\rm NRB}$};
+
+		% ∂y_{\rm NRB}/∂\Delta y_{\rm NRB}
+		\node [deriv_node] at ($(YRMNRBROOT)+(0.2431cm,-1.2156cm)$) (DDELTAYRMNRB) {$\frac{\partial y_{\rm NRB}}{\partial \Delta y_{\rm NRB}}$};
+		\draw [connection, red] (YRMNRBROOT) -- (DDELTAYRMNRB);
+		\node [leaf_node, draw=red, text=red] at ($(YRMNRBROOT)+(0.4456cm,-2.2343cm)$) (UDELTAYRMNRB) {$u(\Delta y_{\rm NRB})$};
+		\draw [connection, red] (DDELTAYRMNRB) -- (UDELTAYRMNRB);
+		\node [effect_node, red] at ($(YRMNRBROOT)+(0.6540cm,-3.2933cm)$) (EFFDELTAYRMNRB) {N5: terrain-model discrepancy \\ Remaining implementation error};
+		\draw [connection, red, dashed] (EFFDELTAYRMNRB) -- (UDELTAYRMNRB);
+
+		% ∂y_{\rm NRB}/∂z_{\rm src}
+		\node [deriv_node] at ($(YRMNRBROOT)+(-1.8147cm,-1.2098cm)$) (DZRMSRC) {$\frac{\partial y_{\rm NRB}}{\partial z_{\rm src}}$};
+		\draw [connection, blue!70!black] (YRMNRBROOT) -- (DZRMSRC);
+		\node [leaf_node, draw=blue!70!black, text=blue!70!black] at ($(YRMNRBROOT)+(-3.3266cm,-2.2226cm)$) (UZRMSRC) {$u(z_{\rm src})$};
+		\draw [connection, blue!70!black] (DZRMSRC) -- (UZRMSRC);
+		\node [effect_node, blue!70!black] at ($(YRMNRBROOT)+(-4.9063cm,-3.2816cm)$) (EFFZRMSRC) {N1, N2: inherited calibration, \\ noise and speckle statistics};
+		\draw [connection, blue!70!black, dashed] (EFFZRMSRC) -- (UZRMSRC);
+
+		% ∂y_{\rm NRB}/∂\mathbf t_{\rm ter}
+		\node [deriv_node] at ($(YRMNRBROOT)+(-1.8128cm,1.2100cm)$) (DMATHBFTRMTER) {$\frac{\partial y_{\rm NRB}}{\partial \mathbf t_{\rm ter}}$};
+		\draw [connection, purple] (YRMNRBROOT) -- (DMATHBFTRMTER);
+
+		% sub-model: \mathbf t_{\rm ter}
+		\node [model_block] at ($(YRMNRBROOT)+(-3.6195cm,2.4162cm)$) (MMATHBFTRMTER) {$\mathbf t_{\rm ter} = H_{\rm ter}(\mathbf d_{\rm DEM},\mathbf x_{\rm geo})$\\ \footnotesize(see Fig.~\ref{fig:nrb_terrain_proposed})};
+		\draw [connection, purple] (DMATHBFTRMTER) -- (MMATHBFTRMTER);
+
+		% ∂y_{\rm NRB}/∂\mathbf x_{\rm resamp}
+		\node [deriv_node] at ($(YRMNRBROOT)+(0.3131cm,1.5786cm)$) (DMATHBFXRMRESAMP) {$\frac{\partial y_{\rm NRB}}{\partial \mathbf x_{\rm resamp}}$};
+		\draw [connection, green!50!black] (YRMNRBROOT) -- (DMATHBFXRMRESAMP);
+		\node [leaf_node, draw=green!50!black, text=green!50!black] at ($(YRMNRBROOT)+(0.5167cm,2.6085cm)$) (UMATHBFXRMRESAMP) {$u(\mathbf x_{\rm resamp})$};
+		\draw [connection, green!50!black] (DMATHBFXRMRESAMP) -- (UMATHBFXRMRESAMP);
+		\node [effect_node, green!50!black] at ($(YRMNRBROOT)+(0.7292cm,3.6763cm)$) (EFFMATHBFXRMRESAMP) {N8: resampling / aggregation \\ Quantified implementation residuals};
+		\draw [connection, green!50!black, dashed] (EFFMATHBFXRMRESAMP) -- (UMATHBFXRMRESAMP);
+
+  \end{tikzpicture}
+  \end{adjustbox}
+  \caption{Uncertainty tree diagram for terrain-normalised NRB backscatter on a declared grid and valid-data mask. The geometric observable is traced separately in Fig.~\ref{fig:nrb_geolocation}. N7 grid/CRS definitions, N9 masks and N10 lineage remain required product-quality information.}
+  \label{fig:nrb_traceability}
+\end{figure}

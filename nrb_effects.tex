@@ -1,0 +1,96 @@
+\begin{table}[H]
+\centering\scriptsize
+\renewcommand{\arraystretch}{1.1}
+\caption{Uncertainty effects table for the Geocoded ARD/NRB Level-1 product, panel 1/3.}
+\label{tab:nrb_effects_table}
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{3.0cm}|*{4}{>{\raggedright\arraybackslash}X|}}\hline
+\textbf{Name of effect} & Inherited source-product calibration & Source-product noise, speckle, and finite looks & \ac{DEM} height, slope, and aspect & Local incidence-angle estimation \\ \hline
+\textbf{Effect identifier} & N1 & N2 & N3 & N4 \\ \hline
+\textbf{Affected term in measurement function} & $z_{\rm src}$ & $z_{\rm src}$ & $\mathbf d_{\rm DEM}$ & $\theta_{\rm loc}$ \\ \hline
+\textbf{AUX inputs / origin} & Inherited calibration / antenna AUX & Inherited noise AUX and scene statistics & DEM / height-reference AUX & Derived jointly from DEM and geometry AUX \\ \hline
+\textbf{Radiometric} & Yes & Yes & Yes & Yes \\ \hline
+\textbf{Geometric} & weak & weak & Yes & weak \\ \hline
+\textbf{Mask / metadata} & No & No & weak & No \\ \hline
+\textbf{Maturity of analysis} & - & - & - & - \\ \hline
+\textbf{Maturity of uncertainty estimate} & 2--3 & 2--3 & 2--3 & 2--3 \\ \hline
+\textbf{Maturity of correlation scale estimate} & - & - & - & - \\ \hline
+\textbf{For low maturity, is effect negligible?} & Not established & Not established & Not established & Not established \\ \hline
+\textbf{Correlation type and form} & structured / swath-product & random to local-window & spatially correlated / terrain tile & structured / terrain facet \\ \hline
+\textbf{Range form} & - & - & - & - \\ \hline
+\textbf{Azimuth form} & - & - & - & - \\ \hline
+\textbf{Over time form} & - & - & - & - \\ \hline
+\textbf{Correlation scale} & Not yet quantified & Not yet quantified & Not yet quantified & Not yet quantified \\ \hline
+\textbf{Range scale} & - & - & - & - \\ \hline
+\textbf{Azimuth scale} & - & - & - & - \\ \hline
+\textbf{Over time scale} & - & - & - & - \\ \hline
+\textbf{Uncertainty: PDF shape} & - & - & - & - \\ \hline
+\textbf{Units} & backscatter units & backscatter units & m & rad \\ \hline
+\textbf{Magnitude} & - & - & - & - \\ \hline
+\textbf{Typical uncertainty form} & multiplicative backscatter bias & variance term reduced by averaging & local-incidence and geolocation covariance & terrain-normalisation sensitivity term \\ \hline
+\textbf{Sensitivity coefficient} & $\mathbf J_{N1}$ & $\mathbf J_{N2}$ & $\mathbf J_{N3}$ & $\mathbf J_{N4}$ \\ \hline
+\end{tabularx}
+\end{table}
+\begin{table}[p]
+\centering\scriptsize
+\renewcommand{\arraystretch}{1.1}
+\caption{Uncertainty effects table for the Geocoded ARD/NRB Level-1 product, panel 2/3.}
+\label{tab:nrb_effects_table_proposed_2}
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{3.0cm}|*{4}{>{\raggedright\arraybackslash}X|}}\hline
+\textbf{Name of effect} & Terrain-flattening and scattering-area model & Orbit, attitude, and timing inherited by geocoding & CRS, grid origin, pixel spacing, and coordinate convention & Resampling, interpolation, and aggregation \\ \hline
+\textbf{Effect identifier} & N5 & N6 & N7 & N8 \\ \hline
+\textbf{Affected term in measurement function} & $T_{\rm rad}$ & $\mathbf x_{\rm geo}$ & $\mathbf x_{\rm CRS}$ & $\mathbf x_{\rm resamp}$ \\ \hline
+\textbf{AUX inputs / origin} & Declared terrain model / residual; not a file by itself & Orbit, attitude and timing AUX & CRS/grid record: fixed definition & Resampling configuration / measured residual \\ \hline
+\textbf{Radiometric} & Yes & weak & No & Yes \\ \hline
+\textbf{Geometric} & weak & Yes & Yes & Yes \\ \hline
+\textbf{Mask / metadata} & No & No & Yes & weak \\ \hline
+\textbf{Maturity of analysis} & - & - & - & - \\ \hline
+\textbf{Maturity of uncertainty estimate} & 1--2 & 2--3 & 2--3 & 1--2 \\ \hline
+\textbf{Maturity of correlation scale estimate} & - & - & - & - \\ \hline
+\textbf{For low maturity, is effect negligible?} & Not established & Not established & Not established & Not established \\ \hline
+\textbf{Correlation type and form} & structured / scene class & structured / acquisition & product-wide systematic & local-window / kernel footprint \\ \hline
+\textbf{Range form} & - & - & - & - \\ \hline
+\textbf{Azimuth form} & - & - & - & - \\ \hline
+\textbf{Over time form} & - & - & - & - \\ \hline
+\textbf{Correlation scale} & Not yet quantified & Not yet quantified & Not yet quantified & Not yet quantified \\ \hline
+\textbf{Range scale} & - & - & - & - \\ \hline
+\textbf{Azimuth scale} & - & - & - & - \\ \hline
+\textbf{Over time scale} & - & - & - & - \\ \hline
+\textbf{Uncertainty: PDF shape} & - & - & - & - \\ \hline
+\textbf{Units} & backscatter units & s, m, rad & definition / m & output units \\ \hline
+\textbf{Magnitude} & - & - & - & - \\ \hline
+\textbf{Typical uncertainty form} & model-convention bias & map-location covariance term & map-grid convention and metadata term & smoothing, covariance, and edge effects \\ \hline
+\textbf{Sensitivity coefficient} & $\mathbf J_{N5}$ & $\mathbf J_{N6}$ & Discrete / definition; see text & $\mathbf J_{N8}$ \\ \hline
+\end{tabularx}
+\end{table}
+\begin{table}[p]
+\centering\scriptsize
+\renewcommand{\arraystretch}{1.1}
+\caption{Uncertainty effects table for the Geocoded ARD/NRB Level-1 product, panel 3/3.}
+\label{tab:nrb_effects_table_proposed_3}
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{3.0cm}|*{4}{>{\raggedright\arraybackslash}X|}}\hline
+\textbf{Name of effect} & Layover, shadow, water, no-data, and validity masks & Ancillary-data lineage and processor version & Reference image or GCP validation data & Atmospheric and ionospheric propagation \\ \hline
+\textbf{Effect identifier} & N9 & N10 & N11 & N12 \\ \hline
+\textbf{Affected term in measurement function} & $\mathbf m$ & $\text{input lineage}$ & $\mathbf r_{\rm ref}$ & $\boldsymbol\ell$ \\ \hline
+\textbf{AUX inputs / origin} & Mask AUX: validity / classification & AUX identity, version and validity metadata & Reference image / surveyed GCP records & Meteorological / ionospheric AUX or inherited residual \\ \hline
+\textbf{Radiometric} & weak & Yes & weak & Yes \\ \hline
+\textbf{Geometric} & weak & Yes & Yes & Yes \\ \hline
+\textbf{Mask / metadata} & Yes & Yes & weak & No \\ \hline
+\textbf{Maturity of analysis} & - & - & - & - \\ \hline
+\textbf{Maturity of uncertainty estimate} & 1--2 & 1--2 & 2 & - \\ \hline
+\textbf{Maturity of correlation scale estimate} & - & - & - & - \\ \hline
+\textbf{For low maturity, is effect negligible?} & Not established & Not established & Not established & Not established \\ \hline
+\textbf{Correlation type and form} & object/local-region & product-wide / processing baseline & local to scene-wide & scene-dependent / acquisition \\ \hline
+\textbf{Range form} & - & - & - & - \\ \hline
+\textbf{Azimuth form} & - & - & - & - \\ \hline
+\textbf{Over time form} & - & - & - & - \\ \hline
+\textbf{Correlation scale} & Not yet quantified & Not yet quantified & Not yet quantified & Not yet quantified \\ \hline
+\textbf{Range scale} & - & - & - & - \\ \hline
+\textbf{Azimuth scale} & - & - & - & - \\ \hline
+\textbf{Over time scale} & - & - & - & - \\ \hline
+\textbf{Uncertainty: PDF shape} & - & - & - & - \\ \hline
+\textbf{Units} & categorical & identifier & m & m, 1 \\ \hline
+\textbf{Magnitude} & - & - & - & - \\ \hline
+\textbf{Typical uncertainty form} & classification or flagging uncertainty & traceability and reproducibility term & validation-reference covariance & inherited or additional propagation residual \\ \hline
+\textbf{Sensitivity coefficient} & Discrete / definition; see text & Discrete / definition; see text & $\mathbf J_{N11}$ & $\mathbf J_{N12}$ \\ \hline
+\end{tabularx}
+\end{table}
