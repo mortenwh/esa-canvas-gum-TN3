@@ -1,0 +1,51 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{todo}[2026/11/03 To-do macro with summary list]
+
+% Usage:
+%   \todo{<one-word-ID>}{<details>}{<target-closing-date>}
+%   \listoftodos          % summary section, like the acronym list
+% Entries are written to \jobname.tdl and read back on the next run,
+% so LaTeX must be run twice (compile.sh already does this).
+% Package options: `final' hides the inline tags (list is still printed).
+
+\RequirePackage{xcolor}
+\RequirePackage{longtable}
+\RequirePackage{booktabs}
+
+\newif\iftodo@final
+\DeclareOption{final}{\todo@finaltrue}
+\DeclareOption*{\PackageWarning{todo}{Unknown option `\CurrentOption'}}
+\ProcessOptions\relax
+
+\newwrite\todo@file
+\def\todo@rows{}
+
+% Called once per line of the .tdl file: {ID}{page}{date}{details}
+\def\todoentry#1#2#3#4{%
+  \g@addto@macro\todo@rows{\texttt{#1} & #4 & #3 & #2\\}}
+
+\AtBeginDocument{%
+  \InputIfFileExists{\jobname.tdl}{}{}%
+  \immediate\openout\todo@file=\jobname.tdl\relax}
+
+\newcommand{\todo}[3]{%
+  \protected@write\todo@file{}{\string\todoentry{#1}{\thepage}{#3}{#2}}%
+  \iftodo@final\else
+    \textcolor{red}{\textbf{[TODO:~#1]}}%
+  \fi}
+
+\newcommand{\listoftodos}{%
+  \section*{To-do list}%
+  \addcontentsline{toc}{section}{To-do list}%
+  \ifx\todo@rows\@empty
+    No open to-do items.%
+  \else
+    \begin{longtable}{@{}l p{0.52\linewidth} l r@{}}
+      \toprule
+      \textbf{ID} & \textbf{Details} & \textbf{Target date} & \textbf{Page}\\
+      \midrule
+      \endhead
+      \todo@rows
+      \bottomrule
+    \end{longtable}%
+  \fi}
