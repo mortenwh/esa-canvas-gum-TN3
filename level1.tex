@@ -6,19 +6,118 @@ activity---as the measurand-oriented starting point. This is consistent with
 metrological practice: uncertainty analysis should begin from the reported
 quantity, define its measurement model, identify all relevant input quantities,
 and then propagate the corresponding uncertainties to the final product
-statement \cite{JCGMGUM,QA4EO3}. %For Level-1 \ac{SAR}, this means that the uncertainty analysis should be organized around SLC product, the interferometric product, geocoded Analysis Ready Data such as Normalised Radar Backscatter, and the geophysical Doppler product.
+statement \cite{JCGMGUM,QA4EO3}.
+
+%For Level-1 \ac{SAR}, this means that the uncertainty analysis should be
+%organized around \ac{SLC} product, the interferometric product, geocoded Analysis
+%Ready Data such as Normalised Radar Backscatter, and the geophysical Doppler
+%product.
 
 Radiometric, geometric, and polarimetric calibration are therefore treated here
 as \emph{contributors} to the uncertainty budget of the corresponding Level-1
-product, not as separate top-level measurands. For example, a calibrated
-SLC product inherits uncertainty contributions from radiometric gain and
-noise corrections, geometric timing and orbit knowledge, processor
-approximations, and, where relevant, polarimetric channel corrections. In the
-same way, an interferometric product inherits uncertainties from the two input
-\ac{SLC} products, their co-registration, the baseline knowledge, and the
-statistics of the interferometric estimator. An \ac{NRB}/\ac{ARD} product inherits the uncertainty of the
-source \ac{SAR} acquisition and adds uncertainty from radiometric terrain correction, \ac{DEM} and ancillary
-data, geocoding, resampling, masks, and map-grid definition.
+product, not as separate top-level measurands. For example, a calibrated \ac{SLC}
+product inherits uncertainty contributions from radiometric gain and noise
+corrections, geometric timing and orbit knowledge, processor approximations,
+and, where relevant, polarimetric channel corrections. In the same way, an
+interferometric product inherits uncertainties from the two input \ac{SLC}
+products, their co-registration, the baseline knowledge, and the statistics of
+the interferometric estimator. A \ac{NRB}/\ac{ARD} product inherits the
+uncertainty of the source \ac{SAR} acquisition and adds uncertainty from, e.g.,
+radiometric terrain correction, geocoding, resampling, masking, and map-grid
+projection.
+
+In general, the five stages of uncertainty analysis given by \cite{QA4EO1} are
+followed for the various \ac{SAR} products. For a generic Level-1 product
+measurand $y$, the measurement model can be written in compact form as
+\begin{equation}
+  y = f\!\left(\mathbf{x}_{\rm scene}, \mathbf{x}_{\rm inst},
+  \mathbf{x}_{\rm proc}, \mathbf{x}_{\rm aux}\right) + \Delta y,
+  \label{eq:l1_product_generic_model}
+\end{equation}
+where $\mathbf{x}_{\rm scene}$ contains the scene-dependent quantities,
+$\mathbf{x}_{\rm inst}$ the instrument and calibration quantities,
+$\mathbf{x}_{\rm proc}$ the processor-dependent quantities, and
+$\mathbf{x}_{\rm aux}$ the auxiliary data, such as orbit, attitude,
+propagation, and reference target information. The residual term $\Delta y$
+collects unmodelled effects.
+
+In matrix form, the uncertainties of the input quantities and the covariances
+between them, are described by
+\begin{equation}
+  u^{2}(y) \approx \mathbf{J}_{f}\, \mathbf{U}_{\mathbf{x}}\,
+  \mathbf{J}_{f}^{\mathsf{T}},
+  \label{eq:l1_product_generic_cov}
+\end{equation}
+where $\mathbf{J}_{f}$ is the Jacobian of the measurement model and
+$\mathbf{U}_{\mathbf{x}}$ is the covariance matrix of the input quantities.
+For Level-1 \ac{SAR} products, the main challenge is identifying and
+quantifying all relevant uncertainty sources and accounting for their
+inter-dependencies, e.g., correlations in space and time.
+
+Across all Level-1 products, the dominant uncertainty sources generally belong
+to the following categories:
+\begin{itemize}
+  \item Instrument characterization and calibration terms, such as antenna gain
+    drift, receiver noise, antenna pattern, timing, and channel imbalance;
+  \item Focusing and processor terms, such as resampling, interpolation,
+    co-registration, annotation approximations, and finite-resolution effects;
+  \item Scene-dependent terms, such as speckle, decorrelation, and
+    target-background contrast;
+  \item Auxiliary data terms such as, e.g., orbit, attitude, \ac{DEM}, and
+    reference-target uncertainties used to estimate product quality (point
+    target analysis (\ac{IRF}) requires the uncertainty of the reference
+    measurements in terms of, e.g., geolocation, radiometry, target calibration
+    uncertainty, signal-to-clutter ratio, background estimation, and
+    atmospheric and ionospheric signal propagation at the time of acquisition). 
+\end{itemize}
+
+Auxiliary products, such as orbit and attitude estimates, instrument
+characterization and calibration parameters (e.g., antenna patterns and
+calibration \acp{LUT}), \acp{DEM}, ionospheric activity maps, and processor
+annotation files shall be documented with their validity domains and,
+where applicable, uncertainty terms and correlation scales. Atmospheric signal
+propagation terms include atmospheric path delay and attenuation, whereas
+ionospheric terms include dispersive group delay, and Faraday rotation. These
+terms can affect \ac{SLC} and interferometric products.
+
+Per-pixel uncertainty reporting should be provided where the product provides a
+spatially varying measurand. A per-pixel uncertainty layer should contain the
+local random component of the standard uncertainty, while product-level
+metadata should document common-mode and spatially correlated terms that cannot
+be interpreted as independent pixel noise. The recommended reporting structure
+is therefore: per-pixel random uncertainty, uncertainty within local estimation
+windows, swath-scale or burst-scale uncertainty, and product-wide uncertainty.
+
+For consistency in the traceability diagrams used below, $u(x)$ denotes the
+standard uncertainty of input quantity $x$, $\Delta x$ denotes a residual or
+model error term, $\partial y/\partial x$ denotes a sensitivity coefficient,
+$\mathbf{U}$ denotes a covariance matrix, $\mathbf{J}$ denotes a Jacobian, and
+connections model dependence and uncertainty propagation from an input quantity
+or uncertainty contribution to the measurand.
+
+This product-based organization places the role of radiometric, geometric, or
+polarimetric calibration inside the measurement model of the final product.
+
+For the CANVAS Cal/Val tool, the starting point is an \ac{SLC} product with its
+annotations and declared calibration state. Raw-data focusing is outside the
+tool boundary. Instrument and processor effects already present in that
+\ac{SLC} are inherited uncertainty contributions.
+
+
+Uncertainty related to Auxiliary files (AUX) is attached to the quantities read
+or derived from each file. Calibration, noise and antenna-pattern \acp{LUT}, orbit,
+attitude and timing products, \ac{DEM} and height-reference data, and atmospheric
+and ionospheric inputs are identified in the diagrams and in the tables' ``AUX
+inputs / origin'' row.
+
+The following four subsections present the effects of uncertainties on the
+considered L1 products. Complex and vector derivatives denote Jacobian blocks
+for real and imaginary components. Note that the maturity ranges presented in
+the effects tables are not verified product-specific scores. Many maturity
+fields, uncertainty magnitudes, PDFs and numerical correlation scales remain
+TBD \todo{Clarify what is meant by TBD here}{2026-11-06}.  $\mathbf J_{Ei}$ denotes
+the total Jacobian with respect to effect $Ei$ in the selected observable
+model.
 
 The following product-based structure is adopted:
 \begin{itemize}
@@ -34,101 +133,13 @@ The following product-based structure is adopted:
   \item the geophysical Doppler product, treated as a detailed worked example.
 \end{itemize}
 
-% \section{Applicability of Metrology Standards to SAR Cal/Val procedures}
-
-\subsection{General GUM approach for Level-1 SAR products}
-
-For a generic Level-1 product measurand $y$, the measurement model can be
-written in compact form as
-\begin{equation}
-  y = f\!\left(\mathbf{x}_{\rm scene}, \mathbf{x}_{\rm inst},
-  \mathbf{x}_{\rm proc}, \mathbf{x}_{\rm aux}\right) + \Delta y,
-  \label{eq:l1_product_generic_model}
-\end{equation}
-where $\mathbf{x}_{\rm scene}$ contains the scene-dependent quantities,
-$\mathbf{x}_{\rm inst}$ the instrument and calibration quantities,
-$\mathbf{x}_{\rm proc}$ the processor-dependent quantities, and
-$\mathbf{x}_{\rm aux}$ the auxiliary data, such as orbit, attitude,
-propagation, and reference target information. The residual term $\Delta y$
-collects unmodelled effects.
-
 Following the \ac{GUM}, the combined standard uncertainty is obtained either
 through the law of propagation of uncertainty or, when the model is strongly
 nonlinear, through Monte Carlo propagation as discussed in
 Section~\ref{sec:uncertainty_propagation} \todo{in reality we're not
 really doing this, are we? E.g., the DCA uncertainty is achieved by analysing
 calibrated data over land. For wind, we prefer
-NOC/HOC/triple-collocation?}{2026-11-06}. In covariance form,
-
-\begin{equation}
-  u^{2}(y) \approx \mathbf{J}_{f}\, \mathbf{U}_{\mathbf{x}}\,
-  \mathbf{J}_{f}^{\mathsf{T}},
-  \label{eq:l1_product_generic_cov}
-\end{equation}
-where $\mathbf{J}_{f}$ is the Jacobian of the measurement model and
-$\mathbf{U}_{\mathbf{x}}$ is the covariance matrix of the input quantities.
-For Level-1 \ac{SAR} products, the main challenge is identifying and quantifying all relevant uncertainty sources and accounting for their dependencies - for example, calibration or orbit uncertainties that affect many pixels together, and errors that vary in a correlated way across space or time.
-
-Across all Level-1 products, the dominant uncertainty sources generally belong
-to the following categories:
-\begin{itemize}
-  \item instrument and internal calibration terms, such as gain drifts,
-  receiver noise, antenna pattern uncertainty, timing offsets, and channel
-  imbalance;
-  \item focusing and processor terms, such as resampling, interpolation,
-  co-registration, annotation approximations, and finite-resolution effects;
-  \item scene-dependent terms, such as speckle, decorrelation,
-  and target-background contrast;
-\item auxiliary-data terms, such as orbit, attitude, \ac{DEM}, and surveyed reference-target uncertainties.
-\end{itemize}
-
-
-The uncertainty budget shall also include the \ac{Cal/Val} reference and the
-measurement tool used to estimate the product quality indicator. For point
-target Impulse Response Function (IRF), geolocation, and radiometric checks, this includes target survey
-uncertainty, target calibration uncertainty, signal-to-clutter ratio,
-background estimation, atmospheric and ionospheric propagation at the time of
-acquisition, and the implementation uncertainty of the analysis software. For
-distributed-targets, it includes the spatial and
-temporal collocation thresholds, representativeness error, model assumptions,
-and the covariance between the satellite product, reference data, and any
-background or model field.
-
-Auxiliary data files are part of the measurement model. Orbit and attitude
-products, \acp{DEM}, meteorological fields, ionospheric maps, antenna patterns,
-calibration look-up tables, masks, and processor annotation files shall
-therefore be documented with their validity domains and, where applicable, uncertainty terms, validity domains, and correlation scales. Atmospheric propagation terms include atmospheric path delay and
-attenuation; ionospheric terms include dispersive group delay, and Faraday
-rotation. These terms can affect \ac{SLC}, and interferometric products and are not
-limited to geocoded products.
-
-Per-pixel uncertainty reporting is required where the product provides a
-spatially varying measurand. A per-pixel uncertainty layer should contain the
-local random component of the standard uncertainty, while product-level
-metadata should document common-mode and spatially correlated terms that cannot
-be interpreted as independent pixel noise. The recommended reporting structure
-is therefore: per-pixel random uncertainty, local-window uncertainty for
-estimator or multilooking effects, swath-scale or burst-scale uncertainty for
-calibration and processing terms, and product-wide uncertainty for reference,
-orbit, processor-version.
-
-For consistency in the traceability diagrams used below, $u(x)$ denotes the
-standard uncertainty of input quantity $x$, $\Delta x$ denotes a residual or
-model error term, $\partial y/\partial x$ denotes a sensitivity coefficient,
-$\mathbf{U}$ denotes a covariance matrix, $\mathbf{J}$ denotes a Jacobian, and
-connections model dependence and uncertainty propagation from an input quantity or uncertainty contribution
-to the measurand.
-
-This product-based organization places the role of radiometric,
-geometric, or polarimetric calibration inside the measurement model of the final product.
-
-For the CANVAS Cal/Val tool, the starting point is an SLC product with its annotations and declared calibration state. Raw-data focusing is outside the tool boundary. Instrument and processor effects already present in that SLC are inherited uncertainty contributions.
-
-
-Uncertainty related to Auxiliary files (AUX) is attached to the quantities read or derived from each file. Calibration, noise and antenna-pattern LUTs, orbit, attitude and timing products, DEM and height-reference data, and atmospheric and ionospheric inputs
-are identified in the diagrams and in the tables' ``AUX inputs / origin'' row.
-
-The following four subsections present the effects of uncertainties on the considered L1 products. Complex and vector derivatives denote Jacobian blocks for real and imaginary components. Note that the maturity ranges presented in the effects tables are not verified product-specific scores. Many maturity fields, uncertainty magnitudes, PDFs and numerical correlation scales remain TBD.  $\mathbf J_{Ei}$ denotes the total Jacobian with respect to effect $Ei$ in the selected observable model.
+NOC/HOC/triple-collocation?}{2026-11-06}. 
 
 \subsection{Calibrated Level-1 SLC product}
 
