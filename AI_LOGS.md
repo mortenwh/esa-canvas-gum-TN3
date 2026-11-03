@@ -24,3 +24,10 @@
 - `level1.tex`: migrated the one existing `\todo` call; `gum4sar.tex` comment updated.
 - Built with `compile.sh` (no `!` errors); verified link destinations in an uncompressed PDF; final mode tested in a temp doc.
 **Outcome:** Done; docs updated.
+
+## 2026-11-03T13:20:00Z — Table ID as back-link
+**Prompt:** Make the ID (not the page number) in the to-do table the clickable link.
+**Actions:**
+- `todo.sty`: table ID now links to the margin note; page number is plain; row anchor kept.
+- DOCUMENTATION.md updated; rebuilt with `compile.sh`.
+**Outcome:** Done.

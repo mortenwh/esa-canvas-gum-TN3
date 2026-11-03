@@ -14,7 +14,7 @@ LaTeX sources for the GUM for SAR report (TN3, CANVAS). Main file:
   (`TBD1`, `TBD2`, ...; counter `todo`), puts a red `TBD<n>` note in the
   margin and records number, details, date and page.
 * hyperref links: the margin ID jumps to its row in the summary table, and
-  the page number in the table jumps back to the margin note. `todo.sty`
+  the ID in the table jumps back to the margin note. `todo.sty`
   loads before hyperref, which is fine since links are resolved at use time.
 * `\listoftodos` (draft) prints the summary table (ID, details, target date,
   page) in a "To-do list" section; it is placed after the acronyms in
