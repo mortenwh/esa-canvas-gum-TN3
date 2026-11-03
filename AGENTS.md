@@ -10,9 +10,10 @@ repository contains the latex and related documents for the GUM for SAR report
 
 # Tasks
 
-* Adjust the todo package, so it only prints todo's in draft mode, e.g.,
-  employing the obeyDraft package to print the todo IDs in the margin and
-  summarized only in draft mode
+* The todo IDs should be dynamic, like label and reference, with a number
+  associated to each to-do item. Use TBD<number> as the general identification.
+* use hyperref, so a reader can click on the ID and get to the detailed table
+  description in the summary section
 
 # Misc
 
