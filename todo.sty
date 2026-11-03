@@ -6,14 +6,19 @@
 %   \listoftodos          % summary section, like the acronym list
 % Entries are written to \jobname.tdl and read back on the next run,
 % so LaTeX must be run twice (compile.sh already does this).
-% Package options: `final' hides the inline tags (list is still printed).
+% Draft mode only: the ID is printed in the margin and \listoftodos prints
+% the summary. In final mode (default) \todo and \listoftodos print nothing.
+% Package options: `draft' enables draft mode, `final' disables it (default).
+% Use \usepackage[draft]{todo} rather than the class option `draft', which
+% would also turn graphicx figures into empty boxes.
 
 \RequirePackage{xcolor}
 \RequirePackage{longtable}
 \RequirePackage{booktabs}
 
-\newif\iftodo@final
-\DeclareOption{final}{\todo@finaltrue}
+\newif\iftodo@draft
+\DeclareOption{draft}{\todo@drafttrue}
+\DeclareOption{final}{\todo@draftfalse}
 \DeclareOption*{\PackageWarning{todo}{Unknown option `\CurrentOption'}}
 \ProcessOptions\relax
 
@@ -24,16 +29,18 @@
 \def\todoentry#1#2#3#4{%
   \g@addto@macro\todo@rows{\texttt{#1} & #4 & #3 & #2\\}}
 
-\AtBeginDocument{%
-  \InputIfFileExists{\jobname.tdl}{}{}%
-  \immediate\openout\todo@file=\jobname.tdl\relax}
+\iftodo@draft
+  \AtBeginDocument{%
+    \InputIfFileExists{\jobname.tdl}{}{}%
+    \immediate\openout\todo@file=\jobname.tdl\relax}
+  \newcommand{\todo}[3]{%
+    \protected@write\todo@file{}{\string\todoentry{#1}{\thepage}{#3}{#2}}%
+    \marginpar{\raggedright\footnotesize\textcolor{red}{\textbf{TODO:~#1}}}}
+\else
+  \newcommand{\todo}[3]{}
+\fi
 
-\newcommand{\todo}[3]{%
-  \protected@write\todo@file{}{\string\todoentry{#1}{\thepage}{#3}{#2}}%
-  \iftodo@final\else
-    \textcolor{red}{\textbf{[TODO:~#1]}}%
-  \fi}
-
+\iftodo@draft
 \newcommand{\listoftodos}{%
   \section*{To-do list}%
   \addcontentsline{toc}{section}{To-do list}%
@@ -49,3 +56,6 @@
       \bottomrule
     \end{longtable}%
   \fi}
+\else
+\newcommand{\listoftodos}{}
+\fi
