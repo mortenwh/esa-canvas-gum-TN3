@@ -10,8 +10,12 @@ LaTeX sources for the GUM for SAR report (TN3, CANVAS). Main file:
   `\listoftodos` print nothing and no `.tdl` file is written.
 * The package option is used instead of the class option `draft`, which would
   also turn all graphicx figures into empty boxes.
-* `\todo{<one-word-ID>}{<details>}{<target-closing-date>}` (draft) puts a red
-  `TODO: ID` note in the margin and records ID, details, date and page.
+* `\todo{<details>}{<target-closing-date>}` (draft) auto-numbers the item
+  (`TBD1`, `TBD2`, ...; counter `todo`), puts a red `TBD<n>` note in the
+  margin and records number, details, date and page.
+* hyperref links: the margin ID jumps to its row in the summary table, and
+  the page number in the table jumps back to the margin note. `todo.sty`
+  loads before hyperref, which is fine since links are resolved at use time.
 * `\listoftodos` (draft) prints the summary table (ID, details, target date,
   page) in a "To-do list" section; it is placed after the acronyms in
   `gum4sar.tex`.
@@ -27,7 +31,7 @@ LaTeX sources for the GUM for SAR report (TN3, CANVAS). Main file:
 
 ## Status / next steps
 
-* To-do macro (draft-only, margin IDs) implemented and tested; no `\todo` entries in the manuscript yet.
+* To-do macro (draft-only, automatic TBD<n> IDs, hyperref links) implemented and tested; one `\todo` entry in `level1.tex` (TBD1).
 * Open: `guidelines_writing_papers/` (referenced in AGENTS.md) does not exist.
 * Open: AGENTS.md says "only edit python scripts"; the user allowed LaTeX
   edits for the to-do macro only (see `TRUTHS.md`).

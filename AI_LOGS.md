@@ -16,3 +16,11 @@
 - `gum4sar.tex`: now loads `\usepackage[draft]{todo}`.
 - Tested both modes in a temp document; full `compile.sh` build has no `!` errors.
 **Outcome:** Done. Package option chosen over the class `draft` option to keep figures visible; obeyDraft is not installed.
+
+## 2026-11-03T13:30:00Z — Automatic clickable to-do IDs
+**Prompt:** See AGENTS.md (new task: dynamic TBD<number> IDs, hyperref links to the summary table).
+**Actions:**
+- `todo.sty`: `\todo{details}{date}`, counter-based `TBD<n>` IDs, margin ID links to table row, table page links back.
+- `level1.tex`: migrated the one existing `\todo` call; `gum4sar.tex` comment updated.
+- Built with `compile.sh` (no `!` errors); verified link destinations in an uncompressed PDF; final mode tested in a temp doc.
+**Outcome:** Done; docs updated.

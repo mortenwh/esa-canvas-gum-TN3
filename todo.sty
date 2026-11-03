@@ -2,8 +2,11 @@
 \ProvidesPackage{todo}[2026/11/03 To-do macro with summary list]
 
 % Usage:
-%   \todo{<one-word-ID>}{<details>}{<target-closing-date>}
+%   \todo{<details>}{<target-closing-date>}
 %   \listoftodos          % summary section, like the acronym list
+% Each item gets an automatic ID TBD<number>. With hyperref (loaded after
+% this package), the margin ID links to its row in the summary table, and
+% the page number in the table links back to the margin note.
 % Entries are written to \jobname.tdl and read back on the next run,
 % so LaTeX must be run twice (compile.sh already does this).
 % Draft mode only: the ID is printed in the margin and \listoftodos prints
@@ -25,19 +28,28 @@
 \newwrite\todo@file
 \def\todo@rows{}
 
-% Called once per line of the .tdl file: {ID}{page}{date}{details}
+\newcounter{todo}
+\renewcommand{\thetodo}{TBD\arabic{todo}}
+
+% Called once per line of the .tdl file: {number}{page}{date}{details}
 \def\todoentry#1#2#3#4{%
-  \g@addto@macro\todo@rows{\texttt{#1} & #4 & #3 & #2\\}}
+  \g@addto@macro\todo@rows{%
+    \hypertarget{todo:#1}{\texttt{TBD#1}} & #4 & #3 &
+    \hyperlink{todo:src:#1}{#2}\\}}
 
 \iftodo@draft
   \AtBeginDocument{%
     \InputIfFileExists{\jobname.tdl}{}{}%
     \immediate\openout\todo@file=\jobname.tdl\relax}
-  \newcommand{\todo}[3]{%
-    \protected@write\todo@file{}{\string\todoentry{#1}{\thepage}{#3}{#2}}%
-    \marginpar{\raggedright\footnotesize\textcolor{red}{\textbf{TODO:~#1}}}}
+  \newcommand{\todo}[2]{%
+    \refstepcounter{todo}%
+    \protected@write\todo@file{}{%
+      \string\todoentry{\arabic{todo}}{\thepage}{#2}{#1}}%
+    \marginpar{\raggedright\footnotesize\textcolor{red}{%
+      \hypertarget{todo:src:\arabic{todo}}{}%
+      \hyperlink{todo:\arabic{todo}}{\textbf{\thetodo}}}}}
 \else
-  \newcommand{\todo}[3]{}
+  \newcommand{\todo}[2]{}
 \fi
 
 \iftodo@draft
