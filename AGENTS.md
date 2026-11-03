@@ -10,9 +10,9 @@ repository contains the latex and related documents for the GUM for SAR report
 
 # Tasks
 
-* We need a to-do macro that can be used in latex as \todo{<one-word-ID>}{<details>}{<target-closing-date>}
-* It shall be possible to summarize the to-do list in a separate section of the
-  document, similarly to how it is done in the acronym package.
+* Adjust the todo package, so it only prints todo's in draft mode, e.g.,
+  employing the obeyDraft package to print the todo IDs in the margin and
+  summarized only in draft mode
 
 # Misc
 
