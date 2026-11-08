@@ -28,22 +28,35 @@ estimated and the predicted \ac{DC} shifts after pointing calibration. To
 simplify figure complexities, the \ac{UTD} diagram is split in multiple
 figures, one per upstream measurement model:
 \begin{itemize}
-  \item The estimated DC shift \ac{UTD} is shown in Fig.~\ref{fig:dc_uncertainty_trace};
-  \item The predicted DC shift \ac{UTD} is shown in Fig.~\ref{fig:utd_varpi_p}, and defines two (four; TBD) sub-models:
+  \item The estimated DC shift \ac{UTD} is shown in
+    Fig.~\ref{fig:dc_uncertainty_trace};
+  \item The predicted DC shift \ac{UTD} is shown in Fig.~\ref{fig:utd_varpi_p},
+    and defines two sub-models:
   \begin{itemize}
-    \item One related to the satellite orbit and attitude geometry, $\varpi_{\rm geo}$ (Fig.~\ref{fig:utd_varpi_geo});
-    \item \ac{TED} (TBD);
-    \item Errors related to the antenna electronics (TBD);
-    \item Ionospheric phase gradients (TBD); and
-    \item One depending on the pattern of the antenna elevation angle, $\varpi_{\rm e}$ (Fig.~\ref{fig:utd_varpi_e});
+    \item One depending on the pattern of the antenna elevation angle,
+      $\varpi_{\rm e}$ (Fig.~\ref{fig:utd_varpi_e});
+    \item One related to the satellite orbit and attitude geometry,
+      $\varpi_{\rm geo}$ (Fig.~\ref{fig:utd_varpi_geo});
+    %\item \ac{TED} (TBD);
+    %\item Errors related to the antenna electronics (TBD);
+    %\item Ionospheric phase gradients (TBD); and
   \end{itemize}
-  \item The \ac{UTD} diagram for the geometric term, $\varpi_{\rm geo}$, defines three additional sub-models:
-  \begin{itemize}
-    \item $\varpi_{\rm fit}$, describing the effect of a constant adjustment of the attitude angles (pitch, $\psi$; yaw, $\gamma$; and roll, $\phi$; Fig.~\ref{fig:utd_varpi_fit});
-    \item $\varpi_{\rm orb}$, describing an observed orbital variation of the DC shift (Fig.~\ref{fig:utd_varpi_orb}); and
-    \item An additional term, $\varpi_{\rm oa}$, that is calculated from estimates of the satellite position, velocity and attitude (Fig.~\ref{fig:utd_varpi_oa}).
-  \end{itemize}
-  \item Moreover, the \ac{UTD} for $\varpi_{\rm oa}$ defines a sub-model, $\alpha$, resulting from estimates of satellite pitch, $\psi$, yaw, $\gamma$, and roll, $\phi$, attitude attitude angles (Fig.~\ref{fig:utd_alpha}).
+  \item The \ac{UTD} diagram for the geometric term, $\varpi_{\rm geo}$,
+    defines three additional sub-models:
+    \begin{itemize}
+      \item An additional term, $\varpi_{\rm oa}$, that is calculated from
+        estimates of the satellite position, velocity and attitude
+        (Fig.~\ref{fig:utd_varpi_oa}).
+      \item $\varpi_{\rm fit}$, describing the effect of a constant adjustment of
+        the attitude angles (pitch, $\psi$; yaw, $\gamma$; and roll, $\phi$;
+        Fig.~\ref{fig:utd_varpi_fit});
+      \item $\varpi_{\rm orb}$, describing an observed orbital variation of the
+        DC shift (Fig.~\ref{fig:utd_varpi_orb}); and
+    \end{itemize}
+  \item Moreover, the \ac{UTD} for $\varpi_{\rm oa}$ defines a sub-model,
+    $\alpha$, resulting from estimates of satellite pitch, $\psi$, yaw,
+    $\gamma$, and roll, $\phi$, attitude attitude angles
+    (Fig.~\ref{fig:utd_alpha}).
 \end{itemize}
 
 \input{utd_varpi_g}
