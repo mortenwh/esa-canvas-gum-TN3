@@ -10,10 +10,9 @@ repository contains the latex and related documents for the GUM for SAR report
 
 # Tasks
 
-* The todo IDs should be dynamic, like label and reference, with a number
-  associated to each to-do item. Use TBD<number> as the general identification.
-* use hyperref, so a reader can click on the ID and get to the detailed table
-  description in the summary section
+* The current version of the document does not compile. I am using `pdflatex
+  gum4sar.tex`, and there seems to be an issue with the todo package. Please
+  review and suggest the way forward.
 
 # Misc
 
