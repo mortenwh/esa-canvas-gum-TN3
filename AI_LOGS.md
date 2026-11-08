@@ -31,3 +31,10 @@
 - `todo.sty`: table ID now links to the margin note; page number is plain; row anchor kept.
 - DOCUMENTATION.md updated; rebuilt with `compile.sh`.
 **Outcome:** Done.
+
+## 2026-11-08T12:25:00Z — Fix to-do/\tbd misuse in level1.tex
+**Prompt:** Document did not compile with the todo package; review and suggest way forward.
+**Actions:**
+- Found `\tbd \todo{..}{..}` in `level1.tex`: `\tbd` takes one argument and swallowed `\todo`, writing a corrupt entry to `gum4sar.tdl`.
+- Replaced it with "to be determined\todo{..}{..}"; removed stale `.tdl`; rebuilt with `bash compile.sh` (no `!` errors, two correct to-do entries).
+**Outcome:** Fixed; `compile.sh` is not executable (run via `bash compile.sh`).

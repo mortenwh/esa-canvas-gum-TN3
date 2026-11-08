@@ -31,7 +31,7 @@ LaTeX sources for the GUM for SAR report (TN3, CANVAS). Main file:
 
 ## Status / next steps
 
-* To-do macro (draft-only, automatic TBD<n> IDs, hyperref links) implemented and tested; one `\todo` entry in `level1.tex` (TBD1).
+* To-do macro (draft-only, automatic TBD<n> IDs, hyperref links) implemented and tested; two `\todo` entries in `level1.tex` (TBD1, TBD2); never place `\todo` directly after `\tbd` (it takes one argument).
 * Open: `guidelines_writing_papers/` (referenced in AGENTS.md) does not exist.
 * Open: AGENTS.md says "only edit python scripts"; the user allowed LaTeX
   edits for the to-do macro only (see `TRUTHS.md`).
